@@ -28,8 +28,8 @@ import (
 	"github.com/mendsley/gojwk"
 	"stash.kopano.io/kgol/oidc-go"
 
-	"stash.kopano.io/kc/konnect/identity/clients"
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
+	"github.com/libregraph/lico/identity/clients"
+	konnectoidc "github.com/libregraph/lico/oidc"
 )
 
 // ClientRegistrationRequest holds the incoming request data for the OpenID

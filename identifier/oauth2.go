@@ -29,10 +29,10 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/identity/authorities"
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
-	"stash.kopano.io/kc/konnect/oidc/payload"
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/identity/authorities"
+	konnectoidc "github.com/libregraph/lico/oidc"
+	"github.com/libregraph/lico/oidc/payload"
+	"github.com/libregraph/lico/utils"
 )
 
 func (i *Identifier) writeOAuth2Start(rw http.ResponseWriter, req *http.Request, authority *authorities.Details) {

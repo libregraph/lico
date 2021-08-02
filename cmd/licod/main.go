@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"stash.kopano.io/kc/konnect/cmd"
+	"github.com/libregraph/lico/cmd"
 )
 
 // Defaults.

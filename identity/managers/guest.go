@@ -28,12 +28,12 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/identity/clients"
-	"stash.kopano.io/kc/konnect/managers"
-	"stash.kopano.io/kc/konnect/oidc/payload"
-	"stash.kopano.io/kc/konnect/utils"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/identity/clients"
+	"github.com/libregraph/lico/managers"
+	"github.com/libregraph/lico/oidc/payload"
+	"github.com/libregraph/lico/utils"
 )
 
 const guestIdentitityManagerName = "guest"

@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"stash.kopano.io/kc/konnect/version"
+	"github.com/libregraph/lico/version"
 )
 
 var trampolinTemplate = template.Must(template.New("trampolin").Parse(`<!DOCTYPE html>

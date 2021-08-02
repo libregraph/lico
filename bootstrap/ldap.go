@@ -22,11 +22,11 @@ import (
 	"os"
 	"strings"
 
-	"stash.kopano.io/kc/konnect/identifier"
-	identifierBackends "stash.kopano.io/kc/konnect/identifier/backends"
-	ldapDefinitions "stash.kopano.io/kc/konnect/identifier/backends/ldap"
-	"stash.kopano.io/kc/konnect/identity"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
+	"github.com/libregraph/lico/identifier"
+	identifierBackends "github.com/libregraph/lico/identifier/backends"
+	ldapDefinitions "github.com/libregraph/lico/identifier/backends/ldap"
+	"github.com/libregraph/lico/identity"
+	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
 func newLDAPIdentityManager(bs *bootstrap) (identity.Manager, error) {

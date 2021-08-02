@@ -23,7 +23,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 // Manager is a interface to define a identity manager.

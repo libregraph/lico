@@ -26,9 +26,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 const sessionVersion = 2

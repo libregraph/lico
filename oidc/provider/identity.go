@@ -22,8 +22,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 func (p *Provider) getIdentityManager(identityProvider string) (identity.Manager, error) {

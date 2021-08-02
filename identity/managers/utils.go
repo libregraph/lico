@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
+	konnectoidc "github.com/libregraph/lico/oidc"
 )
 
 func setupSupportedScopes(scopes []string, extra []string, override []string) []string {

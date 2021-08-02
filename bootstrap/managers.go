@@ -22,11 +22,11 @@ import (
 	"fmt"
 	"time"
 
-	identityAuthorities "stash.kopano.io/kc/konnect/identity/authorities"
-	identityClients "stash.kopano.io/kc/konnect/identity/clients"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
-	"stash.kopano.io/kc/konnect/managers"
-	codeManagers "stash.kopano.io/kc/konnect/oidc/code/managers"
+	identityAuthorities "github.com/libregraph/lico/identity/authorities"
+	identityClients "github.com/libregraph/lico/identity/clients"
+	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/managers"
+	codeManagers "github.com/libregraph/lico/oidc/code/managers"
 )
 
 func newManagers(ctx context.Context, bs *bootstrap) (*managers.Managers, error) {

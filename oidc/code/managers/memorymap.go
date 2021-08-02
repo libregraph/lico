@@ -24,7 +24,7 @@ import (
 	"github.com/orcaman/concurrent-map"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/oidc/code"
+	"github.com/libregraph/lico/oidc/code"
 )
 
 const (

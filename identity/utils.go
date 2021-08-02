@@ -21,11 +21,10 @@ import (
 	"fmt"
 
 	"github.com/dgrijalva/jwt-go"
-
-	"stash.kopano.io/kc/konnect/oidc/payload"
 	"stash.kopano.io/kgol/oidc-go"
 
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
+	konnectoidc "github.com/libregraph/lico/oidc"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 // AuthorizeScopes uses the provided manager and user to filter the provided

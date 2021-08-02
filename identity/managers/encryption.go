@@ -21,7 +21,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"stash.kopano.io/kc/konnect/encryption"
+	"github.com/libregraph/lico/encryption"
 )
 
 // EncryptionManager implements string encryption functions with a key.

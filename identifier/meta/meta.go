@@ -18,7 +18,7 @@
 package meta
 
 import (
-	"stash.kopano.io/kc/konnect/identifier/meta/scopes"
+	"github.com/libregraph/lico/identifier/meta/scopes"
 )
 
 // Meta is a container to hold identifier meta data which can be requested by

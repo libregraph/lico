@@ -37,8 +37,8 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/sirupsen/logrus"
 
-	"stash.kopano.io/kc/konnect/identity/authorities/samlext"
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/identity/authorities/samlext"
+	"github.com/libregraph/lico/utils"
 )
 
 var cleanWhitespaceRegexp = regexp.MustCompile(`\s+`)

@@ -2,7 +2,7 @@ style: bitbucket
 template: CHANGELOG.tpl.md
 info:
   title: CHANGELOG
-  repository_url: https://stash.kopano.io/projects/KC/repos/konnect/
+  repository_url: https://github.com/libregraph/lico
 options:
   commits:
     # filters:

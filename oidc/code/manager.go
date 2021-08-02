@@ -18,8 +18,8 @@
 package code
 
 import (
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 // Record bundles the data storedi in a code manager.

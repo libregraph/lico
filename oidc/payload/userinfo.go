@@ -18,7 +18,7 @@
 package payload
 
 import (
-	"stash.kopano.io/kc/konnect/oidc"
+	"github.com/libregraph/lico/oidc"
 )
 
 // UserInfoResponse defines the data returned from the OIDC UserInfo

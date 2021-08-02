@@ -19,4 +19,4 @@
 // flexibale authorization and authentication backends and consent screen.
 //
 // See README.md for more info.
-package konnect // import "stash.kopano.io/kc/konnect"
+package lico // import "github.com/libregraph/lico"

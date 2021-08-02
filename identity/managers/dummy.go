@@ -28,10 +28,10 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identity"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identity"
 
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 const dummyIdentityManagerName = "dummy"

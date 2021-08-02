@@ -25,8 +25,8 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/identifier/meta"
-	"stash.kopano.io/kc/konnect/identifier/meta/scopes"
+	"github.com/libregraph/lico/identifier/meta"
+	"github.com/libregraph/lico/identifier/meta/scopes"
 )
 
 func (i *Identifier) writeWebappIndexHTML(rw http.ResponseWriter, req *http.Request) {

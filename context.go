@@ -15,7 +15,7 @@
  *
  */
 
-package konnect
+package lico
 
 import (
 	"context"

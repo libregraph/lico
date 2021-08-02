@@ -22,7 +22,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 // AuthRecord is an interface which provides identity auth information with scopes and claims..

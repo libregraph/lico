@@ -28,8 +28,8 @@ import (
 	"golang.org/x/crypto/blake2b"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 var browserStateMarker = []byte("kopano-konnect-1")

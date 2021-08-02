@@ -29,13 +29,13 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/identifier"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/identity/clients"
-	"stash.kopano.io/kc/konnect/managers"
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
-	"stash.kopano.io/kc/konnect/oidc/payload"
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/identifier"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/identity/clients"
+	"github.com/libregraph/lico/managers"
+	konnectoidc "github.com/libregraph/lico/oidc"
+	"github.com/libregraph/lico/oidc/payload"
+	"github.com/libregraph/lico/utils"
 )
 
 // IdentifierIdentityManager implements an identity manager which relies on

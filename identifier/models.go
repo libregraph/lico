@@ -25,8 +25,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stash.kopano.io/kc/konnect/identifier/meta"
-	"stash.kopano.io/kc/konnect/identity/clients"
+	"github.com/libregraph/lico/identifier/meta"
+	"github.com/libregraph/lico/identity/clients"
 )
 
 // A LogonRequest is the request data as sent to the logon endpoint

@@ -23,7 +23,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"stash.kopano.io/kc/konnect/version"
+	"github.com/libregraph/lico/version"
 )
 
 // CommandVersion provides the commandline implementation for version.

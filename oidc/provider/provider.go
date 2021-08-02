@@ -34,15 +34,15 @@ import (
 	"golang.org/x/crypto/ed25519"
 	"stash.kopano.io/kgol/oidc-go"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/identity/clients"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
-	"stash.kopano.io/kc/konnect/managers"
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
-	"stash.kopano.io/kc/konnect/oidc/code"
-	"stash.kopano.io/kc/konnect/signing"
-	"stash.kopano.io/kc/konnect/utils"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/identity/clients"
+	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/managers"
+	konnectoidc "github.com/libregraph/lico/oidc"
+	"github.com/libregraph/lico/oidc/code"
+	"github.com/libregraph/lico/signing"
+	"github.com/libregraph/lico/utils"
 )
 
 // Provider defines an OIDC provider with the handlers for the OIDC endpoints.

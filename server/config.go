@@ -23,7 +23,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"stash.kopano.io/kc/konnect/config"
+	"github.com/libregraph/lico/config"
 )
 
 // Config defines a Server's configuration settings.

@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/square/go-jose.v2"
 
-	"stash.kopano.io/kc/konnect/signing"
+	"github.com/libregraph/lico/signing"
 )
 
 func parseJSONWebKey(jsonBytes []byte) (*jose.JSONWebKey, error) {

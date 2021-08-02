@@ -20,8 +20,8 @@ package backends
 import (
 	"context"
 
-	"stash.kopano.io/kc/konnect/identifier/meta/scopes"
-	"stash.kopano.io/kc/konnect/identity"
+	"github.com/libregraph/lico/identifier/meta/scopes"
+	"github.com/libregraph/lico/identity"
 )
 
 // A Backend is an identifier Backend providing functionality to logon and to

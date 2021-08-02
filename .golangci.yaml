@@ -27,7 +27,7 @@ linters-settings:
   lll:
     line-length: 200
   goimports:
-    local-prefixes: stash.kopano.io/kc/kapi
+    local-prefixes: github.com/libregraph/lico
   gocritic:
     enabled-tags:
       - performance

@@ -32,11 +32,11 @@ import (
 	"stash.kopano.io/kgol/ksurveyclient-go"
 	"stash.kopano.io/kgol/ksurveyclient-go/autosurvey"
 
-	"stash.kopano.io/kc/konnect/bootstrap"
-	"stash.kopano.io/kc/konnect/config"
-	"stash.kopano.io/kc/konnect/encryption"
-	"stash.kopano.io/kc/konnect/server"
-	"stash.kopano.io/kc/konnect/version"
+	"github.com/libregraph/lico/bootstrap"
+	"github.com/libregraph/lico/config"
+	"github.com/libregraph/lico/encryption"
+	"github.com/libregraph/lico/server"
+	"github.com/libregraph/lico/version"
 )
 
 var bootstrapConfig = &bootstrap.Config{}
