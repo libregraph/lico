@@ -27,13 +27,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
-	"stash.kopano.io/kc/konnect/config"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/identity/clients"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
-	"stash.kopano.io/kc/konnect/managers"
-	codeManagers "stash.kopano.io/kc/konnect/oidc/code/managers"
-	"stash.kopano.io/kc/konnect/oidc/provider"
+	"github.com/libregraph/lico/config"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/identity/clients"
+	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/managers"
+	codeManagers "github.com/libregraph/lico/oidc/code/managers"
+	"github.com/libregraph/lico/oidc/provider"
 )
 
 var logger = &logrus.Logger{

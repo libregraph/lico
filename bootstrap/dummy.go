@@ -18,8 +18,8 @@
 package bootstrap
 
 import (
-	"stash.kopano.io/kc/konnect/identity"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
+	"github.com/libregraph/lico/identity"
+	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
 func newDummyIdentityManager(bs *bootstrap) (identity.Manager, error) {

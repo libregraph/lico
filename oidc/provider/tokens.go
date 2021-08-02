@@ -26,11 +26,11 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identity"
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
-	"stash.kopano.io/kc/konnect/oidc/payload"
-	"stash.kopano.io/kc/konnect/utils"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identity"
+	konnectoidc "github.com/libregraph/lico/oidc"
+	"github.com/libregraph/lico/oidc/payload"
+	"github.com/libregraph/lico/utils"
 )
 
 // MakeAccessToken implements the oidc.AccessTokenProvider interface.

@@ -15,14 +15,14 @@
  *
  */
 
-package konnect
+package lico
 
 import (
 	"errors"
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 // Access token claims used by Konnect.

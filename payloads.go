@@ -15,10 +15,10 @@
  *
  */
 
-package konnect
+package lico
 
 import (
-	"stash.kopano.io/kc/konnect/oidc/payload"
+	"github.com/libregraph/lico/oidc/payload"
 )
 
 // UserInfoResponse defines the data returned from the Konnect UserInfo

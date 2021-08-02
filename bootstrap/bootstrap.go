@@ -36,12 +36,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/config"
-	"stash.kopano.io/kc/konnect/encryption"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/managers"
-	oidcProvider "stash.kopano.io/kc/konnect/oidc/provider"
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/config"
+	"github.com/libregraph/lico/encryption"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/managers"
+	oidcProvider "github.com/libregraph/lico/oidc/provider"
+	"github.com/libregraph/lico/utils"
 )
 
 // Identity managers.

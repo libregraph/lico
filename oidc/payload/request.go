@@ -22,7 +22,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stash.kopano.io/kc/konnect/identity/clients"
+	"github.com/libregraph/lico/identity/clients"
 )
 
 // RequestObjectClaims holds the incoming request object claims provided as

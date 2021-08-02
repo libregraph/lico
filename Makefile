@@ -1,5 +1,5 @@
-PACKAGE  = stash.kopano.io/kc/konnect
-PACKAGE_NAME = kopano-$(shell basename $(PACKAGE))
+PACKAGE  = github.com/libregraph/lico
+PACKAGE_NAME = libregraph-$(shell basename $(PACKAGE))
 
 # Tools
 

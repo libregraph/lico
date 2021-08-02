@@ -31,12 +31,12 @@ import (
 	"stash.kopano.io/kgol/kcc-go/v5"
 	"stash.kopano.io/kgol/oidc-go"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/config"
-	kcDefinitions "stash.kopano.io/kc/konnect/identifier/backends/kc"
-	"stash.kopano.io/kc/konnect/identifier/meta/scopes"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/managers"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/config"
+	kcDefinitions "github.com/libregraph/lico/identifier/backends/kc"
+	"github.com/libregraph/lico/identifier/meta/scopes"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/managers"
 )
 
 const (

@@ -24,10 +24,10 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identifier/backends"
-	"stash.kopano.io/kc/konnect/identity"
-	"stash.kopano.io/kc/konnect/identity/authorities"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identifier/backends"
+	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/identity/authorities"
 )
 
 // A IdentifiedUser is a user with meta data.

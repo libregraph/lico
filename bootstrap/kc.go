@@ -26,12 +26,12 @@ import (
 
 	kcc "stash.kopano.io/kgol/kcc-go/v5"
 
-	"stash.kopano.io/kc/konnect/identifier"
-	identifierBackends "stash.kopano.io/kc/konnect/identifier/backends"
-	"stash.kopano.io/kc/konnect/identity"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
-	"stash.kopano.io/kc/konnect/utils"
-	"stash.kopano.io/kc/konnect/version"
+	"github.com/libregraph/lico/identifier"
+	identifierBackends "github.com/libregraph/lico/identifier/backends"
+	"github.com/libregraph/lico/identity"
+	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/utils"
+	"github.com/libregraph/lico/version"
 )
 
 func newKCIdentityManager(bs *bootstrap) (identity.Manager, error) {

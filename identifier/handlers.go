@@ -29,8 +29,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"stash.kopano.io/kgol/oidc-go"
 
-	"stash.kopano.io/kc/konnect/identity/authorities"
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/identity/authorities"
+	"github.com/libregraph/lico/utils"
 )
 
 func (i *Identifier) staticHandler(handler http.Handler, cache bool) http.Handler {

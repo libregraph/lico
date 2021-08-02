@@ -29,11 +29,11 @@ import (
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
-	"stash.kopano.io/kc/konnect/identity/authorities"
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
+	"github.com/libregraph/lico/identity/authorities"
+	konnectoidc "github.com/libregraph/lico/oidc"
 
-	"stash.kopano.io/kc/konnect/identity/authorities/samlext"
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/identity/authorities/samlext"
+	"github.com/libregraph/lico/utils"
 )
 
 func (i *Identifier) writeSAML2Start(rw http.ResponseWriter, req *http.Request, authority *authorities.Details) {

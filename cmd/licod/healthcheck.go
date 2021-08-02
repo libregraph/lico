@@ -29,7 +29,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/utils"
 )
 
 func commandHealthcheck() *cobra.Command {

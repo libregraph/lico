@@ -31,9 +31,9 @@ import (
 	"gopkg.in/square/go-jose.v2"
 	"stash.kopano.io/kgol/oidc-go"
 
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
-	"stash.kopano.io/kc/konnect/oidc/payload"
-	"stash.kopano.io/kc/konnect/utils"
+	konnectoidc "github.com/libregraph/lico/oidc"
+	"github.com/libregraph/lico/oidc/payload"
+	"github.com/libregraph/lico/utils"
 )
 
 // Authority default values.

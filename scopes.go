@@ -15,7 +15,7 @@
  *
  */
 
-package konnect
+package lico
 
 const (
 	// ScopeID is the string value for the Konnect ID scope.

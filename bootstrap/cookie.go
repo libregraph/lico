@@ -25,8 +25,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"stash.kopano.io/kc/konnect/identity"
-	identityManagers "stash.kopano.io/kc/konnect/identity/managers"
+	"github.com/libregraph/lico/identity"
+	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
 func newCookieIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {

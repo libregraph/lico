@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/square/go-jose.v2"
 
-	"stash.kopano.io/kc/konnect/bootstrap"
+	"github.com/libregraph/lico/bootstrap"
 )
 
 func commandJwkFromPem() *cobra.Command {

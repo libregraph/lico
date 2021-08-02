@@ -34,10 +34,10 @@ import (
 	"golang.org/x/time/rate"
 	"stash.kopano.io/kgol/oidc-go"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/config"
-	ldapDefinitions "stash.kopano.io/kc/konnect/identifier/backends/ldap"
-	"stash.kopano.io/kc/konnect/identifier/meta/scopes"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/config"
+	ldapDefinitions "github.com/libregraph/lico/identifier/backends/ldap"
+	"github.com/libregraph/lico/identifier/meta/scopes"
 )
 
 const ldapIdentifierBackendName = "identifier-ldap"

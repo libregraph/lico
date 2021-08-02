@@ -20,8 +20,8 @@ package identifier
 import (
 	"net/url"
 
-	"stash.kopano.io/kc/konnect/config"
-	"stash.kopano.io/kc/konnect/identifier/backends"
+	"github.com/libregraph/lico/config"
+	"github.com/libregraph/lico/identifier/backends"
 )
 
 // Config defines a Server's configuration settings.

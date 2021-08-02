@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"stash.kopano.io/kc/konnect/utils"
+	"github.com/libregraph/lico/utils"
 )
 
 // OAuth2Error defines a general OAuth2 error with id and decription.

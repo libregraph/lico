@@ -20,8 +20,8 @@ package provider
 import (
 	"errors"
 
-	"stash.kopano.io/kc/konnect"
-	"stash.kopano.io/kc/konnect/identity"
+	konnect "github.com/libregraph/lico"
+	"github.com/libregraph/lico/identity"
 )
 
 // PublicSubjectFromAuth creates the provideds auth Subject value with the

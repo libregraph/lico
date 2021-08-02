@@ -24,7 +24,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"stash.kopano.io/kgol/oidc-go"
 
-	"stash.kopano.io/kc/konnect"
+	konnect "github.com/libregraph/lico"
 )
 
 const (

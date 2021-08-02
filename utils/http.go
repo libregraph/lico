@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/net/http2"
 
-	"stash.kopano.io/kc/konnect/version"
+	"github.com/libregraph/lico/version"
 )
 
 const (

@@ -27,7 +27,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"stash.kopano.io/kgol/oidc-go"
 
-	konnectoidc "stash.kopano.io/kc/konnect/oidc"
+	konnectoidc "github.com/libregraph/lico/oidc"
 )
 
 // TokenRequest holds the incoming parameters and request data for

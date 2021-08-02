@@ -15,12 +15,12 @@
  *
  */
 
-package konnect
+package lico
 
 import (
 	"context"
 
-	"stash.kopano.io/kc/konnect/identity"
+	"github.com/libregraph/lico/identity"
 )
 
 // AccessTokenProvider is an interface for something which can create

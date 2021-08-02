@@ -20,7 +20,7 @@ package provider
 import (
 	"time"
 
-	"stash.kopano.io/kc/konnect/config"
+	"github.com/libregraph/lico/config"
 )
 
 // Config defines a Provider's configuration settings.
