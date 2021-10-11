@@ -7,7 +7,7 @@ import Grid from '@material-ui/core/Grid';
 import DialogContent from '@material-ui/core/DialogContent';
 
 import ResponsiveDialog from './ResponsiveDialog';
-import KopanoLogo from '../images/kopano-logo.svg';
+import Logo from '../images/app-icon.svg';
 import Loading from './Loading';
 
 const styles = theme => ({
@@ -51,7 +51,7 @@ const ResponsiveScreen = (props) => {
   } = props;
 
   const logo = withoutLogo ? null :
-    <DialogContent><img src={KopanoLogo} className={classes.logo} alt=""/></DialogContent>;
+    <DialogContent><img src={Logo} className={classes.logo} alt=""/></DialogContent>;
 
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 
