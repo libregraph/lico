@@ -2,7 +2,7 @@
 #
 # This assumes Konnect is running with identifier on 127.0.0.1:8777.
 
-0.0.0.0:8443 {
+*:8443 {
 	errors stderr
 	log stdout
 
