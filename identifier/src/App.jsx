@@ -1,13 +1,15 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 
-import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider } from '@material-ui/core/styles';
+import {
+  CssBaseline,
+ } from '@material-ui/core';
 
 import { IntlProvider } from 'react-intl';
 
 import './App.css';
 import './fancy-background.css';
-import LoadingMessage from './components/LoadingMessage';
+import Spinner from './components/Spinner';
 import * as version from './version';
 import theme from './theme';
 
@@ -15,24 +17,39 @@ const LazyMain = lazy(() => import(/* webpackChunkName: "identifier-main" */ './
 
 console.info(`Kopano Identifier build version: ${version.build}`); // eslint-disable-line no-console
 
-class App extends React.PureComponent {
-  render() {
-    return (
-      <IntlProvider locale="en-GB" onError={(err)=> {
-        if (err.code === 'MISSING_TRANSLATION') {
-          return;
-        }
-        throw err;
-      }}>
-        <MuiThemeProvider theme={theme}>
-          <CssBaseline/>
-          <Suspense fallback={<LoadingMessage/>}>
-            <LazyMain />
-          </Suspense>
-        </MuiThemeProvider>
-      </IntlProvider>
-    );
+async function loadLocaleData(locale) {
+  switch (locale) {
+  default:
+    return import(/* webpackChunkName: "identifier-locale-en" */ './locales/en.json');
   }
 }
+
+const App = ({ locale }) => {
+  const [ messages, setMessages ] = useState(null);
+  useEffect(() => {
+    async function fetchLocaleData() {
+      const data = await loadLocaleData(locale);
+      setMessages(data);
+    }
+    fetchLocaleData();
+  }, [locale]);
+
+  const elem = messages === null ? <Spinner/> : (<IntlProvider defaultLocale="en" locale={locale} messages={messages}>
+    <Suspense fallback={<Spinner/>}>
+      <LazyMain />
+    </Suspense>
+  </IntlProvider>);
+
+  return (
+    <MuiThemeProvider theme={theme}>
+      <CssBaseline/>
+      {elem}
+    </MuiThemeProvider>
+  );
+}
+
+App.defaultProps= {
+  locale: 'en',
+};
 
 export default App;

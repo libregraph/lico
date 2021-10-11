@@ -1,0 +1,122 @@
+{
+  "9pBa/R": {
+    "defaultMessage": "Enter a password"
+  },
+  "RqphQQ": {
+    "defaultMessage": "Network error. Please check your connection and try again."
+  },
+  "c5Ty8T": {
+    "defaultMessage": "Enter an username"
+  },
+  "f3MCem": {
+    "defaultMessage": "Unexpected HTTP response: {status}. Please check your connection and try again."
+  },
+  "hLSkha": {
+    "defaultMessage": "Logon failed. Please verify your credentials and try again."
+  },
+  "konnect.chooseaccount.headline": {
+    "defaultMessage": "Choose an account"
+  },
+  "konnect.chooseaccount.subHeader": {
+    "defaultMessage": "to sign in"
+  },
+  "konnect.chooseaccount.useOther.label": {
+    "defaultMessage": "Use another account"
+  },
+  "konnect.chooseaccount.useOther.persona.label": {
+    "defaultMessage": "?"
+  },
+  "konnect.consent.allowButton.label": {
+    "defaultMessage": "Allow"
+  },
+  "konnect.consent.cancelButton.label": {
+    "defaultMessage": "Cancel"
+  },
+  "konnect.consent.consequence": {
+    "defaultMessage": "By clicking Allow, you allow this app to use your information."
+  },
+  "konnect.consent.headline": {
+    "defaultMessage": "Hi {displayName}"
+  },
+  "konnect.consent.message": {
+    "defaultMessage": "{clientDisplayName} wants to"
+  },
+  "konnect.consent.question": {
+    "defaultMessage": "Allow {clientDisplayName} to do this?"
+  },
+  "konnect.consent.tooltip.client": {
+    "defaultMessage": "Clicking \"Allow\" will redirect you to: {redirectURI}"
+  },
+  "konnect.goodbye.confirm.headline": {
+    "defaultMessage": "Hello {displayName}"
+  },
+  "konnect.goodbye.confirm.subHeader": {
+    "defaultMessage": "please confirm sign out"
+  },
+  "konnect.goodbye.headline": {
+    "defaultMessage": "Goodbye"
+  },
+  "konnect.goodbye.message.close": {
+    "defaultMessage": "You can close this window now."
+  },
+  "konnect.goodbye.message.confirm": {
+    "defaultMessage": "Press the button below, to sign out from your Kopano account now."
+  },
+  "konnect.goodbye.signoutButton.label": {
+    "defaultMessage": "Sign out"
+  },
+  "konnect.goodbye.subHeader": {
+    "defaultMessage": "you have been signed out from your account"
+  },
+  "konnect.loading.error.headline": {
+    "defaultMessage": "Failed to connect to server"
+  },
+  "konnect.login.headline": {
+    "defaultMessage": "Sign in"
+  },
+  "konnect.login.nextButton.label": {
+    "defaultMessage": "Next"
+  },
+  "konnect.login.passwordField.label": {
+    "defaultMessage": "Password"
+  },
+  "konnect.login.retryButton.label": {
+    "defaultMessage": "Retry"
+  },
+  "konnect.login.usernameField.label": {
+    "defaultMessage": "Username"
+  },
+  "konnect.scopeDescription.aliasBasic": {
+    "defaultMessage": "Access your basic account information"
+  },
+  "konnect.scopeDescription.offlineAccess": {
+    "defaultMessage": "Keep the allowed access persistently and forever"
+  },
+  "konnect.scopeDescription.scope": {
+    "defaultMessage": "Scope: {scope}"
+  },
+  "konnect.welcome.headline": {
+    "defaultMessage": "Welcome {displayName}"
+  },
+  "konnect.welcome.message": {
+    "defaultMessage": "You are signed in - awesome!"
+  },
+  "konnect.welcome.signoutButton.label": {
+    "defaultMessage": "Sign out"
+  },
+  "kpop.loader.error.message": {
+    "defaultMessage": "Error!"
+  },
+  "kpop.loader.loading.message": {
+    "defaultMessage": "Loading..."
+  },
+  "kpop.loader.longtime.message": {
+    "defaultMessage": "Taking a long time..."
+  },
+  "kpop.loader.retry": {
+    "defaultMessage": "retry"
+  },
+  "rfDUoy": {
+    "defaultMessage": "Unexpected response state: {state}"
+  }
+}
