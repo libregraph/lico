@@ -65,7 +65,7 @@ func (s *Server) AddContext(parent context.Context, next http.Handler) http.Hand
 		ctx, cancel := context.WithCancel(parent)
 
 		if s.requestLog {
-			loggedWriter := metrics.NewLoggedResponseWriter(rw)
+			loggedWriter := loggedwriter.NewLoggedResponseWriter(rw)
 			// Create per request context.
 			ctx = timing.NewContext(ctx, func(duration time.Duration) {
 				// This is the stop callback, called when complete with duration.
