@@ -17,12 +17,12 @@ indent_style = space
 indent_size = 4
 
 ; YAML format, 2 spaces
-[*.{yaml,yml,yaml.in}]
+[*.{yaml,yml,yaml.in,json}]
 indent_style = space
 indent_size = 2
 
 ; HTML, CSS and JavaScript, 4 spaces
-[*.{html,css,js}]
+[*.{html,css,js,ts,tsx,jsx}]
 charset = utf-8
 indent_size = 2
 indent_style = space
