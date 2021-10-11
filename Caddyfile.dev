@@ -5,7 +5,7 @@
 # running on 127.0.0.1:3001. Additional examples are included for third party
 # login provides which use cookie passthrough backend.
 
-0.0.0.0:8443 {
+*:8443 {
 	errors stderr
 	log stdout
 
