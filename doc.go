@@ -15,7 +15,7 @@
  *
  */
 
-// Package konnect is a Go implementation of an OpenID Connect server with
+// Package lico is a Go implementation of an OpenID Connect server with
 // flexibale authorization and authentication backends and consent screen.
 //
 // See README.md for more info.

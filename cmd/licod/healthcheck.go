@@ -44,7 +44,7 @@ func commandHealthcheck() *cobra.Command {
 		},
 	}
 
-	healthcheckCmd.Flags().String("hostname", defaultListenAddr, "Host and port where konnectd is listening")
+	healthcheckCmd.Flags().String("hostname", defaultListenAddr, "Host and port where the service is listening")
 	healthcheckCmd.Flags().String("path", "/health-check", "URL path and optional parameters to health-check endpoint")
 	healthcheckCmd.Flags().String("scheme", "http", "URL scheme")
 	healthcheckCmd.Flags().Bool("insecure", false, "Disable TLS certificate and hostname validation")

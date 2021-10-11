@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Kopano Konnect Daemon (konnectd) launcher
+# Libregraph Connect Daemon (licod) launcher
 #
 # License: Apache-2.0
 # Copyright 2018 Kopano and its licensors
@@ -10,16 +10,16 @@ set -e
 
 # Base defines.
 
-EXE=/usr/libexec/kopano/konnectd
+EXE=/usr/libexec/libregraph/licod
 OPENSSL=openssl
 DEFAULT_IDENTIY_MANAGER=kc
-DEFAULT_WEB_RESOURCES_PATH=/usr/share/kopano-konnect
-DEFAULT_IDENTIFIER_REGISTRATION_FILE=/etc/kopano/konnectd-identifier-registration.yaml
-DEFAULT_IDENTIFIER_SCOPES_FILE=/etc/kopano/konnectd-identifier-scopes.yaml
+DEFAULT_WEB_RESOURCES_PATH=/usr/share/libregraph-lico
+DEFAULT_IDENTIFIER_REGISTRATION_FILE=/etc/libregraph/lico/identifier-registration.yaml
+DEFAULT_IDENTIFIER_SCOPES_FILE=/etc/libregraph/lico/identifier-scopes.yaml
 DEFAULT_OIDC_ISSUER_IDENTIFIER=https://localhost
-DEFAULT_SIGNING_PRIVATE_KEY_FILE=/etc/kopano/konnectd-signing-private-key.pem
-DEFAULT_VALIDATION_KEYS_PATH=/etc/kopano/konnectkeys
-DEFAULT_ENCRYPTION_SECRET_KEY_FILE=/etc/kopano/konnectd-encryption-secret.key
+DEFAULT_SIGNING_PRIVATE_KEY_FILE=/etc/libregraph/lico/signing-private-key.pem
+DEFAULT_VALIDATION_KEYS_PATH=/etc/libregraph/lico/keys
+DEFAULT_ENCRYPTION_SECRET_KEY_FILE=/etc/libregraph/lico/encryption-secret.key
 DEFAULT_KOPANO_SERVER_URI=file:///run/kopano/server.sock
 
 # Handle parameters for configuration.
@@ -31,7 +31,7 @@ case "${1}" in
 		if [ -z "$signing_method" -o "$signing_method" = "PS256" -o "$signing_method" = "RS256" ]; then
 			mkdir -p "${DEFAULT_VALIDATION_KEYS_PATH}" && chown "$USER" "${DEFAULT_VALIDATION_KEYS_PATH}"
 			rnd=$(RANDFILE=/tmp/.rnd $OPENSSL rand -hex 2)
-			key="${DEFAULT_VALIDATION_KEYS_PATH}/konnect-$(date +%Y%m%d)-${rnd}.pem"
+			key="${DEFAULT_VALIDATION_KEYS_PATH}/lico-$(date +%Y%m%d)-${rnd}.pem"
 			>&2	echo "setup: creating new RSA private key at ${key} ..."
 			RANDFILE=/tmp/.rnd $OPENSSL genpkey -algorithm RSA -out "${key}" -pkeyopt rsa_keygen_bits:4096 -pkeyopt rsa_keygen_pubexp:65537 && chown "$USER" "${key}" || true
 			if [ -f "${key}" ]; then
@@ -56,7 +56,7 @@ case "${1}" in
 
 		shift
 
-		# konnectd basics
+		# licod basics
 
 		if [ -z "$identity_manager" ]; then
 			identity_manager="${DEFAULT_IDENTIY_MANAGER}"

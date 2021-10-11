@@ -1,11 +1,11 @@
 [Unit]
-Description=Kopano Konnect Daemon
+Description=LibreGraph Connect Daemon
 
 [Service]
 Type=simple
 PrivateTmp=yes
-User=konnect
-Group=kopano
+User=licod
+Group=licod
 NoNewPrivileges=yes
 PrivateUsers=yes
 CapabilityBoundingSet=
@@ -14,9 +14,9 @@ UMask=0077
 LimitNOFILE=infinity
 PermissionsStartOnly=true
 Environment=LC_CTYPE=en_US.UTF-8
-EnvironmentFile=-/etc/kopano/konnectd.cfg
-ExecStartPre=/usr/sbin/kopano-konnectd setup
-ExecStart=/usr/sbin/kopano-konnectd serve --log-timestamp=false
+EnvironmentFile=-/etc/libregraph/lico/licod.cfg
+ExecStartPre=/usr/sbin/licod setup
+ExecStart=/usr/sbin/licod serve --log-timestamp=false
 
 [Install]
 WantedBy=multi-user.target
