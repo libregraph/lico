@@ -20,7 +20,7 @@ const styles = () => ({
   }
 });
 
-class App extends PureComponent {
+class Main extends PureComponent {
   render() {
     const { classes, hello, pathPrefix } = this.props;
 
@@ -40,7 +40,7 @@ class App extends PureComponent {
   }
 }
 
-App.propTypes = {
+Main.propTypes = {
   classes: PropTypes.object.isRequired,
 
   hello: PropTypes.object,
@@ -58,4 +58,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(App));
+export default connect(mapStateToProps)(withStyles(styles)(Main));

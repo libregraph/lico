@@ -1,12 +1,20 @@
-import 'kpop/static/css/base.css';
-import 'kpop/static/css/scrollbar.css';
-import 'typeface-roboto';
-import './app.css';
-import './fancy-background.css';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 
-import * as version from './version';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 
-console.info(`Kopano Identifier build version: ${version.build}`); // eslint-disable-line no-console
+import App from './App';
+import store from './store';
 
-// NOTE(longsleep): Load async, this enables code splitting via Webpack.
-import(/* webpackChunkName: "identifier-app" */ './app');
+ReactDOM.render(
+  <React.StrictMode>
+    <Provider store={store as any}>
+      <App/>
+    </Provider>
+  </React.StrictMode>,
+  document.getElementById('root')
+);

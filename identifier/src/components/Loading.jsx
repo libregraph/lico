@@ -37,7 +37,7 @@ class Loading extends React.PureComponent {
     const { classes, error } = this.props;
 
     return (
-      <Grid container direction="column" alignItems="center" justify="center" spacing={0} className={classes.root}>
+      <Grid container direction="column" alignItems="center" justifyContent="center" spacing={0} className={classes.root}>
         <Grid item align="center">
           {renderIf(error === null)(() => (
             <LinearProgress className={classes.progress} />
