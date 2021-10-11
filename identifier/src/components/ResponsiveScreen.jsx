@@ -5,8 +5,6 @@ import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogActions from '@material-ui/core/DialogActions';
-import LocaleSelect from 'kpop/es/IntlContainer/LocaleSelect';
 
 import ResponsiveDialog from './ResponsiveDialog';
 import KopanoLogo from '../images/kopano-logo.svg';
@@ -56,10 +54,9 @@ const ResponsiveScreen = (props) => {
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 
   return (
-    <Grid container justify="center" alignItems="center" spacing={0}
+    <Grid container justifyContent="center" alignItems="center" spacing={0}
       className={classNames(classes.root, className)} {...other}>
-      <ResponsiveDialog open fullWidth maxWidth="sm"
-        disableBackdropClick disableEscapeKeyDown hideBackdrop
+      <ResponsiveDialog open fullWidth maxWidth="sm" disableEscapeKeyDown hideBackdrop
         {...DialogProps}
         PaperProps={{elevation: 4, ...PaperProps}}
       >
@@ -67,7 +64,6 @@ const ResponsiveScreen = (props) => {
           {logo}
           {content}
         </div>
-        <DialogActions className={classes.actions} disableSpacing><LocaleSelect disableUnderline/></DialogActions>
       </ResponsiveDialog>
     </Grid>
   );

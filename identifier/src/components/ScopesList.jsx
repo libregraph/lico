@@ -6,7 +6,7 @@ import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import Checkbox from '@material-ui/core/Checkbox';
 
-import { injectIntl, intlShape, defineMessages, FormattedMessage } from 'react-intl';
+import { injectIntl, defineMessages, FormattedMessage } from 'react-intl';
 
 const styles = () => ({
   row: {
@@ -92,7 +92,7 @@ const ScopesList = ({scopes, meta, classes, intl, ...rest}) => {
 
 ScopesList.propTypes = {
   classes: PropTypes.object.isRequired,
-  intl: intlShape.isRequired,
+  intl: PropTypes.object.isRequired,
 
   scopes: PropTypes.object.isRequired,
   meta: PropTypes.object.isRequired

@@ -1,16 +1,15 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import PropTypes from 'prop-types';
 
 import { Route, Switch } from 'react-router-dom';
-import AsyncComponent from 'kpop/es/AsyncComponent';
 
 import PrivateRoute from './components/PrivateRoute';
 
-const AsyncLogin = AsyncComponent(() =>
+const AsyncLogin = lazy(() =>
   import(/* webpackChunkName: "containers-login" */ './containers/Login'));
-const AsyncWelcome = AsyncComponent(() =>
+const AsyncWelcome = lazy(() =>
   import(/* webpackChunkName: "containers-welcome" */ './containers/Welcome'));
-const AsyncGoodbye = AsyncComponent(() =>
+const AsyncGoodbye = lazy(() =>
   import(/* webpackChunkName: "containers-goodbye" */ './containers/Goodbye'));
 
 const Routes = ({ hello }) => (
