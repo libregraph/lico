@@ -13,19 +13,21 @@ import Loading from './Loading';
 const styles = theme => ({
   root: {
     display: 'flex',
-    flex: 1
+    flex: 1,
   },
   content: {
     paddingTop: 24,
     paddingBottom: 12,
-    minHeight: 500,
+    minHeight: 350,
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
     position: 'relative'
   },
+  dialog: {
+    maxWidth: 440,
+  },
   logo: {
-    height: 18,
-    marginBottom: theme.spacing(2)
+    height: 24,
   },
   actions: {
     marginTop: -40,
@@ -49,7 +51,7 @@ const ResponsiveScreen = (props) => {
   } = props;
 
   const logo = withoutLogo ? null :
-    <DialogContent><img src={KopanoLogo} className={classes.logo} alt="Kopano"/></DialogContent>;
+    <DialogContent><img src={KopanoLogo} className={classes.logo} alt=""/></DialogContent>;
 
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 
@@ -59,6 +61,9 @@ const ResponsiveScreen = (props) => {
       <ResponsiveDialog open fullWidth maxWidth="sm" disableEscapeKeyDown hideBackdrop
         {...DialogProps}
         PaperProps={{elevation: 4, ...PaperProps}}
+        classes={{
+          paperWidthSm: classes.dialog,
+        }}
       >
         <div className={classes.content}>
           {logo}

@@ -42,7 +42,7 @@ class Goodbyescreen extends React.PureComponent {
             </Typography>
             <Typography variant="subtitle1" className={classes.subHeader}>
               <FormattedMessage id="konnect.goodbye.subHeader"
-                defaultMessage="you have been signed out from your Kopano account">
+                defaultMessage="you have been signed out from your account">
               </FormattedMessage>
             </Typography>
             <Typography gutterBottom>
