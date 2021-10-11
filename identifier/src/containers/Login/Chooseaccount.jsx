@@ -61,7 +61,7 @@ class Chooseaccount extends React.PureComponent {
           <FormattedMessage id="konnect.chooseaccount.headline" defaultMessage="Choose an account"></FormattedMessage>
         </Typography>
         <Typography variant="subtitle1" className={classes.subHeader}>
-          <FormattedMessage id="konnect.chooseaccount.subHeader" defaultMessage="to sign in to your account">
+          <FormattedMessage id="konnect.chooseaccount.subHeader" defaultMessage="to sign in">
           </FormattedMessage>
         </Typography>
 

@@ -141,6 +141,7 @@ class Consent extends React.PureComponent {
             <div className={classes.wrapper}>
               <Button
                 color="secondary"
+                variant="outlined"
                 className={classes.button}
                 disabled={!!loading}
                 onClick={this.action(false, scopes)}

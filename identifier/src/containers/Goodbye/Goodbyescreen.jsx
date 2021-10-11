@@ -77,6 +77,7 @@ class Goodbyescreen extends React.PureComponent {
               <div className={classes.wrapper}>
                 <Button
                   color="secondary"
+                  variant="outlined"
                   className={classes.button}
                   onClick={(event) => this.logoff(event)}
                 >
