@@ -25,7 +25,7 @@ import (
 
 // RootCmd provides the commandline parser root.
 var RootCmd = &cobra.Command{
-	Use: "konnectd",
+	Use: "licod",
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 		os.Exit(2)

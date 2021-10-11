@@ -2,7 +2,7 @@
 /bin
 /.gopath
 /.vscode
-/cmd/konnectd/debug
+/cmd/licod/debug
 /test/tests.*
 /test/coverage.*
 /golint.txt

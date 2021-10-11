@@ -59,7 +59,7 @@ clients:
 authorities:
 #  - id: my-univention-oidc
 #    name: Univention
-#    client_id: kopano-konnect
+#    client_id: libregraph-lico
 #    authority_type: oidc
 #    jwks:
 #      keys:
@@ -83,7 +83,7 @@ authorities:
 
 #  - id: my-univention-saml2
 #    name: Univention
-#    entity_id: kopano-konnect
+#    entity_id: libregraph-lico
 #    authority_type: saml2
 #    default: yes
 #    trusted: yes

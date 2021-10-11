@@ -72,12 +72,12 @@ func commandServe() *cobra.Command {
 
 	cfg := bootstrapConfig
 
-	serveCmd.Flags().StringVar(&cfg.Listen, "listen", envOrDefault("KONNECTD_LISTEN", defaultListenAddr), fmt.Sprintf("TCP listen address (default \"%s\")", defaultListenAddr))
+	serveCmd.Flags().StringVar(&cfg.Listen, "listen", envOrDefault("LICOD_LISTEN", defaultListenAddr), fmt.Sprintf("TCP listen address (default \"%s\")", defaultListenAddr))
 	serveCmd.Flags().StringVar(&cfg.Iss, "iss", "", "OIDC issuer URL")
-	serveCmd.Flags().StringArrayVar(&cfg.SigningPrivateKeyFiles, "signing-private-key", listEnvArg("KONNECTD_SIGNING_PRIVATE_KEY"), "Full path to PEM encoded private key file (must match the --signing-method algorithm)")
-	serveCmd.Flags().StringVar(&cfg.SigningKid, "signing-kid", os.Getenv("KONNECTD_SIGNING_KID"), "Value of kid field to use in created tokens (uniquely identifying the signing-private-key)")
-	serveCmd.Flags().StringVar(&cfg.ValidationKeysPath, "validation-keys-path", os.Getenv("KONNECTD_VALIDATION_KEYS_PATH"), "Full path to a folder containing PEM encoded private or public key files used for token validaton (file name without extension is used as kid)")
-	serveCmd.Flags().StringVar(&cfg.EncryptionSecretFile, "encryption-secret", os.Getenv("KONNECTD_ENCRYPTION_SECRET"), fmt.Sprintf("Full path to a file containing a %d bytes secret key", encryption.KeySize))
+	serveCmd.Flags().StringArrayVar(&cfg.SigningPrivateKeyFiles, "signing-private-key", listEnvArg("LICOD_SIGNING_PRIVATE_KEY"), "Full path to PEM encoded private key file (must match the --signing-method algorithm)")
+	serveCmd.Flags().StringVar(&cfg.SigningKid, "signing-kid", os.Getenv("LICOD_SIGNING_KID"), "Value of kid field to use in created tokens (uniquely identifying the signing-private-key)")
+	serveCmd.Flags().StringVar(&cfg.ValidationKeysPath, "validation-keys-path", os.Getenv("LICOD_VALIDATION_KEYS_PATH"), "Full path to a folder containing PEM encoded private or public key files used for token validaton (file name without extension is used as kid)")
+	serveCmd.Flags().StringVar(&cfg.EncryptionSecretFile, "encryption-secret", os.Getenv("LICOD_ENCRYPTION_SECRET"), fmt.Sprintf("Full path to a file containing a %d bytes secret key", encryption.KeySize))
 	serveCmd.Flags().StringVar(&cfg.SigningMethod, "signing-method", "PS256", "JWT default signing method")
 	serveCmd.Flags().StringVar(&cfg.URIBasePath, "uri-base-path", "", "Custom base path for URI endpoints")
 	serveCmd.Flags().StringVar(&cfg.SignInURI, "sign-in-uri", "", "Custom redirection URI to sign-in form")
@@ -85,7 +85,7 @@ func commandServe() *cobra.Command {
 	serveCmd.Flags().StringVar(&cfg.AuthorizationEndpointURI, "authorization-endpoint-uri", "", "Custom authorization endpoint URI")
 	serveCmd.Flags().StringVar(&cfg.EndsessionEndpointURI, "endsession-endpoint-uri", "", "Custom endsession endpoint URI")
 	serveCmd.Flags().BoolVar(&cfg.IdentifierClientDisabled, "disable-identifier-client", false, "Disable loading the identifier web client")
-	serveCmd.Flags().StringVar(&cfg.IdentifierClientPath, "identifier-client-path", envOrDefault("KONNECTD_IDENTIFIER_CLIENT_PATH", defaultIdentifierClientPath), fmt.Sprintf("Path to the identifier web client base folder (default \"%s\")", defaultIdentifierClientPath))
+	serveCmd.Flags().StringVar(&cfg.IdentifierClientPath, "identifier-client-path", envOrDefault("LICOD_IDENTIFIER_CLIENT_PATH", defaultIdentifierClientPath), fmt.Sprintf("Path to the identifier web client base folder (default \"%s\")", defaultIdentifierClientPath))
 	serveCmd.Flags().StringVar(&cfg.IdentifierRegistrationConf, "identifier-registration-conf", "", "Path to a identifier-registration.yaml configuration file")
 	serveCmd.Flags().StringVar(&cfg.IdentifierScopesConf, "identifier-scopes-conf", "", "Path to a scopes.yaml configuration file")
 	serveCmd.Flags().BoolVar(&cfg.Insecure, "insecure", false, "Disable TLS certificate and hostname validation")
@@ -178,7 +178,7 @@ func serve(cmd *cobra.Command, args []string) error {
 		guid = []byte(issURL.String())
 	}
 	err = autosurvey.Start(ctx,
-		"konnectd",
+		"licod",
 		version.Version,
 		guid,
 		ksurveyclient.MustNewConstMap("userplugin", map[string]interface{}{
