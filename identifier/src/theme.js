@@ -28,10 +28,10 @@ const theme = createMuiTheme({
     tonalOffset: 0.2,
   },
   typography: {
+    fontSize: 12,
     useNextVariants: true,
     button: {
       textTransform: 'none',
-      fontSize: '1rem',
     },
   },
 });

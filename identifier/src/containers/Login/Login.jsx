@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 import renderIf from 'render-if';
-import { FormattedMessage } from 'react-intl';
+import { injectIntl, FormattedMessage, defineMessages } from 'react-intl';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -42,6 +42,17 @@ const styles = theme => ({
   }
 });
 
+const loginTranslations = defineMessages({
+  login_username_placeholder: {
+    id: 'konnect.login.usernameField.label',
+    defaultMessage: 'Username'
+  },
+  login_password_placeholder: {
+    id: 'konnect.login.passwordField.label',
+    defaultMessage: 'Password'
+  },
+});
+
 class Login extends React.PureComponent {
   state = {};
 
@@ -59,28 +70,22 @@ class Login extends React.PureComponent {
   }
 
   render() {
-    const { loading, errors, classes, username } = this.props;
+    const { loading, errors, classes, username, intl } = this.props;
 
     return (
       <div>
         <Typography variant="h5" component="h3">
           <FormattedMessage id="konnect.login.headline" defaultMessage="Sign in"></FormattedMessage>
         </Typography>
-        <Typography variant="subtitle1" className={classes.subHeader}>
-          <FormattedMessage id="konnect.login.subHeader" defaultMessage="with your Kopano account"></FormattedMessage>
-        </Typography>
 
         <form action="" onSubmit={(event) => this.logon(event)}>
           <div>
             <TextField
-              label={
-                <FormattedMessage id="konnect.login.usernameField.label" defaultMessage="Username"></FormattedMessage>
-              }
+              placeholder={intl.formatMessage(loginTranslations.login_username_placeholder)}
               error={!!errors.username}
               helperText={<ErrorMessage error={errors.username}></ErrorMessage>}
               fullWidth
               margin="normal"
-              variant="outlined"
               autoFocus
               inputProps={{
                 autoCapitalize: 'off',
@@ -92,14 +97,11 @@ class Login extends React.PureComponent {
             />
             <TextField
               type="password"
-              label={
-                <FormattedMessage id="konnect.login.passwordField.label" defaultMessage="Password"></FormattedMessage>
-              }
+              placeholder={intl.formatMessage(loginTranslations.login_password_placeholder)}
               error={!!errors.password}
               helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
               fullWidth
               margin="normal"
-              variant="outlined"
               onChange={this.handleChange('password')}
               autoComplete="kopano-account current-password"
             />
@@ -150,6 +152,7 @@ class Login extends React.PureComponent {
 
 Login.propTypes = {
   classes: PropTypes.object.isRequired,
+  intl: PropTypes.object.isRequired,
 
   loading: PropTypes.string.isRequired,
   username: PropTypes.string.isRequired,
@@ -176,4 +179,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(Login));
+export default connect(mapStateToProps)(withStyles(styles)(injectIntl(Login)));

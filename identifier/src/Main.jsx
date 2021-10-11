@@ -6,11 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { withStyles } from '@material-ui/core/styles';
 
-import { enhanceBodyBackground } from './utils';
 import Routes from './Routes';
-
-// Trigger loading of background image.
-enhanceBodyBackground();
 
 const styles = () => ({
   root: {
