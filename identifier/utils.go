@@ -18,8 +18,13 @@
 package identifier
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/gabriel-vasile/mimetype"
 )
 
 var (
@@ -38,4 +43,13 @@ func addNoCacheResponseHeaders(header http.Header) {
 	header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	header.Set("Pragma", "no-cache")
 	header.Set("Expires", farPastExpiryTimeHTTPHeaderString)
+}
+
+func encodeImageAsDataURL(b []byte) (string, error) {
+	mt := mimetype.Detect(b)
+	if !strings.HasPrefix(mt.String(), "image/") {
+		return "", fmt.Errorf("not an image: %s", mt)
+	}
+
+	return "data:" + mt.String() + ";base64," + base64.StdEncoding.EncodeToString(b), nil
 }

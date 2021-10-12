@@ -106,6 +106,7 @@ type HelloResponse struct {
 	Scopes        map[string]bool  `json:"scopes,omitempty"`
 	ClientDetails *clients.Details `json:"client,omitempty"`
 	Meta          *meta.Meta       `json:"meta,omitempty"`
+	Branding      *meta.Branding   `json:"branding,omitempty"`
 }
 
 // A StateRequest is a general request with a state.

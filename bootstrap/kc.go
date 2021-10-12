@@ -34,7 +34,7 @@ import (
 	"github.com/libregraph/lico/version"
 )
 
-func newKCIdentityManager(bs *bootstrap) (identity.Manager, error) {
+func newKCIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {
 	logger := bs.cfg.Logger
 
 	if bs.authorizationEndpointURI.String() != "" {
@@ -137,6 +137,10 @@ func newKCIdentityManager(bs *bootstrap) (identity.Manager, error) {
 
 		AuthorizationEndpointURI: fullAuthorizationEndpointURL,
 		SignedOutEndpointURI:     fullSignedOutEndpointURL,
+
+		DefaultBannerLogo:       bs.identifierDefaultBannerLogo,
+		DefaultSignInPageText:   bs.IdentifierDefaultSignInPageText,
+		DefaultUsernameHintText: bs.IdentifierDefaultUsernameHintText,
 
 		Backend: identifierBackend,
 	})

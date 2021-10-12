@@ -12,6 +12,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import green from '@material-ui/core/colors/green';
 import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
 
 import { executeConsent, advanceLogonFlow, receiveValidateLogon } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
@@ -86,7 +87,7 @@ class Consent extends React.PureComponent {
     const meta = hello.details.meta || {};
 
     return (
-      <div>
+      <DialogContent>
         <Typography variant="h5" component="h3">
           <FormattedMessage
             id="konnect.consent.headline"
@@ -172,7 +173,7 @@ class Consent extends React.PureComponent {
             </Typography>
           ))}
         </form>
-      </div>
+      </DialogContent>
     );
   }
 }

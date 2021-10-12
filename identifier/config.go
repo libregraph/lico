@@ -39,5 +39,9 @@ type Config struct {
 	AuthorizationEndpointURI *url.URL
 	SignedOutEndpointURI     *url.URL
 
+	DefaultBannerLogo       []byte
+	DefaultSignInPageText   *string
+	DefaultUsernameHintText *string
+
 	Backend backends.Backend
 }

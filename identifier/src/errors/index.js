@@ -11,11 +11,11 @@ export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATE = 'konnect.error.http.unexpect
 const translations = defineMessages({
   [ERROR_LOGIN_VALIDATE_MISSINGUSERNAME]: {
     id: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
-    defaultMessage: 'Enter an username'
+    defaultMessage: 'Enter a valid {what}.'
   },
   [ERROR_LOGIN_VALIDATE_MISSINGPASSWORD]: {
     id: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
-    defaultMessage: 'Enter a password'
+    defaultMessage: 'Enter your password.'
   },
   [ERROR_LOGIN_FAILED]: {
     id: ERROR_LOGIN_FAILED,
@@ -50,7 +50,7 @@ export class ExtendedError extends Error {
 
 // Component to translate error text with values.
 function ErrorMessageComponent(props) {
-  const { error, intl } = props;
+  const { error, intl, values } = props;
 
   if (!error) {
     return null;
@@ -62,7 +62,7 @@ function ErrorMessageComponent(props) {
     defaultMessage: error.id ? error.message : undefined
   }, translations[id]);
 
-  return intl.formatMessage(messageDescriptor, error.values);
+  return intl.formatMessage(messageDescriptor, {...error.values, ...values});
 }
 
 export const ErrorMessage = injectIntl(ErrorMessageComponent);

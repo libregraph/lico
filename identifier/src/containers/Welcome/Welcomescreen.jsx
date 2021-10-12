@@ -28,7 +28,7 @@ class Welcomescreen extends React.PureComponent {
 
     const loading = hello === null;
     return (
-      <ResponsiveScreen loading={loading}>
+      <ResponsiveScreen loading={loading} hello={hello}>
         <Typography variant="h5" component="h3">
           <FormattedMessage
             id="konnect.welcome.headline"

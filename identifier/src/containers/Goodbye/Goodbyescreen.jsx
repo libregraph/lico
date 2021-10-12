@@ -34,7 +34,7 @@ class Goodbyescreen extends React.PureComponent {
 
     const loading = hello === null;
     return (
-      <ResponsiveScreen loading={loading}>
+      <ResponsiveScreen loading={loading} hello={hello}>
         {renderIf(hello !== null && !hello.state)(() => (
           <div>
             <Typography variant="h5" component="h3">
