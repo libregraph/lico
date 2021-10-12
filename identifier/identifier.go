@@ -77,6 +77,8 @@ type Identifier struct {
 
 	meta *meta.Meta
 
+	defaultBannerLogo *string
+
 	onSetLogonCallbacks   []func(ctx context.Context, rw http.ResponseWriter, user identity.User) error
 	onUnsetLogonCallbacks []func(ctx context.Context, rw http.ResponseWriter) error
 
@@ -132,6 +134,14 @@ func NewIdentifier(c *Config) (*Identifier, error) {
 	i.meta.Scopes, err = scopes.NewScopesFromFile(i.scopesConf, i.logger)
 	if err != nil {
 		return nil, err
+	}
+
+	if c.DefaultBannerLogo != nil {
+		defaultBannerLogo, err := encodeImageAsDataURL(c.DefaultBannerLogo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode default banner logo: %w", err)
+		}
+		i.defaultBannerLogo = &defaultBannerLogo
 	}
 
 	i.meta.Scopes.Extend(c.Backend.ScopesMeta())

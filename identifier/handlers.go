@@ -420,11 +420,6 @@ func (i *Identifier) handleHello(rw http.ResponseWriter, req *http.Request) {
 		i.ErrorPage(rw, http.StatusBadRequest, "", err.Error())
 		return
 	}
-	if !response.Success {
-		rw.Header().Set("Kopano-Konnect-State", response.State)
-		rw.WriteHeader(http.StatusNoContent)
-		return
-	}
 
 	err = utils.WriteJSON(rw, http.StatusOK, response, "")
 	if err != nil {

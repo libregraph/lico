@@ -84,6 +84,9 @@ type Config struct {
 	IdentifierClientPath              string
 	IdentifierRegistrationConf        string
 	IdentifierScopesConf              string
+	IdentifierDefaultBannerLogo       string
+	IdentifierDefaultSignInPageText   string
+	IdentifierDefaultUsernameHintText string
 	SigningKid                        string
 	SigningMethod                     string
 	SigningPrivateKeyFiles            []string
@@ -112,12 +115,16 @@ type bootstrap struct {
 
 	tlsClientConfig *tls.Config
 
-	issuerIdentifierURI        *url.URL
-	identifierClientDisabled   bool
-	identifierClientPath       string
-	identifierRegistrationConf string
-	identifierAuthoritiesConf  string
-	identifierScopesConf       string
+	issuerIdentifierURI *url.URL
+
+	identifierClientDisabled          bool
+	identifierClientPath              string
+	identifierRegistrationConf        string
+	identifierAuthoritiesConf         string
+	identifierScopesConf              string
+	identifierDefaultBannerLogo       []byte
+	IdentifierDefaultSignInPageText   *string
+	IdentifierDefaultUsernameHintText *string
 
 	encryptionSecret []byte
 	signingMethod    jwt.SigningMethod
@@ -300,6 +307,21 @@ func (bs *bootstrap) initialize(cfg *Config) error {
 		}
 	}
 
+	if cfg.IdentifierDefaultBannerLogo != "" {
+		// Load from file.
+		b, errRead := ioutil.ReadFile(cfg.IdentifierDefaultBannerLogo)
+		if errRead != nil {
+			return fmt.Errorf("identifier-default-banner-logo failed to open: %w", errRead)
+		}
+		bs.identifierDefaultBannerLogo = b
+	}
+	if cfg.IdentifierDefaultSignInPageText != "" {
+		bs.IdentifierDefaultSignInPageText = &cfg.IdentifierDefaultSignInPageText
+	}
+	if cfg.IdentifierDefaultUsernameHintText != "" {
+		bs.IdentifierDefaultUsernameHintText = &cfg.IdentifierDefaultUsernameHintText
+	}
+
 	bs.signingKeyID = cfg.SigningKid
 	bs.signers = make(map[string]crypto.Signer)
 	bs.validators = make(map[string]crypto.PublicKey)
@@ -457,13 +479,13 @@ func (bs *bootstrap) setupIdentity(ctx context.Context, cfg *Config) (identity.M
 		identityManager, err = newCookieIdentityManager(bs, cfg)
 
 	case identityManagerNameKC:
-		identityManager, err = newKCIdentityManager(bs)
+		identityManager, err = newKCIdentityManager(bs, cfg)
 
 	case identityManagerNameLDAP:
-		identityManager, err = newLDAPIdentityManager(bs)
+		identityManager, err = newLDAPIdentityManager(bs, cfg)
 
 	case identityManagerNameDummy:
-		identityManager, err = newDummyIdentityManager(bs)
+		identityManager, err = newDummyIdentityManager(bs, cfg)
 
 	default:
 		err = fmt.Errorf("unknown identity manager %v", identityManagerName)

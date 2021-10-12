@@ -29,7 +29,7 @@ import (
 	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
-func newLDAPIdentityManager(bs *bootstrap) (identity.Manager, error) {
+func newLDAPIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {
 	logger := bs.cfg.Logger
 
 	if bs.authorizationEndpointURI.String() != "" {
@@ -102,6 +102,10 @@ func newLDAPIdentityManager(bs *bootstrap) (identity.Manager, error) {
 
 		AuthorizationEndpointURI: fullAuthorizationEndpointURL,
 		SignedOutEndpointURI:     fullSignedOutEndpointURL,
+
+		DefaultBannerLogo:       bs.identifierDefaultBannerLogo,
+		DefaultSignInPageText:   bs.IdentifierDefaultSignInPageText,
+		DefaultUsernameHintText: bs.IdentifierDefaultUsernameHintText,
 
 		Backend: identifierBackend,
 	})

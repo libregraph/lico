@@ -27,7 +27,7 @@ class Loginscreen extends React.PureComponent {
 
     const loading = hello === null;
     return (
-      <ResponsiveScreen loading={loading}>
+      <ResponsiveScreen loading={loading} hello={hello} withoutPadding>
         <Switch>
           <Route path="/identifier" exact component={Login}></Route>
           <Route path="/chooseaccount" exact component={Chooseaccount}></Route>

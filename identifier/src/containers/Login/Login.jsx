@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -12,6 +12,7 @@ import green from '@material-ui/core/colors/green';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
 
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
@@ -36,6 +37,9 @@ const styles = theme => ({
     position: 'relative',
     display: 'inline-block'
   },
+  slideContainer: {
+    overflowX: 'hidden',
+  },
   message: {
     marginTop: theme.spacing(2),
     marginBottom: theme.spacing(2)
@@ -44,7 +48,7 @@ const styles = theme => ({
 
 const loginTranslations = defineMessages({
   login_username_placeholder: {
-    id: 'konnect.login.usernameField.label',
+    id: 'konnect.login.usernameField.placeholder',
     defaultMessage: 'Username'
   },
   login_password_placeholder: {
@@ -53,13 +57,23 @@ const loginTranslations = defineMessages({
   },
 });
 
-class Login extends React.PureComponent {
-  state = {};
+function Login(props) {
+  const {
+    hello,
+    query,
+    dispatch,
+    history,
+    loading,
+    errors,
+    classes,
+    username,
+    password,
+    intl,
+  } = props;
 
-  componentDidMount() {
-    const { hello, query, dispatch, history } = this.props;
+  useEffect(() => {
     if (hello && hello.state && history.action !== 'PUSH') {
-      if (!query.prompt || query.prompt.indexOf('select_account') == -1) {
+      if (!query.prompt || query.prompt.indexOf('select_account') === -1) {
         dispatch(advanceLogonFlow(true, history));
         return;
       }
@@ -67,87 +81,82 @@ class Login extends React.PureComponent {
       history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
       return;
     }
-  }
+  }, [ /* no dependencies */ ]);
 
-  render() {
-    const { loading, errors, classes, username, intl } = this.props;
+  const handleChange = (name) => (event) => {
+    dispatch(updateInput(name, event.target.value));
+  };
 
-    return (
-      <div>
-        <Typography variant="h5" component="h3">
-          <FormattedMessage id="konnect.login.headline" defaultMessage="Sign in"></FormattedMessage>
-        </Typography>
-
-        <form action="" onSubmit={(event) => this.logon(event)}>
-          <div>
-            <TextField
-              placeholder={intl.formatMessage(loginTranslations.login_username_placeholder)}
-              error={!!errors.username}
-              helperText={<ErrorMessage error={errors.username}></ErrorMessage>}
-              fullWidth
-              margin="normal"
-              autoFocus
-              inputProps={{
-                autoCapitalize: 'off',
-                spellCheck: 'false'
-              }}
-              value={username}
-              onChange={this.handleChange('username')}
-              autoComplete="kopano-account username"
-            />
-            <TextField
-              type="password"
-              placeholder={intl.formatMessage(loginTranslations.login_password_placeholder)}
-              error={!!errors.password}
-              helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
-              fullWidth
-              margin="normal"
-              onChange={this.handleChange('password')}
-              autoComplete="kopano-account current-password"
-            />
-            <DialogActions>
-              <div className={classes.wrapper}>
-                <Button
-                  type="submit"
-                  color="primary"
-                  variant="contained"
-                  className={classes.button}
-                  disabled={!!loading}
-                  onClick={(event) => this.logon(event)}
-                >
-                  <FormattedMessage id="konnect.login.nextButton.label" defaultMessage="Next"></FormattedMessage>
-                </Button>
-                {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
-              </div>
-            </DialogActions>
-          </div>
-
-          {renderIf(errors.http)(() => (
-            <Typography variant="subtitle2" color="error" className={classes.message}>
-              <ErrorMessage error={errors.http}></ErrorMessage>
-            </Typography>
-          ))}
-        </form>
-      </div>
-    );
-  }
-
-  handleChange(name) {
-    return event => {
-      this.props.dispatch(updateInput(name, event.target.value));
-    };
-  }
-
-  logon(event) {
+  const handleNextClick = (event) => {
     event.preventDefault();
 
-    const { username, password, dispatch, history } = this.props;
     dispatch(executeLogonIfFormValid(username, password, false)).then((response) => {
       if (response.success) {
         dispatch(advanceLogonFlow(response.success, history));
       }
     });
-  }
+  };
+
+  const usernamePlaceHolder = hello?.details?.branding?.usernameHintText ? hello.details.branding.usernameHintText : intl.formatMessage(loginTranslations.login_username_placeholder);
+
+  return (
+    <DialogContent>
+      <Typography variant="h5" component="h3" gutterBottom>
+        <FormattedMessage id="konnect.login.headline" defaultMessage="Sign in"></FormattedMessage>
+      </Typography>
+
+      <form action="" onSubmit={(event) => this.logon(event)}>
+        <TextField
+          placeholder={usernamePlaceHolder}
+          error={!!errors.username}
+          helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder.charAt(0).toLowerCase() + usernamePlaceHolder.slice(1)}}></ErrorMessage>}
+          fullWidth
+          margin="dense"
+          autoFocus
+          inputProps={{
+            autoCapitalize: 'off',
+            spellCheck: 'false'
+          }}
+          value={username}
+          onChange={handleChange('username')}
+          autoComplete="kopano-account username"
+        />
+        <TextField
+          type="password"
+          placeholder={intl.formatMessage(loginTranslations.login_password_placeholder)}
+          error={!!errors.password}
+          helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
+          fullWidth
+          margin="dense"
+          onChange={handleChange('password')}
+          autoComplete="kopano-account current-password"
+        />
+        <DialogActions>
+          <div className={classes.wrapper}>
+            <Button
+              type="submit"
+              color="primary"
+              variant="contained"
+              className={classes.button}
+              disabled={!!loading}
+              onClick={handleNextClick}
+            >
+              <FormattedMessage id="konnect.login.nextButton.label" defaultMessage="Next"></FormattedMessage>
+            </Button>
+            {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
+          </div>
+        </DialogActions>
+
+        {renderIf(errors.http)(() => (
+          <Typography variant="subtitle2" color="error" className={classes.message}>
+            <ErrorMessage error={errors.http}></ErrorMessage>
+          </Typography>
+        ))}
+
+        {hello?.details?.branding?.signinPageText && <Typography variant="body2">{hello.details.branding.signinPageText}</Typography>}
+      </form>
+    </DialogContent>
+  );
 }
 
 Login.propTypes = {

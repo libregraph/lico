@@ -171,6 +171,20 @@ case "${1}" in
 			set -- "$@" --uri-base-path="$uri_base_path"
 		fi
 
+		# identifier branding
+
+		if [ -n "${identifier_default_banner_logo:-}" ]; then
+			set -- "$@" --identifier-default-banner-logo="$identifier_default_banner_logo"
+		fi
+
+		if [ -n "${identifier_default_sign_in_page_text:-}" ]; then
+			set -- "$@" --identifier-default-sign-in-page-text="$identifier_default_sign_in_page_text"
+		fi
+
+		if [ -n "${identifier_default_username_hint_text:-}" ]; then
+			set -- "$@" --identifier-default-username-hint-text="$identifier_default_username_hint_text"
+		fi
+
 		# kc identity manager
 
 		if [ "$identity_manager" = "kc" ]; then

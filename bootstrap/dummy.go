@@ -22,7 +22,7 @@ import (
 	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
-func newDummyIdentityManager(bs *bootstrap) (identity.Manager, error) {
+func newDummyIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {
 	logger := bs.cfg.Logger
 
 	identityManagerConfig := &identity.Config{

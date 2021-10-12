@@ -43,6 +43,7 @@ const ResponsiveScreen = (props) => {
     withoutLogo,
     withoutPadding,
     loading,
+    hello,
     children,
     className,
     DialogProps,
@@ -50,8 +51,9 @@ const ResponsiveScreen = (props) => {
     ...other
   } = props;
 
+  const bannerLogoSrc = hello?.details?.branding?.bannerLogo ? hello.details.branding.bannerLogo : Logo;
   const logo = withoutLogo ? null :
-    <DialogContent><img src={Logo} className={classes.logo} alt=""/></DialogContent>;
+    <DialogContent><img src={bannerLogoSrc} className={classes.logo} alt=""/></DialogContent>;
 
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 
@@ -85,10 +87,12 @@ ResponsiveScreen.propTypes = {
   withoutLogo: PropTypes.bool,
   withoutPadding: PropTypes.bool,
   loading: PropTypes.bool,
+  hello: PropTypes.object,
   children: PropTypes.node.isRequired,
   className: PropTypes.string,
   PaperProps: PropTypes.object,
   DialogProps: PropTypes.object
+
 };
 
 export default withStyles(styles)(ResponsiveScreen);

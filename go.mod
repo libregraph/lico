@@ -8,6 +8,7 @@ require (
 	github.com/crewjam/saml v0.4.5
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gabriel-vasile/mimetype v1.4.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ldap/ldap/v3 v3.4.1
 	github.com/google/go-querystring v1.1.0

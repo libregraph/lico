@@ -11,11 +11,15 @@ import ListItemText from '@material-ui/core/ListItemText';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
+import DialogContent from '@material-ui/core/DialogContent';
 
 import { executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
 
 const styles = theme => ({
+  content: {
+    overflowY: 'visible',
+  },
   subHeader: {
     marginBottom: theme.spacing(2)
   },
@@ -23,12 +27,12 @@ const styles = theme => ({
     marginTop: theme.spacing(2)
   },
   accountList: {
-    marginLeft: theme.spacing(-3),
-    marginRight: theme.spacing(-3)
+    marginLeft: theme.spacing(-5),
+    marginRight: theme.spacing(-5)
   },
   accountListItem: {
-    paddingLeft: theme.spacing(3),
-    paddingRight: theme.spacing(3)
+    paddingLeft: theme.spacing(5),
+    paddingRight: theme.spacing(5)
   }
 });
 
@@ -56,7 +60,7 @@ class Chooseaccount extends React.PureComponent {
     }
 
     return (
-      <div>
+      <DialogContent className={classes.content}>
         <Typography variant="h5" component="h3">
           <FormattedMessage id="konnect.chooseaccount.headline" defaultMessage="Choose an account"></FormattedMessage>
         </Typography>
@@ -102,7 +106,7 @@ class Chooseaccount extends React.PureComponent {
 
           {errorMessage}
         </form>
-      </div>
+      </DialogContent>
     );
   }
 

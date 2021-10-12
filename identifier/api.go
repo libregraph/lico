@@ -46,6 +46,11 @@ func (i Identifier) writeHelloResponse(rw http.ResponseWriter, req *http.Request
 	var err error
 	response := &HelloResponse{
 		State: r.State,
+		Branding: &meta.Branding{
+			BannerLogo:       i.defaultBannerLogo,
+			UsernameHintText: i.Config.DefaultUsernameHintText,
+			SignInPageText:   i.Config.DefaultSignInPageText,
+		},
 	}
 
 handleHelloLoop:
