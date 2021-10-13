@@ -20,7 +20,7 @@ package bsdummy
 import (
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identity"
-	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/managers"
 )
 
 // Identity managers.
@@ -50,7 +50,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 	}
 
 	sub := "dummy"
-	dummyIdentityManager := identityManagers.NewDummyIdentityManager(identityManagerConfig, sub)
+	dummyIdentityManager := managers.NewDummyIdentityManager(identityManagerConfig, sub)
 	logger.WithField("sub", sub).Warnln("using dummy identity manager")
 
 	return dummyIdentityManager, nil

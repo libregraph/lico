@@ -142,16 +142,17 @@ func serve(cmd *cobra.Command, args []string) error {
 		}()
 	}
 
+	// Register imported plugable backends.
 	guestBackendSupport.MustRegister()
 	ldapBackendSupport.MustRegister()
 	dummyBackendSupport.MustRegister()
 	kcBackendSupport.MustRegister()
 
+	// Boot our setup.
 	bs, err := bootstrap.Boot(ctx, bootstrapConfig, &config.Config{
 		WithMetrics: withMetrics,
 		Logger:      logger,
 	})
-
 	if err != nil {
 		return err
 	}

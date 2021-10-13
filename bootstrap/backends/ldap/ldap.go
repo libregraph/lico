@@ -24,10 +24,9 @@ import (
 
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identifier"
-	identifierBackends "github.com/libregraph/lico/identifier/backends"
-	ldapDefinitions "github.com/libregraph/lico/identifier/backends/ldap"
+	"github.com/libregraph/lico/identifier/backends/ldap"
 	"github.com/libregraph/lico/identity"
-	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/managers"
 )
 
 // Identity managers.
@@ -70,17 +69,17 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 
 	// Default LDAP attribute mappings.
 	attributeMapping := map[string]string{
-		ldapDefinitions.AttributeLogin:                        os.Getenv("LDAP_LOGIN_ATTRIBUTE"),
-		ldapDefinitions.AttributeEmail:                        os.Getenv("LDAP_EMAIL_ATTRIBUTE"),
-		ldapDefinitions.AttributeName:                         os.Getenv("LDAP_NAME_ATTRIBUTE"),
-		ldapDefinitions.AttributeFamilyName:                   os.Getenv("LDAP_FAMILY_NAME_ATTRIBUTE"),
-		ldapDefinitions.AttributeGivenName:                    os.Getenv("LDAP_GIVEN_NAME_ATTRIBUTE"),
-		ldapDefinitions.AttributeUUID:                         os.Getenv("LDAP_UUID_ATTRIBUTE"),
-		fmt.Sprintf("%s_type", ldapDefinitions.AttributeUUID): os.Getenv("LDAP_UUID_ATTRIBUTE_TYPE"),
+		ldap.AttributeLogin:                        os.Getenv("LDAP_LOGIN_ATTRIBUTE"),
+		ldap.AttributeEmail:                        os.Getenv("LDAP_EMAIL_ATTRIBUTE"),
+		ldap.AttributeName:                         os.Getenv("LDAP_NAME_ATTRIBUTE"),
+		ldap.AttributeFamilyName:                   os.Getenv("LDAP_FAMILY_NAME_ATTRIBUTE"),
+		ldap.AttributeGivenName:                    os.Getenv("LDAP_GIVEN_NAME_ATTRIBUTE"),
+		ldap.AttributeUUID:                         os.Getenv("LDAP_UUID_ATTRIBUTE"),
+		fmt.Sprintf("%s_type", ldap.AttributeUUID): os.Getenv("LDAP_UUID_ATTRIBUTE_TYPE"),
 	}
 	// Add optional LDAP attribute mappings.
 	if numericUIDAttribute := os.Getenv("LDAP_UIDNUMBER_ATTRIBUTE"); numericUIDAttribute != "" {
-		attributeMapping[ldapDefinitions.AttributeNumericUID] = numericUIDAttribute
+		attributeMapping[ldap.AttributeNumericUID] = numericUIDAttribute
 	}
 	// Sub from LDAP attribute mappings.
 	var subMapping []string
@@ -88,7 +87,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		subMapping = strings.Split(subMappingString, " ")
 	}
 
-	identifierBackend, identifierErr := identifierBackends.NewLDAPIdentifierBackend(
+	identifierBackend, identifierErr := ldap.NewLDAPIdentifierBackend(
 		config.Config,
 		config.TLSClientConfig,
 		os.Getenv("LDAP_URI"),
@@ -144,7 +143,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		ScopesSupported: config.Config.AllowedScopes,
 	}
 
-	identifierIdentityManager := identityManagers.NewIdentifierIdentityManager(identityManagerConfig, activeIdentifier)
+	identifierIdentityManager := managers.NewIdentifierIdentityManager(identityManagerConfig, activeIdentifier)
 	logger.Infoln("using identifier backed identity manager")
 
 	return identifierIdentityManager, nil

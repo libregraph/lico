@@ -28,9 +28,9 @@ import (
 
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identifier"
-	identifierBackends "github.com/libregraph/lico/identifier/backends"
+	"github.com/libregraph/lico/identifier/backends/kc"
 	"github.com/libregraph/lico/identity"
-	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/managers"
 	"github.com/libregraph/lico/utils"
 	"github.com/libregraph/lico/version"
 )
@@ -128,7 +128,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		logger.Infoln("kc server identifier backend initialized client for TLS authentication")
 	}
 
-	identifierBackend, identifierErr := identifierBackends.NewKCIdentifierBackend(
+	identifierBackend, identifierErr := kc.NewKCIdentifierBackend(
 		config.Config,
 		kopanoStorageServerClient,
 		useGlobalSession,
@@ -179,7 +179,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		ScopesSupported: config.Config.AllowedScopes,
 	}
 
-	identifierIdentityManager := identityManagers.NewIdentifierIdentityManager(identityManagerConfig, activeIdentifier)
+	identifierIdentityManager := managers.NewIdentifierIdentityManager(identityManagerConfig, activeIdentifier)
 	logger.Infoln("using identifier backed identity manager")
 
 	return identifierIdentityManager, nil
