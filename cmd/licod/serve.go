@@ -42,6 +42,7 @@ import (
 	guestBackendSupport "github.com/libregraph/lico/bootstrap/backends/guest"
 	kcBackendSupport "github.com/libregraph/lico/bootstrap/backends/kc"
 	ldapBackendSupport "github.com/libregraph/lico/bootstrap/backends/ldap"
+	libreGraphBackendSupport "github.com/libregraph/lico/bootstrap/backends/libregraph"
 )
 
 var bootstrapConfig = &bootstrap.Settings{}
@@ -147,6 +148,7 @@ func serve(cmd *cobra.Command, args []string) error {
 	ldapBackendSupport.MustRegister()
 	dummyBackendSupport.MustRegister()
 	kcBackendSupport.MustRegister()
+	libreGraphBackendSupport.MustRegister()
 
 	// Boot our setup.
 	bs, err := bootstrap.Boot(ctx, bootstrapConfig, &config.Config{
