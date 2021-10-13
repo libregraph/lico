@@ -222,20 +222,20 @@ func addSignerWithIDFromFile(fn string, kid string, bs *bootstrap) error {
 		kid = getKeyIDFromFilename(real)
 	}
 
-	if _, ok := bs.signers[kid]; ok {
-		bs.cfg.Logger.WithFields(logrus.Fields{
+	if _, ok := bs.config.Signers[kid]; ok {
+		bs.config.Config.Logger.WithFields(logrus.Fields{
 			"path": fn,
 			"kid":  kid,
 		}).Warnln("skipped as signer with same kid already loaded")
 		return nil
 	} else {
-		bs.cfg.Logger.WithFields(logrus.Fields{
+		bs.config.Config.Logger.WithFields(logrus.Fields{
 			"path": fn,
 			"kid":  kid,
 		}).Debugln("loaded signer key")
 	}
 
-	bs.signers[kid] = signer
+	bs.config.Signers[kid] = signer
 	return nil
 }
 
@@ -243,7 +243,7 @@ func validateSigners(bs *bootstrap) error {
 	haveRSA := false
 	haveECDSA := false
 	haveEd25519 := false
-	for _, signer := range bs.signers {
+	for _, signer := range bs.config.Signers {
 		switch s := signer.(type) {
 		case *rsa.PrivateKey:
 			// Ensure the private key is not vulnerable with PKCS-1.5 signatures. See
@@ -263,29 +263,29 @@ func validateSigners(bs *bootstrap) error {
 	}
 
 	// Validate signing method
-	switch bs.signingMethod.(type) {
+	switch bs.config.SigningMethod.(type) {
 	case *jwt.SigningMethodRSA:
 		if !haveRSA {
-			return fmt.Errorf("no private key for signing method: %s", bs.signingMethod.Alg())
+			return fmt.Errorf("no private key for signing method: %s", bs.config.SigningMethod.Alg())
 		}
 	case *jwt.SigningMethodRSAPSS:
 		if !haveRSA {
-			return fmt.Errorf("no private key for signing method: %s", bs.signingMethod.Alg())
+			return fmt.Errorf("no private key for signing method: %s", bs.config.SigningMethod.Alg())
 		}
 	case *jwt.SigningMethodECDSA:
 		if !haveECDSA {
-			return fmt.Errorf("no private key for signing method: %s", bs.signingMethod.Alg())
+			return fmt.Errorf("no private key for signing method: %s", bs.config.SigningMethod.Alg())
 		}
 	case *signing.SigningMethodEdwardsCurve:
 		if !haveEd25519 {
-			return fmt.Errorf("no private key for signing method: %s", bs.signingMethod.Alg())
+			return fmt.Errorf("no private key for signing method: %s", bs.config.SigningMethod.Alg())
 		}
 	default:
-		return fmt.Errorf("unsupported signing method: %s", bs.signingMethod.Alg())
+		return fmt.Errorf("unsupported signing method: %s", bs.config.SigningMethod.Alg())
 	}
 
 	if !haveRSA {
-		bs.cfg.Logger.Warnln("no RSA signing private key, some clients might not be compatible")
+		bs.config.Config.Logger.Warnln("no RSA signing private key, some clients might not be compatible")
 	}
 
 	return nil
@@ -320,7 +320,7 @@ func addValidatorsFromPath(pn string, bs *bootstrap) error {
 	for _, file := range files {
 		kid, validator, err := LoadValidatorFromFile(file)
 		if err != nil {
-			bs.cfg.Logger.WithError(err).WithField("path", file).Warnln("failed to load validator key")
+			bs.config.Config.Logger.WithError(err).WithField("path", file).Warnln("failed to load validator key")
 			continue
 		}
 
@@ -329,25 +329,25 @@ func addValidatorsFromPath(pn string, bs *bootstrap) error {
 			_, fn := filepath.Split(file)
 			kid = getKeyIDFromFilename(fn)
 		}
-		if _, ok := bs.validators[kid]; ok {
-			bs.cfg.Logger.WithFields(logrus.Fields{
+		if _, ok := bs.config.Validators[kid]; ok {
+			bs.config.Config.Logger.WithFields(logrus.Fields{
 				"path": file,
 				"kid":  kid,
 			}).Warnln("skipped as validator with same kid already loaded")
 			continue
 		} else {
-			bs.cfg.Logger.WithFields(logrus.Fields{
+			bs.config.Config.Logger.WithFields(logrus.Fields{
 				"path": file,
 				"kid":  kid,
 			}).Debugln("loaded validator key")
 		}
-		bs.validators[kid] = validator
+		bs.config.Validators[kid] = validator
 	}
 
 	return nil
 }
 
-func withSchemeAndHost(u, base *url.URL) *url.URL {
+func WithSchemeAndHost(u, base *url.URL) *url.URL {
 	if u.Host != "" && u.Scheme != "" {
 		return u
 	}

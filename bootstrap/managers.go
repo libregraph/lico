@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/libregraph/lico/identity"
 	identityAuthorities "github.com/libregraph/lico/identity/authorities"
 	identityClients "github.com/libregraph/lico/identity/clients"
 	identityManagers "github.com/libregraph/lico/identity/managers"
@@ -29,8 +30,25 @@ import (
 	codeManagers "github.com/libregraph/lico/oidc/code/managers"
 )
 
+type IdentityManagerFactory func(Bootstrap) (identity.Manager, error)
+
+var identityManagerRegistry = make(map[string]IdentityManagerFactory)
+
+func RegisterIdentityManager(name string, f IdentityManagerFactory) error {
+	identityManagerRegistry[name] = f
+	return nil
+}
+
+func getIdentityManagerByName(name string, bs Bootstrap) (identity.Manager, error) {
+	if f, found := identityManagerRegistry[name]; !found {
+		return nil, fmt.Errorf("no identity manager with name %s registered", name)
+	} else {
+		return f(bs)
+	}
+}
+
 func newManagers(ctx context.Context, bs *bootstrap) (*managers.Managers, error) {
-	logger := bs.cfg.Logger
+	logger := bs.config.Config.Logger
 
 	var err error
 	mgrs := managers.New()
@@ -41,7 +59,7 @@ func newManagers(ctx context.Context, bs *bootstrap) (*managers.Managers, error)
 		return nil, fmt.Errorf("failed to create encryption manager: %v", err)
 	}
 
-	err = encryption.SetKey(bs.encryptionSecret)
+	err = encryption.SetKey(bs.config.EncryptionSecret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid --encryption-secret parameter value for encryption: %v", err)
 	}
@@ -53,14 +71,14 @@ func newManagers(ctx context.Context, bs *bootstrap) (*managers.Managers, error)
 	mgrs.Set("code", code)
 
 	// Identifier client registry manager.
-	clients, err := identityClients.NewRegistry(ctx, bs.issuerIdentifierURI, bs.identifierRegistrationConf, bs.cfg.AllowDynamicClientRegistration, time.Duration(bs.dyamicClientSecretDurationSeconds)*time.Second, logger)
+	clients, err := identityClients.NewRegistry(ctx, bs.config.IssuerIdentifierURI, bs.config.IdentifierRegistrationConf, bs.config.Config.AllowDynamicClientRegistration, time.Duration(bs.config.DyamicClientSecretDurationSeconds)*time.Second, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client registry: %v", err)
 	}
 	mgrs.Set("clients", clients)
 
 	// Identifier authorities registry manager.
-	authorities, err := identityAuthorities.NewRegistry(ctx, bs.makeURI(apiTypeSignin, ""), bs.identifierAuthoritiesConf, logger)
+	authorities, err := identityAuthorities.NewRegistry(ctx, bs.MakeURI(APITypeSignin, ""), bs.config.IdentifierAuthoritiesConf, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorities registry: %v", err)
 	}
