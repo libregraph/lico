@@ -15,13 +15,14 @@
  *
  */
 
-package bootstrap
+package bsldap
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identifier"
 	identifierBackends "github.com/libregraph/lico/identifier/backends"
 	ldapDefinitions "github.com/libregraph/lico/identifier/backends/ldap"
@@ -29,25 +30,42 @@ import (
 	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
-func newLDAPIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {
-	logger := bs.cfg.Logger
+// Identity managers.
+const (
+	identityManagerName = "ldap"
+)
 
-	if bs.authorizationEndpointURI.String() != "" {
+func Register() error {
+	return bootstrap.RegisterIdentityManager(identityManagerName, NewIdentityManager)
+}
+
+func MustRegister() {
+	if err := Register(); err != nil {
+		panic(err)
+	}
+}
+
+func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
+	config := bs.Config()
+
+	logger := config.Config.Logger
+
+	if config.AuthorizationEndpointURI.String() != "" {
 		return nil, fmt.Errorf("ldap backend is incompatible with authorization-endpoint-uri parameter")
 	}
-	bs.authorizationEndpointURI.Path = bs.makeURIPath(apiTypeSignin, "/identifier/_/authorize")
+	config.AuthorizationEndpointURI.Path = bs.MakeURIPath(bootstrap.APITypeSignin, "/identifier/_/authorize")
 
-	if bs.endSessionEndpointURI.String() != "" {
+	if config.EndSessionEndpointURI.String() != "" {
 		return nil, fmt.Errorf("ldap backend is incompatible with endsession-endpoint-uri parameter")
 	}
-	bs.endSessionEndpointURI.Path = bs.makeURIPath(apiTypeSignin, "/identifier/_/endsession")
+	config.EndSessionEndpointURI.Path = bs.MakeURIPath(bootstrap.APITypeSignin, "/identifier/_/endsession")
 
-	if bs.signInFormURI.EscapedPath() == "" {
-		bs.signInFormURI.Path = bs.makeURIPath(apiTypeSignin, "/identifier")
+	if config.SignInFormURI.EscapedPath() == "" {
+		config.SignInFormURI.Path = bs.MakeURIPath(bootstrap.APITypeSignin, "/identifier")
 	}
 
-	if bs.signedOutURI.EscapedPath() == "" {
-		bs.signedOutURI.Path = bs.makeURIPath(apiTypeSignin, "/goodbye")
+	if config.SignedOutURI.EscapedPath() == "" {
+		config.SignedOutURI.Path = bs.MakeURIPath(bootstrap.APITypeSignin, "/goodbye")
 	}
 
 	// Default LDAP attribute mappings.
@@ -71,8 +89,8 @@ func newLDAPIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error
 	}
 
 	identifierBackend, identifierErr := identifierBackends.NewLDAPIdentifierBackend(
-		bs.cfg,
-		bs.tlsClientConfig,
+		config.Config,
+		config.TLSClientConfig,
 		os.Getenv("LDAP_URI"),
 		os.Getenv("LDAP_BINDDN"),
 		os.Getenv("LDAP_BINDPW"),
@@ -86,33 +104,33 @@ func newLDAPIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error
 		return nil, fmt.Errorf("failed to create identifier backend: %v", identifierErr)
 	}
 
-	fullAuthorizationEndpointURL := withSchemeAndHost(bs.authorizationEndpointURI, bs.issuerIdentifierURI)
-	fullSignInFormURL := withSchemeAndHost(bs.signInFormURI, bs.issuerIdentifierURI)
-	fullSignedOutEndpointURL := withSchemeAndHost(bs.signedOutURI, bs.issuerIdentifierURI)
+	fullAuthorizationEndpointURL := bootstrap.WithSchemeAndHost(config.AuthorizationEndpointURI, config.IssuerIdentifierURI)
+	fullSignInFormURL := bootstrap.WithSchemeAndHost(config.SignInFormURI, config.IssuerIdentifierURI)
+	fullSignedOutEndpointURL := bootstrap.WithSchemeAndHost(config.SignedOutURI, config.IssuerIdentifierURI)
 
 	activeIdentifier, err := identifier.NewIdentifier(&identifier.Config{
-		Config: bs.cfg,
+		Config: config.Config,
 
-		BaseURI:         bs.issuerIdentifierURI,
-		PathPrefix:      bs.makeURIPath(apiTypeSignin, ""),
-		StaticFolder:    bs.identifierClientPath,
+		BaseURI:         config.IssuerIdentifierURI,
+		PathPrefix:      bs.MakeURIPath(bootstrap.APITypeSignin, ""),
+		StaticFolder:    config.IdentifierClientPath,
 		LogonCookieName: "__Secure-KKT", // Kopano-Konnect-Token
-		ScopesConf:      bs.identifierScopesConf,
-		WebAppDisabled:  bs.identifierClientDisabled,
+		ScopesConf:      config.IdentifierScopesConf,
+		WebAppDisabled:  config.IdentifierClientDisabled,
 
 		AuthorizationEndpointURI: fullAuthorizationEndpointURL,
 		SignedOutEndpointURI:     fullSignedOutEndpointURL,
 
-		DefaultBannerLogo:       bs.identifierDefaultBannerLogo,
-		DefaultSignInPageText:   bs.IdentifierDefaultSignInPageText,
-		DefaultUsernameHintText: bs.IdentifierDefaultUsernameHintText,
+		DefaultBannerLogo:       config.IdentifierDefaultBannerLogo,
+		DefaultSignInPageText:   config.IdentifierDefaultSignInPageText,
+		DefaultUsernameHintText: config.IdentifierDefaultUsernameHintText,
 
 		Backend: identifierBackend,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create identifier: %v", err)
 	}
-	err = activeIdentifier.SetKey(bs.encryptionSecret)
+	err = activeIdentifier.SetKey(config.EncryptionSecret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid --encryption-secret parameter value for identifier: %v", err)
 	}
@@ -123,7 +141,7 @@ func newLDAPIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error
 
 		Logger: logger,
 
-		ScopesSupported: bs.cfg.AllowedScopes,
+		ScopesSupported: config.Config.AllowedScopes,
 	}
 
 	identifierIdentityManager := identityManagers.NewIdentifierIdentityManager(identityManagerConfig, activeIdentifier)

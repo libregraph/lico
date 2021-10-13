@@ -37,9 +37,14 @@ import (
 	"github.com/libregraph/lico/encryption"
 	"github.com/libregraph/lico/server"
 	"github.com/libregraph/lico/version"
+
+	dummyBackendSupport "github.com/libregraph/lico/bootstrap/backends/dummy"
+	guestBackendSupport "github.com/libregraph/lico/bootstrap/backends/guest"
+	kcBackendSupport "github.com/libregraph/lico/bootstrap/backends/kc"
+	ldapBackendSupport "github.com/libregraph/lico/bootstrap/backends/ldap"
 )
 
-var bootstrapConfig = &bootstrap.Config{}
+var bootstrapConfig = &bootstrap.Settings{}
 
 func commandServe() *cobra.Command {
 	serveCmd := &cobra.Command{
@@ -137,6 +142,11 @@ func serve(cmd *cobra.Command, args []string) error {
 		}()
 	}
 
+	guestBackendSupport.MustRegister()
+	ldapBackendSupport.MustRegister()
+	dummyBackendSupport.MustRegister()
+	kcBackendSupport.MustRegister()
+
 	bs, err := bootstrap.Boot(ctx, bootstrapConfig, &config.Config{
 		WithMetrics: withMetrics,
 		Logger:      logger,
@@ -147,7 +157,7 @@ func serve(cmd *cobra.Command, args []string) error {
 	}
 
 	srv, err := server.NewServer(&server.Config{
-		Config: bs.Config(),
+		Config: bs.Config().Config,
 
 		Handler: bs.Managers().Must("handler").(http.Handler),
 		Routes:  []server.WithRoutes{bs.Managers().Must("identity").(server.WithRoutes)},

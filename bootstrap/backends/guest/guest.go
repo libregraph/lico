@@ -15,25 +15,39 @@
  *
  */
 
-package bootstrap
+package bsguest
 
 import (
+	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identity"
 	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
-func newDummyIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {
-	logger := bs.cfg.Logger
+// Identity managers.
+const (
+	identityManagerName = "guest"
+)
+
+func Register() error {
+	return bootstrap.RegisterIdentityManager(identityManagerName, NewIdentityManager)
+}
+
+func MustRegister() {
+	if err := Register(); err != nil {
+		panic(err)
+	}
+}
+
+func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
+	config := bs.Config()
+
+	logger := config.Config.Logger
 
 	identityManagerConfig := &identity.Config{
 		Logger: logger,
-
-		ScopesSupported: bs.cfg.AllowedScopes,
 	}
 
-	sub := "dummy"
-	dummyIdentityManager := identityManagers.NewDummyIdentityManager(identityManagerConfig, sub)
-	logger.WithField("sub", sub).Warnln("using dummy identity manager")
+	guestIdentityManager := identityManagers.NewGuestIdentityManager(identityManagerConfig)
 
-	return dummyIdentityManager, nil
+	return guestIdentityManager, nil
 }

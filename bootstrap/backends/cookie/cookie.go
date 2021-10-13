@@ -15,7 +15,7 @@
  *
  */
 
-package bootstrap
+package bscookie
 
 import (
 	"fmt"
@@ -25,25 +25,43 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identity"
 	identityManagers "github.com/libregraph/lico/identity/managers"
 )
 
-func newCookieIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, error) {
-	logger := bs.cfg.Logger
+// Identity managers.
+const (
+	identityManagerName = "cookie"
+)
 
-	if bs.authorizationEndpointURI.EscapedPath() == "" {
-		bs.authorizationEndpointURI.Path = bs.makeURIPath(apiTypeKonnect, "/authorize")
+func Register() error {
+	return bootstrap.RegisterIdentityManager(identityManagerName, NewIdentityManager)
+}
+
+func MustRegister() {
+	if err := Register(); err != nil {
+		panic(err)
+	}
+}
+
+func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
+	config := bs.Config()
+
+	logger := config.Config.Logger
+
+	if config.AuthorizationEndpointURI.EscapedPath() == "" {
+		config.AuthorizationEndpointURI.Path = bs.MakeURIPath(bootstrap.APITypeKonnect, "/authorize")
 	}
 
-	if !strings.HasPrefix(bs.signInFormURI.EscapedPath(), "/") {
+	if !strings.HasPrefix(config.SignInFormURI.EscapedPath(), "/") {
 		return nil, fmt.Errorf("URI path must be absolute")
 	}
 
-	if cfg.CookieBackendURI == "" {
+	if config.Settings.CookieBackendURI == "" {
 		return nil, fmt.Errorf("cookie backend requires the backend URI as argument")
 	}
-	backendURI, backendURIErr := url.Parse(cfg.CookieBackendURI)
+	backendURI, backendURIErr := url.Parse(config.Settings.CookieBackendURI)
 	if backendURIErr != nil || !backendURI.IsAbs() {
 		if backendURIErr == nil {
 			backendURIErr = fmt.Errorf("URI must have a scheme")
@@ -52,23 +70,23 @@ func newCookieIdentityManager(bs *bootstrap, cfg *Config) (identity.Manager, err
 	}
 
 	var cookieNames []string
-	if len(cfg.CookieNames) > 0 {
+	if len(config.Settings.CookieNames) > 0 {
 		// TODO(longsleep): Add proper usage help.
-		cookieNames = cfg.CookieNames
+		cookieNames = config.Settings.CookieNames
 	}
 
 	identityManagerConfig := &identity.Config{
-		SignInFormURI: bs.signInFormURI,
+		SignInFormURI: config.SignInFormURI,
 
 		Logger: logger,
 
-		ScopesSupported: bs.cfg.AllowedScopes,
+		ScopesSupported: config.Config.AllowedScopes,
 	}
 
-	cookieIdentityManager := identityManagers.NewCookieIdentityManager(identityManagerConfig, backendURI, cookieNames, 30*time.Second, bs.cfg.HTTPTransport)
+	cookieIdentityManager := identityManagers.NewCookieIdentityManager(identityManagerConfig, backendURI, cookieNames, 30*time.Second, config.Config.HTTPTransport)
 	logger.WithFields(logrus.Fields{
 		"backend": backendURI,
-		"signIn":  bs.signInFormURI,
+		"signIn":  config.SignInFormURI,
 		"cookies": cookieNames,
 	}).Infoln("using cookie backed identity manager")
 
