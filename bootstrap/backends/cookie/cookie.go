@@ -27,7 +27,7 @@ import (
 
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identity"
-	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/managers"
 )
 
 // Identity managers.
@@ -83,7 +83,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		ScopesSupported: config.Config.AllowedScopes,
 	}
 
-	cookieIdentityManager := identityManagers.NewCookieIdentityManager(identityManagerConfig, backendURI, cookieNames, 30*time.Second, config.Config.HTTPTransport)
+	cookieIdentityManager := managers.NewCookieIdentityManager(identityManagerConfig, backendURI, cookieNames, 30*time.Second, config.Config.HTTPTransport)
 	logger.WithFields(logrus.Fields{
 		"backend": backendURI,
 		"signIn":  config.SignInFormURI,

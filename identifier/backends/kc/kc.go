@@ -15,7 +15,7 @@
  *
  */
 
-package backends
+package kc
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/config"
-	kcDefinitions "github.com/libregraph/lico/identifier/backends/kc"
+	"github.com/libregraph/lico/identifier/backends"
 	"github.com/libregraph/lico/identifier/meta/scopes"
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/managers"
@@ -52,12 +52,12 @@ var kcSupportedScopes = []string{
 	konnect.ScopeID,
 	konnect.ScopeUniqueUserID,
 	konnect.ScopeRawSubject,
-	kcDefinitions.ScopeKopanoGC,
+	ScopeKopanoGC,
 }
 
 var scopesMeta = &scopes.Scopes{
 	Definitions: map[string]*scopes.Definition{
-		kcDefinitions.ScopeKopanoGC: &scopes.Definition{
+		ScopeKopanoGC: &scopes.Definition{
 			Description: "Read and write your Kopano Groupware data",
 		},
 	},
@@ -291,7 +291,7 @@ func (b *KCIdentifierBackend) RunWithContext(ctx context.Context) error {
 
 // Logon implements the Backend interface, enabling Logon with user name and
 // password as provided. Requests are bound to the provided context.
-func (b *KCIdentifierBackend) Logon(ctx context.Context, audience, username, password string) (bool, *string, *string, UserFromBackend, error) {
+func (b *KCIdentifierBackend) Logon(ctx context.Context, audience, username, password string) (bool, *string, *string, backends.UserFromBackend, error) {
 	var logonFlags kcc.KCFlag
 	logonFlags |= kcc.KOPANO_LOGON_NO_UID_AUTH
 	if b.useGlobalSession {
@@ -362,7 +362,7 @@ func (b *KCIdentifierBackend) Logon(ctx context.Context, audience, username, pas
 
 // ResolveUserByUsername implements the Beckend interface, providing lookup for user by
 // providing the username. Requests are bound to the provided context.
-func (b *KCIdentifierBackend) ResolveUserByUsername(ctx context.Context, username string) (UserFromBackend, error) {
+func (b *KCIdentifierBackend) ResolveUserByUsername(ctx context.Context, username string) (backends.UserFromBackend, error) {
 	// NOTE(longsleep): No session support here. This means resolving of users
 	// by their user name always needs a global session.
 	response, err := b.resolveUsername(ctx, username, nil)
@@ -390,7 +390,7 @@ func (b *KCIdentifierBackend) ResolveUserByUsername(ctx context.Context, usernam
 // GetUser implements the Backend interface, providing user meta data retrieval
 // for the user specified by the userID. Requests are bound to the provided
 // context.
-func (b *KCIdentifierBackend) GetUser(ctx context.Context, userEntryID string, sessionRef *string) (UserFromBackend, error) {
+func (b *KCIdentifierBackend) GetUser(ctx context.Context, userEntryID string, sessionRef *string) (backends.UserFromBackend, error) {
 	abeid, err := kcc.NewABEIDFromBase64([]byte(userEntryID))
 	if err != nil {
 		return nil, fmt.Errorf("kc identifier backend resolve session with invalid entry id: %v", err)
@@ -468,10 +468,10 @@ func (b *KCIdentifierBackend) DestroySession(ctx context.Context, sessionRef *st
 func (b *KCIdentifierBackend) UserClaims(userID string, authorizedScopes map[string]bool) map[string]interface{} {
 	var claims map[string]interface{}
 
-	if authorizedScope, _ := authorizedScopes[kcDefinitions.ScopeKopanoGC]; authorizedScope {
+	if authorizedScope, _ := authorizedScopes[ScopeKopanoGC]; authorizedScope {
 		claims = make(map[string]interface{})
 		// Inject userID as ID claim.
-		claims[kcDefinitions.KopanoGCIDClaim] = userID
+		claims[KopanoGCIDClaim] = userID
 	}
 
 	return claims
@@ -581,8 +581,8 @@ func (b *KCIdentifierBackend) getSessionForUser(ctx context.Context, userEntryID
 	// and ensure that we have the required scopes to access kc. We create a
 	// simple access which uses the entryID as subject.
 	auth := identity.NewAuthRecord(b.identityManager, userEntryID, map[string]bool{
-		oidc.ScopeOpenID:            true,
-		kcDefinitions.ScopeKopanoGC: true,
+		oidc.ScopeOpenID: true,
+		ScopeKopanoGC:    true,
 	}, nil, nil)
 	// Create a new access token which hopefully gets accepted by our backend.
 	accessToken, err := b.oidcProvider.MakeAccessToken(ctx, "konnect", auth)

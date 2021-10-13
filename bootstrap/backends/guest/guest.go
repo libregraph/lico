@@ -20,7 +20,7 @@ package bsguest
 import (
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identity"
-	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/managers"
 )
 
 // Identity managers.
@@ -47,7 +47,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		Logger: logger,
 	}
 
-	guestIdentityManager := identityManagers.NewGuestIdentityManager(identityManagerConfig)
+	guestIdentityManager := managers.NewGuestIdentityManager(identityManagerConfig)
 
 	return guestIdentityManager, nil
 }
