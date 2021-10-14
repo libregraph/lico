@@ -30,8 +30,10 @@ import (
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/config"
+	"github.com/libregraph/lico/identifier"
 	"github.com/libregraph/lico/identifier/backends"
 	"github.com/libregraph/lico/identifier/meta/scopes"
+	"github.com/libregraph/lico/utils"
 )
 
 const libreGraphIdentifierBackendName = "identifier-libregraph"
@@ -152,6 +154,21 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 	}
 	req.SetBasicAuth(username, password)
 
+	record, _ := identifier.FromRecordContext(ctx)
+	if record != nil {
+		// Inject HTTP headers.
+		if record.HelloRequest.Flow != "" {
+			req.Header.Set("X-Flow", record.HelloRequest.Flow)
+		}
+		if record.HelloRequest.RawScope != "" {
+			req.Header.Set("X-Scope", record.HelloRequest.RawScope)
+		}
+		if record.HelloRequest.RawPrompt != "" {
+			req.Header.Set("X-Prompt", record.HelloRequest.RawPrompt)
+		}
+	}
+	req.Header.Set("User-Agent", utils.DefaultHTTPUserAgent)
+
 	response, err := b.client.Do(req)
 	if err != nil {
 		return false, nil, nil, nil, fmt.Errorf("libregraph identifier backend logon request failed: %w", err)
@@ -184,6 +201,11 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 		"id":       userID,
 	}).Debugln("libregraph identifier backend logon")
 
+	// Put the user into the record (if any).
+	if record != nil {
+		record.UserFromBackend = user
+	}
+
 	return true, &userID, nil, user, nil
 }
 
@@ -191,10 +213,23 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 // for the user specified by the userID. Requests are bound to the provided
 // context.
 func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID string, sessionRef *string) (backends.UserFromBackend, error) {
+	record, _ := identifier.FromRecordContext(ctx)
+	if record != nil && record.UserFromBackend != nil {
+		if user, ok := record.UserFromBackend.(*libreGraphUser); ok {
+			// Fastpath, if logon previously injected the user.
+			if user.ID == entryID {
+				return user, nil
+			}
+		}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.getUserURL+"/"+entryID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("libregraph identifier backend get user request error: %w", err)
 	}
+
+	// Inject HTTP headers.
+	req.Header.Set("User-Agent", utils.DefaultHTTPUserAgent)
 
 	response, err := b.client.Do(req)
 	if err != nil {
