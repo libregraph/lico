@@ -39,7 +39,7 @@ const (
 
 // DefaultHTTPUserAgent is the User-Agent Header which should be used when
 // making HTTP requests.
-var DefaultHTTPUserAgent = "Kopano-Konnect/" + version.Version
+var DefaultHTTPUserAgent = "LibreGraph-Connect/" + version.Version
 
 // HTTPTransportWithTLSClientConfig creates a new http.Transport with sane
 // default settings using the provided tls.Config.
