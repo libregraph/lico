@@ -175,6 +175,8 @@ func (i *Identifier) handleLogon(rw http.ResponseWriter, req *http.Request) {
 
 	addNoCacheResponseHeaders(rw.Header())
 
+	record := &Record{}
+
 	if r.Hello != nil {
 		err = r.Hello.parse()
 		if err != nil {
@@ -182,7 +184,10 @@ func (i *Identifier) handleLogon(rw http.ResponseWriter, req *http.Request) {
 			i.ErrorPage(rw, http.StatusBadRequest, "", "failed to parse request values")
 			return
 		}
+		record.HelloRequest = r.Hello
 	}
+
+	req = req.WithContext(NewRecordContext(req.Context(), record))
 
 	// Params is an array like this [$username, $password, $mode], defining a
 	// extensible way to extend login modes over time. The minimal length of
