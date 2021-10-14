@@ -4,6 +4,28 @@
 
 
 
+## v0.50.0 (2021-10-14)
+
+- Switch HTTP client default User-Agent to LibreGraph Connect
+- Inject additional HTTP request headers into libregraph backend requests
+- Implement generic libregraph backend
+- Also make the identifier backends plugable
+- Make bootstrap of backend plugabble
+- Add support for visual branding of identifier
+- Replace Kopano logo with general app icon
+- Refactor translations, English only for now
+- Improve style of back buttons after style changes
+- Remove more Kopano CI, replace with generic UI and styles
+- Migrate more stuff away from konnect naming to lico naming
+- Modernize 3rd-party dependencies and remove kpop
+- Update 3rd-party identifier webapp dependencies
+- Use actually working caddy configuration in example
+- Update 3rd-party Go dependencies to their latest
+- Build with Go 1.17
+- Remove obsolete Jenkinsfile
+- Apply LibreGraph naming treewide
+
+
 ## v0.34.0 (2021-05-06)
 
 - Correct Docker based build example
@@ -212,7 +234,7 @@
 
 ## v0.24.2 (2019-09-05)
 
-- Merge pull request [#112](https://stash.kopano.io/projects/KC/repos/konnect/issues/112/) in KC/konnect from ~GITCOMMIT/konnect:master to master
+- Merge pull request [#112](https://github.com/libregraph/lico/issues/112/) in KC/konnect from ~GITCOMMIT/konnect:master to master
 
 
 ## v0.24.1 (2019-09-04)
@@ -668,7 +690,7 @@
 - Remove --insecure parameter from examples
 - Remove double claim validation
 - identifier: Remove re-logon without password
-- Add support to load PKCS[#8](https://stash.kopano.io/projects/KC/repos/konnect/issues/8/) keys
+- Add support to load PKCS[#8](https://github.com/libregraph/lico/issues/8/) keys
 - Load all keys from file
 - Add support for trusted proxies
 - identifier: Store logon time and validate max age
@@ -749,7 +771,7 @@
 - Implement identifier and kc backend
 - Move config to seperate package
 - Ignore /examples folder
-- Merge pull request [#6](https://stash.kopano.io/projects/KC/repos/konnect/issues/6/) in KC/konnect from ~SEISENMANN/konnect:longsleep-jenkinsfile to master
+- Merge pull request [#6](https://github.com/libregraph/lico/issues/6/) in KC/konnect from ~SEISENMANN/konnect:longsleep-jenkinsfile to master
 - Add Jenkinsfile
 - Add aci builder and systemd service
 
@@ -758,11 +780,11 @@
 
 - Add docs abourt key and secret parameter
 - Fix README to use correct bin location
-- Merge pull request [#5](https://stash.kopano.io/projects/KC/repos/konnect/issues/5/) in KC/konnect from ~SEISENMANN/konnect:longsleep-kw-sign-in to master
+- Merge pull request [#5](https://github.com/libregraph/lico/issues/5/) in KC/konnect from ~SEISENMANN/konnect:longsleep-kw-sign-in to master
 - Add support for KW sign-in form
-- Merge pull request [#4](https://stash.kopano.io/projects/KC/repos/konnect/issues/4/) in KC/konnect from ~SEISENMANN/konnect:longsleep-use-lowercase-cmdline-params to master
+- Merge pull request [#4](https://github.com/libregraph/lico/issues/4/) in KC/konnect from ~SEISENMANN/konnect:longsleep-use-lowercase-cmdline-params to master
 - Use only lower case commandline arguments
-- Merge pull request [#3](https://stash.kopano.io/projects/KC/repos/konnect/issues/3/) in KC/konnect from ~SEISENMANN/konnect:longsleep-use-external-rndm to master
+- Merge pull request [#3](https://github.com/libregraph/lico/issues/3/) in KC/konnect from ~SEISENMANN/konnect:longsleep-use-external-rndm to master
 - Use rndm from external module
 - Build static without cgo by default
 - Add Makefile
@@ -770,17 +792,17 @@
 - Put local imports last
 - Use build date in version command
 - Add X-Forwarded-Prefix to Caddyfile
-- Merge pull request [#2](https://stash.kopano.io/projects/KC/repos/konnect/issues/2/) in KC/konnect from ~SEISENMANN/konnect:longsleep-caddyfile to master
+- Merge pull request [#2](https://github.com/libregraph/lico/issues/2/) in KC/konnect from ~SEISENMANN/konnect:longsleep-caddyfile to master
 - Add example Caddyfile
 - Move random helpers to own subpackage
-- Merge pull request [#3](https://stash.kopano.io/projects/KC/repos/konnect/issues/3/) in ~SEISENMANN/konnect from longsleep-konnect-id-scope to master
+- Merge pull request [#3](https://github.com/libregraph/lico/issues/3/) in ~SEISENMANN/konnect from longsleep-konnect-id-scope to master
 - Implement konnect/id scope
 - Update dependencies
 - Enable code flows in discovery document
 - Support --secret parameter value as hex
 - Update README with newly added parameters
 - Support identity claims in refresh tokens
-- Merge pull request [#1](https://stash.kopano.io/projects/KC/repos/konnect/issues/1/) in ~SEISENMANN/konnect from longsleep-encrypt-cookies-in-at to master
+- Merge pull request [#1](https://github.com/libregraph/lico/issues/1/) in ~SEISENMANN/konnect from longsleep-encrypt-cookies-in-at to master
 - Add encryption manager
 - Use nacl.secretbox for cookies encryption
 - Prepare encryption of cookies value in at
