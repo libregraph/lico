@@ -4,6 +4,11 @@
 
 
 
+## v0.51.1 (2021-10-15)
+
+- Ensure that app-icon.svg gets built with Makefile
+
+
 ## v0.51.0 (2021-10-15)
 
 - Add support for open extensions in libregraph identifier backend
