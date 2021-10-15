@@ -23,7 +23,7 @@ import (
 	"encoding/gob"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"stash.kopano.io/kgol/rndm"
 
 	konnect "github.com/libregraph/lico"

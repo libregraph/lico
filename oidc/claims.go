@@ -18,7 +18,7 @@
 package oidc
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // IDTokenClaims define the claims found in OIDC ID Tokens.

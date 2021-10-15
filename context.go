@@ -20,7 +20,7 @@ package lico
 import (
 	"context"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // key is an unexported type for keys defined in this package.

@@ -22,7 +22,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identifier/backends"
