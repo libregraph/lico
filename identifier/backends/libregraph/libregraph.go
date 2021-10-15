@@ -38,6 +38,11 @@ import (
 
 const libreGraphIdentifierBackendName = "identifier-libregraph"
 
+const (
+	OpenTypeExtensionType       = "#microsoft.graph.openTypeExtension"
+	IdentityClaimsExtensionName = "libregraph.identityClaims"
+)
+
 var libreGraphSpportedScopes = []string{
 	oidc.ScopeProfile,
 	oidc.ScopeEmail,
@@ -63,6 +68,8 @@ type libreGraphUser struct {
 	Mail              string `json:"mail"`
 	Surname           string `json:"surname"`
 	UserPrincipalName string `json:"userPrincipalName"`
+
+	Extensions []map[string]interface{} `json:"extensions"`
 }
 
 func (u *libreGraphUser) Subject() string {
@@ -99,6 +106,22 @@ func (u *libreGraphUser) UniqueID() string {
 func (u *libreGraphUser) BackendClaims() map[string]interface{} {
 	claims := make(map[string]interface{})
 	claims[konnect.IdentifiedUserIDClaim] = u.ID
+
+	for _, extension := range u.Extensions {
+		if odataType, ok := extension["@odata.type"]; ok && odataType.(string) != OpenTypeExtensionType {
+			continue
+		}
+		if extensionName, ok := extension["extensionName"].(string); ok {
+			switch extensionName {
+			case IdentityClaimsExtensionName:
+				if v, ok := extension["claims"].(map[string]interface{}); ok {
+					for k, v := range v {
+						claims[k] = v
+					}
+				}
+			}
+		}
+	}
 
 	return claims
 }
