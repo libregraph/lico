@@ -20,7 +20,7 @@ package provider
 import (
 	"errors"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/oidc/payload"

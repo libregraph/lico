@@ -31,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 	"stash.kopano.io/kgol/rndm"
 
@@ -96,7 +96,7 @@ func (bs *bootstrap) Managers() *managers.Managers {
 func Boot(ctx context.Context, settings *Settings, cfg *config.Config) (Bootstrap, error) {
 	// NOTE(longsleep): Ensure to use same salt length as the hash size.
 	// See https://www.ietf.org/mail-archive/web/jose/current/msg02901.html for
-	// reference and https://github.com/dgrijalva/jwt-go/issues/285 for
+	// reference and https://github.com/golang-jwt/jwt/v4/issues/285 for
 	// the issue in upstream jwt-go.
 	for _, alg := range []string{jwt.SigningMethodPS256.Name, jwt.SigningMethodPS384.Name, jwt.SigningMethodPS512.Name} {
 		sm := jwt.GetSigningMethod(alg)

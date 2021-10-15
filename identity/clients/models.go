@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/mendsley/gojwk"
 	"golang.org/x/crypto/blake2b"
 	_ "gopkg.in/yaml.v2" // Make sure we have yaml.

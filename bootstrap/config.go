@@ -22,7 +22,7 @@ import (
 	"crypto/tls"
 	"net/url"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/libregraph/lico/config"
 )

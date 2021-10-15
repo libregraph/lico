@@ -18,7 +18,7 @@
 package clients
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // RegistrationClaims are claims used to with dynamic clients.

@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/square/go-jose.v2"
 	"stash.kopano.io/kgol/oidc-go"

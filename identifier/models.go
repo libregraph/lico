@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/libregraph/lico/identifier/meta"
 	"github.com/libregraph/lico/identity/clients"
