@@ -4,6 +4,12 @@
 
 
 
+## v0.51.0 (2021-10-15)
+
+- Add support for open extensions in libregraph identifier backend
+- Migrate dgrijalva/jwt-go to golang-jwt/jwt-go
+
+
 ## v0.50.0 (2021-10-14)
 
 - Switch HTTP client default User-Agent to LibreGraph Connect
