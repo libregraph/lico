@@ -14,7 +14,7 @@ ICON   ?= lico-icon.svg
 
 # Build
 
-all:
+all: app-icon.svg
 
 .PHONY: icons
 icons: $(STATIC)/favicon.ico
