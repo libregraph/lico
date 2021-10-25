@@ -24,11 +24,11 @@ const styles = theme => ({
 
 class Welcomescreen extends React.PureComponent {
   render() {
-    const { classes, hello } = this.props;
+    const { classes, branding, hello } = this.props;
 
     const loading = hello === null;
     return (
-      <ResponsiveScreen loading={loading} hello={hello}>
+      <ResponsiveScreen loading={loading} branding={branding}>
         <Typography variant="h5" component="h3">
           <FormattedMessage
             id="konnect.welcome.headline"
@@ -75,6 +75,7 @@ class Welcomescreen extends React.PureComponent {
 Welcomescreen.propTypes = {
   classes: PropTypes.object.isRequired,
 
+  branding: PropTypes.object,
   hello: PropTypes.object,
 
   dispatch: PropTypes.func.isRequired,
@@ -82,9 +83,10 @@ Welcomescreen.propTypes = {
 };
 
 const mapStateToProps = (state) => {
-  const { hello } = state.common;
+  const { branding, hello } = state.common;
 
   return {
+    branding,
     hello
   };
 };

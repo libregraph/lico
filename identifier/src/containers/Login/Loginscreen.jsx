@@ -23,11 +23,11 @@ class Loginscreen extends React.PureComponent {
   }
 
   render() {
-    const { hello } = this.props;
+    const { branding, hello } = this.props;
 
     const loading = hello === null;
     return (
-      <ResponsiveScreen loading={loading} hello={hello} withoutPadding>
+      <ResponsiveScreen loading={loading} branding={branding} withoutPadding>
         <Switch>
           <Route path="/identifier" exact component={Login}></Route>
           <Route path="/chooseaccount" exact component={Chooseaccount}></Route>
@@ -42,15 +42,17 @@ class Loginscreen extends React.PureComponent {
 Loginscreen.propTypes = {
   classes: PropTypes.object.isRequired,
 
+  branding: PropTypes.object,
   hello: PropTypes.object,
 
   dispatch: PropTypes.func.isRequired
 };
 
 const mapStateToProps = (state) => {
-  const { hello } = state.common;
+  const { branding, hello } = state.common;
 
   return {
+    branding,
     hello
   };
 };

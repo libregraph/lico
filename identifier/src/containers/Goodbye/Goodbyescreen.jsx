@@ -30,11 +30,11 @@ class Goodbyescreen extends React.PureComponent {
   }
 
   render() {
-    const { classes, hello } = this.props;
+    const { classes, branding, hello } = this.props;
 
     const loading = hello === null;
     return (
-      <ResponsiveScreen loading={loading} hello={hello}>
+      <ResponsiveScreen loading={loading} branding={branding}>
         {renderIf(hello !== null && !hello.state)(() => (
           <div>
             <Typography variant="h5" component="h3">
@@ -109,6 +109,7 @@ class Goodbyescreen extends React.PureComponent {
 Goodbyescreen.propTypes = {
   classes: PropTypes.object.isRequired,
 
+  branding: PropTypes.object,
   hello: PropTypes.object,
 
   dispatch: PropTypes.func.isRequired,
@@ -116,9 +117,10 @@ Goodbyescreen.propTypes = {
 };
 
 const mapStateToProps = (state) => {
-  const { hello } = state.common;
+  const { branding, hello } = state.common;
 
   return {
+    branding,
     hello
   };
 };

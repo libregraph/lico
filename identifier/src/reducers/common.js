@@ -22,6 +22,7 @@ const defaultPathPrefix = (() => {
 
 const defaultState = {
   hello: null,
+  branding: null,
   error: null,
   flow: flow,
   query: query,
@@ -38,7 +39,8 @@ function commonReducer(state = defaultState, action) {
 
     case RESET_HELLO:
       return Object.assign({}, state, {
-        hello: null
+        hello: null,
+        branding: null
       });
 
     case RECEIVE_HELLO:
@@ -48,7 +50,8 @@ function commonReducer(state = defaultState, action) {
           username: action.username,
           displayName: action.displayName,
           details: action.hello
-        }
+        },
+        branding: action.hello.branding ? action.hello.branding : state.branding
       });
 
     case SERVICE_WORKER_NEW_CONTENT:

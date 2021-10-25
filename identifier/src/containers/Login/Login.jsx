@@ -167,6 +167,7 @@ Login.propTypes = {
   username: PropTypes.string.isRequired,
   password: PropTypes.string.isRequired,
   errors: PropTypes.object.isRequired,
+  branding: PropTypes.object,
   hello: PropTypes.object,
   query: PropTypes.object.isRequired,
 
@@ -176,13 +177,14 @@ Login.propTypes = {
 
 const mapStateToProps = (state) => {
   const { loading, username, password, errors} = state.login;
-  const { hello, query } = state.common;
+  const { branding, hello, query } = state.common;
 
   return {
     loading,
     username,
     password,
     errors,
+    branding,
     hello,
     query
   };
