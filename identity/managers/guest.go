@@ -55,7 +55,7 @@ type GuestIdentityManager struct {
 func NewGuestIdentityManager(c *identity.Config) *GuestIdentityManager {
 	im := &GuestIdentityManager{
 		scopesSupported: setupSupportedScopes([]string{}, []string{
-			konnect.ScopeID,
+			konnect.ScopeNumericID,
 			oidc.ScopeProfile,
 			oidc.ScopeEmail,
 		}, c.ScopesSupported),

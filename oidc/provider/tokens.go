@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Kopano and its licensors
+ * Copyright 2017-2021 Kopano and its licensors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 	authorizedScopesList := makeArrayFromBoolMap(authorizedScopes)
 
 	accessTokenClaims := konnect.AccessTokenClaims{
-		IsAccessToken:           true,
+		TokenType:               konnect.TokenTypeAccessToken,
 		AuthorizedScopesList:    authorizedScopesList,
 		AuthorizedClaimsRequest: auth.AuthorizedClaims(),
 		StandardClaims: jwt.StandardClaims{
@@ -275,7 +275,7 @@ func (p *Provider) makeRefreshToken(ctx context.Context, audience string, auth i
 	}
 
 	refreshTokenClaims := &konnect.RefreshTokenClaims{
-		IsRefreshToken:        true,
+		TokenType:             konnect.TokenTypeRefreshToken,
 		ApprovedScopesList:    approvedScopesList,
 		ApprovedClaimsRequest: auth.AuthorizedClaims(),
 		Ref:                   ref,

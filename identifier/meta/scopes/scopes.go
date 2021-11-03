@@ -42,7 +42,7 @@ var defaultScopesMap = map[string]string{
 	oidc.ScopeEmail:   scopeAliasBasic,
 	oidc.ScopeProfile: scopeAliasBasic,
 
-	konnect.ScopeID:           scopeAliasBasic,
+	konnect.ScopeNumericID:    scopeAliasBasic,
 	konnect.ScopeUniqueUserID: scopeAliasBasic,
 	konnect.ScopeRawSubject:   scopeAliasBasic,
 }

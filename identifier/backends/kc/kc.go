@@ -49,7 +49,7 @@ const (
 var kcSupportedScopes = []string{
 	oidc.ScopeProfile,
 	oidc.ScopeEmail,
-	konnect.ScopeID,
+	konnect.ScopeNumericID,
 	konnect.ScopeUniqueUserID,
 	konnect.ScopeRawSubject,
 	ScopeKopanoGC,
