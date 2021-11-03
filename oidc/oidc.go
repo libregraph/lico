@@ -17,6 +17,6 @@
 
 package oidc
 
-// KonnectIDTokenSubjectSaltV1 is the salt value used when hasing Subjects in
-// ID tokens created by Konnect.
-const KonnectIDTokenSubjectSaltV1 = "konnect-IDToken-v1"
+// LibreGraphIDTokenSubjectSaltV1 is the salt value used when hashing Subjects
+// in ID tokens created by this application.
+const LibreGraphIDTokenSubjectSaltV1 = "lico-IDToken-v1"
