@@ -39,8 +39,10 @@ import (
 const libreGraphIdentifierBackendName = "identifier-libregraph"
 
 const (
-	OpenTypeExtensionType       = "#microsoft.graph.openTypeExtension"
-	IdentityClaimsExtensionName = "libregraph.identityClaims"
+	OpenTypeExtensionType = "#microsoft.graph.openTypeExtension"
+
+	IdentityClaimsExtensionName    = "libregraph.identityClaims"
+	AccessTokenClaimsExtensionName = "libregraph.accessTokenClaims"
 )
 
 var libreGraphSpportedScopes = []string{
@@ -104,8 +106,10 @@ func (u *libreGraphUser) UniqueID() string {
 }
 
 func (u *libreGraphUser) BackendClaims() map[string]interface{} {
-	claims := make(map[string]interface{})
-	claims[konnect.IdentifiedUserIDClaim] = u.ID
+	identityClaims := make(map[string]interface{})
+	identityClaims[konnect.IdentifiedUserIDClaim] = u.ID
+
+	accessTokenClaims := make(map[string]interface{})
 
 	for _, extension := range u.Extensions {
 		if odataType, ok := extension["@odata.type"]; ok && odataType.(string) != OpenTypeExtensionType {
@@ -116,14 +120,31 @@ func (u *libreGraphUser) BackendClaims() map[string]interface{} {
 			case IdentityClaimsExtensionName:
 				if v, ok := extension["claims"].(map[string]interface{}); ok {
 					for k, v := range v {
-						claims[k] = v
+						if k == "" {
+							// Ignore empty key, its used internally by
+							// AccessTokenClaimsExtensionName.
+							continue
+						}
+						identityClaims[k] = v
+					}
+				}
+			case AccessTokenClaimsExtensionName:
+				if v, ok := extension["claims"].(map[string]interface{}); ok {
+					for k, v := range v {
+						accessTokenClaims[k] = v
 					}
 				}
 			}
 		}
 	}
 
-	return claims
+	if len(accessTokenClaims) > 0 {
+		// Inject root claims as nested identity claims. The empty key is picked
+		// up by the access token signer and used to extend the root claims.
+		identityClaims[""] = accessTokenClaims
+	}
+
+	return identityClaims
 }
 
 func NewLibreGraphIdentifierBackend(

@@ -69,7 +69,33 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 		accessTokenClaims.IdentityProvider = auth.Manager().Name()
 	}
 
-	accessToken := jwt.NewWithClaims(sk.SigningMethod, accessTokenClaims)
+	// Support additional custom user specific claims.
+	var finalAccessTokenClaims jwt.Claims = accessTokenClaims
+	if accessTokenClaims.IdentityClaims != nil {
+		// Look for special empty key, if its a map all claims in there are
+		// elevated to top level.
+		extraClaimsMap, _ := accessTokenClaims.IdentityClaims[""].(map[string]interface{})
+		if extraClaimsMap != nil {
+			delete(accessTokenClaims.IdentityClaims, "")
+			accessTokenClaimsMap, err := payload.ToMap(accessTokenClaims)
+			if err != nil {
+				return "", err
+			}
+
+			// Inject extra claims.
+			for claim, value := range extraClaimsMap {
+				if _, ok := accessTokenClaimsMap[claim]; ok {
+					// Prevent override of existing claims, only allow new claims.
+					continue
+				}
+				accessTokenClaimsMap[claim] = value
+			}
+
+			finalAccessTokenClaims = jwt.MapClaims(accessTokenClaimsMap)
+		}
+	}
+
+	accessToken := jwt.NewWithClaims(sk.SigningMethod, finalAccessTokenClaims)
 	accessToken.Header[oidc.JWTHeaderKeyID] = sk.ID
 
 	return accessToken.SignedString(sk.PrivateKey)
