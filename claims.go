@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Kopano and its licensors
+ * Copyright 2017-2021 Kopano and its licensors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,37 +25,50 @@ import (
 	"github.com/libregraph/lico/oidc/payload"
 )
 
-// Access token claims used by Konnect.
+// Access token claims used.
 const (
-	IsAccessTokenClaim    = "kc.isAccessToken"
-	AuthorizedScopesClaim = "kc.authorizedScopes"
-	IsRefreshTokenClaim   = "kc.isRefreshToken"
-	RefClaim              = "kc.ref"
-	IdentityClaim         = "kc.identity"
-	IdentityProvider      = "kc.provider"
+	RefClaim              = "lg.r"
+	IdentityClaim         = "lg.i"
+	IdentityProviderClaim = "lg.p"
 )
 
-// Identifier identity sub claims used by Konnect.
+// Identifier identity sub claims used.
 const (
-	IdentifiedUserClaim        = "kc.i.us"
-	IdentifiedUserIDClaim      = "kc.i.id"
-	IdentifiedUsernameClaim    = "kc.i.un"
-	IdentifiedDisplayNameClaim = "kc.i.dn"
-	IdentifiedData             = "kc.i.da"
-	IdentifiedUserIsGuest      = "kc.i.guest"
+	IdentifiedUserClaim        = "us"
+	IdentifiedUserIDClaim      = "id"
+	IdentifiedUsernameClaim    = "un"
+	IdentifiedDisplayNameClaim = "dn"
+	IdentifiedData             = "da"
+	IdentifiedUserIsGuest      = "gu"
 )
 
-// AccessTokenClaims define the claims found in access tokens issued
-// by Konnect.
+// TokenType defines the token type value.
+type TokenTypeValue string
+
+// Is compares the associated TokenTypeValue to the provided one.
+func (ttv TokenTypeValue) Is(value TokenTypeValue) bool {
+	return ttv == value
+}
+
+// The known token type values.
+const (
+	TokenTypeIDToken      TokenTypeValue = "" // Just a placeholder, not actually set in ID Tokens.
+	TokenTypeAccessToken  TokenTypeValue = "1"
+	TokenTypeRefreshToken TokenTypeValue = "2"
+)
+
+// AccessTokenClaims define the claims found in access tokens issued.
 type AccessTokenClaims struct {
 	jwt.StandardClaims
 
-	IsAccessToken           bool                   `json:"kc.isAccessToken"`
-	AuthorizedScopesList    []string               `json:"kc.authorizedScopes"`
-	AuthorizedClaimsRequest *payload.ClaimsRequest `json:"kc.authorizedClaims,omitempty"`
+	TokenType TokenTypeValue `json:"lg.t"`
 
-	IdentityClaims   jwt.MapClaims `json:"kc.identity"`
-	IdentityProvider string        `json:"kc.provider,omitempty"`
+	AuthorizedClaimsRequest *payload.ClaimsRequest `json:"lg.acr,omitempty"`
+
+	AuthorizedScopesList payload.ScopesValue `json:"scp"`
+
+	IdentityClaims   jwt.MapClaims `json:"lg.i"`
+	IdentityProvider string        `json:"lg.p,omitempty"`
 }
 
 // Valid implements the jwt.Claims interface.
@@ -68,10 +81,10 @@ func (c AccessTokenClaims) Valid() error {
 			return err
 		}
 	}
-	if c.IsAccessToken {
+	if c.TokenType.Is(TokenTypeAccessToken) {
 		return nil
 	}
-	return errors.New("kc.isAccessToken claim not valid")
+	return errors.New("not an access token")
 }
 
 // AuthorizedScopes returns a map with scope keys and true value of all scopes
@@ -89,13 +102,15 @@ func (c AccessTokenClaims) AuthorizedScopes() map[string]bool {
 type RefreshTokenClaims struct {
 	jwt.StandardClaims
 
-	IsRefreshToken        bool                   `json:"kc.isRefreshToken"`
-	ApprovedScopesList    []string               `json:"kc.approvedScopes"`
-	ApprovedClaimsRequest *payload.ClaimsRequest `json:"kc.approvedClaims,omitempty"`
-	Ref                   string                 `json:"kc.ref"`
+	TokenType TokenTypeValue `json:"lg.t"`
 
-	IdentityClaims   jwt.MapClaims `json:"kc.identity"`
-	IdentityProvider string        `json:"kc.provider,omitempty"`
+	ApprovedScopesList payload.ScopesValue `json:"scp"`
+
+	ApprovedClaimsRequest *payload.ClaimsRequest `json:"lg.acr,omitempty"`
+	Ref                   string                 `json:"lg.r"`
+
+	IdentityClaims   jwt.MapClaims `json:"lg.i"`
+	IdentityProvider string        `json:"lg.p,omitempty"`
 }
 
 // Valid implements the jwt.Claims interface.
@@ -108,23 +123,23 @@ func (c RefreshTokenClaims) Valid() error {
 			return err
 		}
 	}
-	if c.IsRefreshToken {
+	if c.TokenType.Is(TokenTypeRefreshToken) {
 		return nil
 	}
-	return errors.New("kc.isRefreshToken claim not valid")
+	return errors.New("not a refresh token")
 }
 
-// IDClaims define the claims used with the konnect/id scope.
-type IDClaims struct {
+// NumericIDClaims define the claims used with the konnect/id scope.
+type NumericIDClaims struct {
 	// NOTE(longsleep): Always keep these claims compatible with the GitLab API
 	// https://docs.gitlab.com/ce/api/users.html#for-user.
-	KCID         int64  `json:"id,omitempty"`
-	KCIDUsername string `json:"username,omitempty"`
+	NumericID         int64  `json:"id,omitempty"`
+	NumericIDUsername string `json:"username,omitempty"`
 }
 
 // Valid implements the jwt.Claims interface.
-func (c IDClaims) Valid() error {
-	if c.KCIDUsername == "" {
+func (c NumericIDClaims) Valid() error {
+	if c.NumericIDUsername == "" {
 		return errors.New("username claim not valid")
 	}
 	return nil
@@ -132,13 +147,13 @@ func (c IDClaims) Valid() error {
 
 // UniqueUserIDClaims define the claims used with the konnect/uuid scope.
 type UniqueUserIDClaims struct {
-	KCUniqueUserID string `json:"kc.uuid,omitempty"`
+	UniqueUserID string `json:"lg.uuid,omitempty"`
 }
 
 // Valid implements the jwt.Claims interface.
 func (c UniqueUserIDClaims) Valid() error {
-	if c.KCUniqueUserID == "" {
-		return errors.New("kc.uuid claim not valid")
+	if c.UniqueUserID == "" {
+		return errors.New("lg.uuid claim not valid")
 	}
 	return nil
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Kopano and its licensors
+ * Copyright 2017-2021 Kopano and its licensors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@
 package lico
 
 const (
-	// ScopeID is the string value for the Konnect ID scope.
-	ScopeID = "konnect/id"
-	// ScopeUniqueUserID is the string value for the Konnect Unique User ID scope.
-	ScopeUniqueUserID = "konnect/uuid"
+	// ScopeNumericID is the string value for the built-in Numeric ID scope.
+	ScopeNumericID = "LibgreGraph.NumericID"
+	// ScopeUniqueUserID is the string value for the built-in Unique User ID scope.
+	ScopeUniqueUserID = "LibgreGraph.UUID"
 
-	// ScopeRawSubject is the string value for the Konnect Raw Subject scope.
-	ScopeRawSubject = "konnect/raw_sub"
+	// ScopeRawSubject is the string value for the built-in Raw Subject scope.
+	ScopeRawSubject = "LibreGraph.RawSub"
 
-	// ScopeGuestOK is the string value for the Konnect Guest OK scope.
-	ScopeGuestOK = "konnect/guestok"
+	// ScopeGuestOK is the string value for the built-in Guest OK scope.
+	ScopeGuestOK = "LibreGraph.GuestOK"
 )

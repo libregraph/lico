@@ -31,8 +31,8 @@ clients:
 #    redirect_uris:
 #      - http://localhost
 #    trusted_scopes:
-#      - konnect/guestok
-#      - kopano/kwm
+#      - LibreGraph.GuestOK
+#      - LibgreGraph.NumericID
 #    jwks:
 #      keys:
 #        - kty: EC

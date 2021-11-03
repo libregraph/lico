@@ -26,6 +26,6 @@ import (
 type UserInfoResponse struct {
 	*payload.UserInfoResponse
 
-	*IDClaims
+	*NumericIDClaims
 	*UniqueUserIDClaims
 }

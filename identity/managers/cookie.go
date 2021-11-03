@@ -90,7 +90,7 @@ func NewCookieIdentityManager(c *identity.Config, backendURI *url.URL, cookieNam
 		scopesSupported: setupSupportedScopes([]string{
 			oidc.ScopeProfile,
 			oidc.ScopeEmail,
-			konnect.ScopeID,
+			konnect.ScopeNumericID,
 		}, nil, c.ScopesSupported),
 	}
 

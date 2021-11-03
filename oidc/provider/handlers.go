@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Kopano and its licensors
+ * Copyright 2017-2021 Kopano and its licensors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -647,27 +647,27 @@ done:
 	var user identity.User
 
 	// Include additional Konnect specific claims when corresponding scopes are authorized.
-	if ok, _ := authorizedScopes[konnect.ScopeID]; ok {
+	if ok, _ := authorizedScopes[konnect.ScopeNumericID]; ok {
 		user = withUser()
 		if userWithID, ok := user.(identity.UserWithID); ok {
-			claims := &konnect.IDClaims{
-				KCID: userWithID.ID(),
+			claims := &konnect.NumericIDClaims{
+				NumericID: userWithID.ID(),
 			}
 			if userWithUsername, ok := user.(identity.UserWithUsername); ok {
-				claims.KCIDUsername = userWithUsername.Username()
+				claims.NumericIDUsername = userWithUsername.Username()
 			}
-			if claims.KCIDUsername == "" {
-				claims.KCIDUsername = user.Subject()
+			if claims.NumericIDUsername == "" {
+				claims.NumericIDUsername = user.Subject()
 			}
 
-			response.IDClaims = claims
+			response.NumericIDClaims = claims
 		}
 	}
 	if ok, _ := authorizedScopes[konnect.ScopeUniqueUserID]; ok {
 		user = withUser()
 		if userWithUniqueID, ok := user.(identity.UserWithUniqueID); ok {
 			claims := &konnect.UniqueUserIDClaims{
-				KCUniqueUserID: userWithUniqueID.UniqueID(),
+				UniqueUserID: userWithUniqueID.UniqueID(),
 			}
 
 			response.UniqueUserIDClaims = claims

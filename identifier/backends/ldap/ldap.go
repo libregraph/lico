@@ -270,7 +270,7 @@ func NewLDAPIdentifierBackend(
 	supportedScopes := make([]string, len(ldapSupportedScopes))
 	copy(supportedScopes, ldapSupportedScopes)
 	if numericUIDAttribute := mappedAttributes[AttributeNumericUID]; numericUIDAttribute != "" {
-		supportedScopes = append(supportedScopes, konnect.ScopeID)
+		supportedScopes = append(supportedScopes, konnect.ScopeNumericID)
 		attributeMapping[AttributeNumericUID] = numericUIDAttribute
 		c.Logger.WithField("attribute", fmt.Sprintf("%v:%v", AttributeNumericUID, numericUIDAttribute)).Debugln("ldap identifier backend use attribute")
 	}

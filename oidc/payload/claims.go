@@ -19,6 +19,7 @@ package payload
 
 import (
 	"encoding/json"
+	"strings"
 
 	"stash.kopano.io/kgol/oidc-go"
 )
@@ -168,4 +169,25 @@ func (crv *ClaimsRequestValue) Match(value interface{}) bool {
 	}
 
 	return false
+}
+
+// ScopesValue is a string array with JSON marshal to/from a space separated
+// single string value.
+type ScopesValue []string
+
+func (sv ScopesValue) MarshalJSON() ([]byte, error) {
+	result := strings.Join(sv, " ")
+	return json.Marshal(&result)
+}
+
+func (sv *ScopesValue) UnmarshalJSON(data []byte) error {
+	var parsed string
+	err := json.Unmarshal(data, &parsed)
+	if err != nil {
+		return err
+	}
+
+	result := ScopesValue(strings.Split(parsed, " "))
+	*sv = result
+	return nil
 }
