@@ -34,8 +34,8 @@ func setupSupportedScopes(scopes []string, extra []string, override []string) []
 }
 
 func getPublicSubject(sub []byte, extra []byte) (string, error) {
-	// Hash the raw subject with a konnect specific salt.
-	hasher, err := blake2b.New512([]byte(konnectoidc.KonnectIDTokenSubjectSaltV1))
+	// Hash the raw subject with our specific salt.
+	hasher, err := blake2b.New512([]byte(konnectoidc.LibreGraphIDTokenSubjectSaltV1))
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +45,8 @@ func getPublicSubject(sub []byte, extra []byte) (string, error) {
 	hasher.Write(extra)
 
 	// NOTE(longsleep): URL safe encoding for subject is important since many
-	// third party applications validate this with rather strict patterns.
+	// third party applications validate this with rather strict patterns. We
+	// also inject an @ to ensure its compatible to some apps which require one.
 	s := base64.RawURLEncoding.EncodeToString(hasher.Sum(nil))
-	return s + "@konnect", nil
+	return s[:16] + "@" + s[16:], nil
 }
