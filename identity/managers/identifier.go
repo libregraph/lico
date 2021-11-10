@@ -165,6 +165,8 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 		// Let all other prompt values pass.
 	}
 
+	var auth identity.AuthRecord
+
 	// More checks.
 	if err == nil {
 		var sub string
@@ -174,6 +176,17 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 		err = ar.Verify(sub)
 		if err != nil {
 			return nil, err
+		}
+
+		if user != nil {
+			// Load user record from identitymanager, without any scopes or claims
+			// to ensure that the user data is refreshed and that the user still
+			// exists.
+			var found bool
+			auth, found, err = im.Fetch(ctx, user.Raw(), user.SessionRef(), nil, nil)
+			if !found {
+				err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2ServerError, "user not found")
+			}
 		}
 	}
 
@@ -198,8 +211,14 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 		return nil, &identity.IsHandledError{}
 	}
 
-	auth := identity.NewAuthRecord(im, user.Subject(), nil, nil, nil)
-	auth.SetUser(user)
+	if auth == nil {
+		// In case no existing user was fetched and that was not an error, make
+		// sure that we actually create a new auth record. This should not
+		// happen and is kept here for potential backwards compatibility.
+		auth = identity.NewAuthRecord(im, user.Subject(), nil, nil, nil)
+		auth.SetUser(user)
+	}
+
 	if loggedOn, logonAt := u.LoggedOn(); loggedOn {
 		auth.SetAuthTime(logonAt)
 	}
