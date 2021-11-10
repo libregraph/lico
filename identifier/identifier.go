@@ -558,6 +558,9 @@ func (i *Identifier) GetUserFromID(ctx context.Context, userID string, sessionRe
 	if err != nil {
 		return nil, err
 	}
+	if user == nil {
+		return nil, nil
+	}
 
 	// XXX(longsleep): This is quite crappy. Move IdentifiedUser to a package
 	// which can be imported by backends so they directly can return that shit.
