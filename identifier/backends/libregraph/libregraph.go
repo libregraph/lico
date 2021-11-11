@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -67,9 +68,10 @@ type LibreGraphIdentifierBackend struct {
 }
 
 type libreGraphUser struct {
+	AccountEnabled    bool   `json:"accountEnabled"`
+	DisplayName       string `json:"displayName"`
 	RawGivenName      string `json:"givenName"`
 	ID                string `json:"id"`
-	DisplayName       string `json:"displayName"`
 	Mail              string `json:"mail"`
 	Surname           string `json:"surname"`
 	UserPrincipalName string `json:"userPrincipalName"`
@@ -184,6 +186,13 @@ func (u *libreGraphUser) BackendScopes() []string {
 	return u.requestedScopes
 }
 
+func withSelectQuery(r *http.Request) {
+	if r.Form == nil {
+		r.Form = make(url.Values)
+	}
+	r.Form.Set("$select", "accountEnabled,displayName,givenName,id,mail,surname,userPrincipalName,extensions")
+}
+
 func NewLibreGraphIdentifierBackend(
 	c *config.Config,
 	tlsConfig *tls.Config,
@@ -250,6 +259,9 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 	}
 	req.Header.Set("User-Agent", utils.DefaultHTTPUserAgent)
 
+	// Inject select parameter.
+	withSelectQuery(req)
+
 	response, err := b.client.Do(req)
 	if err != nil {
 		return false, nil, nil, nil, fmt.Errorf("libregraph identifier backend logon request failed: %w", err)
@@ -270,6 +282,10 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 	user, err := decodeLibreGraphUser(response.Body)
 	if err != nil {
 		return false, nil, nil, nil, fmt.Errorf("libregraph identifier backend logon json decode error: %w", err)
+	}
+
+	if !user.AccountEnabled {
+		return false, nil, nil, nil, nil
 	}
 
 	// Use the users subject as user id.
@@ -319,6 +335,9 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 	}
 	req.Header.Set("User-Agent", utils.DefaultHTTPUserAgent)
 
+	// Inject select parameter.
+	withSelectQuery(req)
+
 	response, err := b.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("libregraph identifier backend get user request failed: %w", err)
@@ -337,6 +356,10 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 	user, err := decodeLibreGraphUser(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("libregraph identifier backend logon json decode error: %w", err)
+	}
+
+	if !user.AccountEnabled {
+		return nil, nil
 	}
 
 	return user, nil
