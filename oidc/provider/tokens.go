@@ -45,7 +45,7 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 	}
 
 	authorizedScopes := auth.AuthorizedScopes()
-	authorizedScopesList := makeArrayFromBoolMap(authorizedScopes)
+	authorizedScopesList := payload.ScopesValue(makeArrayFromBoolMap(authorizedScopes))
 
 	accessTokenClaims := konnect.AccessTokenClaims{
 		TokenType:               konnect.TokenTypeAccessToken,
@@ -84,9 +84,19 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 
 			// Inject extra claims.
 			for claim, value := range extraClaimsMap {
-				if _, ok := accessTokenClaimsMap[claim]; ok {
-					// Prevent override of existing claims, only allow new claims.
-					continue
+				switch claim {
+				case konnect.ScopesClaim:
+					// Support to extend the scopes.
+					extraScopesList, _ := value.(string)
+					if extraScopesList != "" {
+						authorizedScopesList = append(authorizedScopesList, extraScopesList)
+						value = authorizedScopesList
+					}
+				default:
+					if _, ok := accessTokenClaimsMap[claim]; ok {
+						// Prevent override of existing claims, only allow new claims.
+						continue
+					}
 				}
 				accessTokenClaimsMap[claim] = value
 			}
