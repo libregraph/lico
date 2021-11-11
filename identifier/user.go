@@ -50,6 +50,7 @@ type IdentifiedUser struct {
 	sessionRef *string
 	logonRef   *string
 	claims     map[string]interface{}
+	scopes     []string
 
 	logonAt      time.Time
 	expiresAfter *time.Time
@@ -131,6 +132,11 @@ func (u *IdentifiedUser) ScopedClaims(authorizedScopes map[string]bool) jwt.MapC
 
 	claims := u.backend.UserClaims(u.Subject(), authorizedScopes)
 	return jwt.MapClaims(claims)
+}
+
+// Scopes returns the scopes attached to this user.
+func (u *IdentifiedUser) Scopes() []string {
+	return u.scopes
 }
 
 // LoggedOn returns true if the accociated user has a logonAt time set.
@@ -219,7 +225,7 @@ func (i *Identifier) updateUser(ctx context.Context, user *IdentifiedUser, exter
 		return errors.New("no id claim in user identity claims")
 	}
 
-	u, err := i.backend.GetUser(ctx, userID, user.sessionRef)
+	u, err := i.backend.GetUser(ctx, userID, user.sessionRef, nil)
 	if err != nil {
 		return err
 	}

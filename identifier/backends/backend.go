@@ -30,7 +30,7 @@ type Backend interface {
 	RunWithContext(context.Context) error
 
 	Logon(ctx context.Context, audience string, username string, password string) (success bool, userID *string, sessionRef *string, user UserFromBackend, err error)
-	GetUser(ctx context.Context, userID string, sessionRef *string) (user UserFromBackend, err error)
+	GetUser(ctx context.Context, userID string, sessionRef *string, requestedScopes map[string]bool) (user UserFromBackend, err error)
 
 	ResolveUserByUsername(ctx context.Context, username string) (user UserFromBackend, err error)
 
@@ -49,4 +49,5 @@ type Backend interface {
 type UserFromBackend interface {
 	identity.UserWithUsername
 	BackendClaims() map[string]interface{}
+	BackendScopes() []string
 }

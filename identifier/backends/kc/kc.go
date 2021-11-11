@@ -177,6 +177,10 @@ func (u *kcUser) BackendClaims() map[string]interface{} {
 	return claims
 }
 
+func (u *kcUser) BackendScopes() []string {
+	return nil
+}
+
 func (u *kcUser) splitFullName() [2]string {
 	// TODO(longsleep): Cache this, instead of doing every time.
 	parts := strings.SplitN(u.user.FullName, " ", 2)
@@ -390,7 +394,7 @@ func (b *KCIdentifierBackend) ResolveUserByUsername(ctx context.Context, usernam
 // GetUser implements the Backend interface, providing user meta data retrieval
 // for the user specified by the userID. Requests are bound to the provided
 // context.
-func (b *KCIdentifierBackend) GetUser(ctx context.Context, userEntryID string, sessionRef *string) (backends.UserFromBackend, error) {
+func (b *KCIdentifierBackend) GetUser(ctx context.Context, userEntryID string, sessionRef *string, requestedScopes map[string]bool) (backends.UserFromBackend, error) {
 	abeid, err := kcc.NewABEIDFromBase64([]byte(userEntryID))
 	if err != nil {
 		return nil, fmt.Errorf("kc identifier backend resolve session with invalid entry id: %v", err)

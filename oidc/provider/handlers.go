@@ -461,7 +461,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		// Load user record from identitymanager, without any scopes or claims.
-		auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, nil, nil)
+		auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, nil, nil, nil)
 		if !found {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, "user not found")
 			goto done
@@ -588,7 +588,7 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if userID == "" {
-		err = fmt.Errorf("missing data in kc.identity claim")
+		err = fmt.Errorf("missing data in identity claim")
 		goto done
 	}
 
@@ -596,7 +596,7 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 		requestedClaimsMap = []*payload.ClaimsRequestMap{claims.AuthorizedClaimsRequest.UserInfo}
 	}
 
-	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, claims.AuthorizedScopes(), requestedClaimsMap)
+	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, claims.AuthorizedScopes(), requestedClaimsMap, nil)
 	if err != nil {
 		p.logger.WithFields(utils.ErrorAsFields(err)).Errorln("identity manager fetch failed")
 		found = false

@@ -181,7 +181,7 @@ func (im *DummyIdentityManager) ApprovedScopes(ctx context.Context, sub string, 
 }
 
 // Fetch implements the identity.Manager interface.
-func (im *DummyIdentityManager) Fetch(ctx context.Context, userID string, sessionRef *string, scopes map[string]bool, requestedClaimsMaps []*payload.ClaimsRequestMap) (identity.AuthRecord, bool, error) {
+func (im *DummyIdentityManager) Fetch(ctx context.Context, userID string, sessionRef *string, scopes map[string]bool, requestedClaimsMaps []*payload.ClaimsRequestMap, requestedScopes map[string]bool) (identity.AuthRecord, bool, error) {
 	if userID != im.sub {
 		return nil, false, fmt.Errorf("DummyIdentityManager: no user")
 	}

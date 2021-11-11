@@ -553,8 +553,8 @@ func (i *Identifier) GetUserFromLogonCookie(ctx context.Context, req *http.Reque
 
 // GetUserFromID looks up the user identified by the provided userID by
 // requesting the associated backend.
-func (i *Identifier) GetUserFromID(ctx context.Context, userID string, sessionRef *string) (*IdentifiedUser, error) {
-	user, err := i.backend.GetUser(ctx, userID, sessionRef)
+func (i *Identifier) GetUserFromID(ctx context.Context, userID string, sessionRef *string, requestedScopes map[string]bool) (*IdentifiedUser, error) {
+	user, err := i.backend.GetUser(ctx, userID, sessionRef, requestedScopes)
 	if err != nil {
 		return nil, err
 	}
@@ -573,6 +573,7 @@ func (i *Identifier) GetUserFromID(ctx context.Context, userID string, sessionRe
 
 		sessionRef: sessionRef,
 		claims:     user.BackendClaims(),
+		scopes:     user.BackendScopes(),
 	}
 	if userWithEmail, ok := user.(identity.UserWithEmail); ok {
 		identifiedUser.email = userWithEmail.Email()
