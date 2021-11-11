@@ -22,7 +22,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -43,6 +45,7 @@ const (
 
 	IdentityClaimsExtensionName    = "libregraph.identityClaims"
 	AccessTokenClaimsExtensionName = "libregraph.accessTokenClaims"
+	RequestedScopesExtensionName   = "libregraph.requestedScopes"
 )
 
 var libreGraphSpportedScopes = []string{
@@ -72,6 +75,74 @@ type libreGraphUser struct {
 	UserPrincipalName string `json:"userPrincipalName"`
 
 	Extensions []map[string]interface{} `json:"extensions"`
+
+	identityClaims  map[string]interface{}
+	requestedScopes []string
+}
+
+func decodeLibreGraphUser(r io.Reader) (*libreGraphUser, error) {
+	decoder := json.NewDecoder(r)
+	u := &libreGraphUser{}
+	if err := decoder.Decode(u); err != nil {
+		return nil, err
+	}
+
+	identityClaims := make(map[string]interface{})
+	identityClaims[konnect.IdentifiedUserIDClaim] = u.ID
+
+	var accessTokenClaims map[string]interface{}
+	var requestedScopes []string
+
+	for _, extension := range u.Extensions {
+		if odataType, ok := extension["@odata.type"]; ok && odataType.(string) != OpenTypeExtensionType {
+			continue
+		}
+		if extensionName, ok := extension["extensionName"].(string); ok {
+			switch extensionName {
+			case IdentityClaimsExtensionName:
+				if v, ok := extension["claims"].(map[string]interface{}); ok {
+					for k, v := range v {
+						if k == "" {
+							// Ignore empty key, its used internally by
+							// AccessTokenClaimsExtensionName.
+							continue
+						}
+						identityClaims[k] = v
+					}
+				}
+			case AccessTokenClaimsExtensionName:
+				if accessTokenClaims == nil {
+					accessTokenClaims = make(map[string]interface{})
+				}
+				if v, ok := extension["claims"].(map[string]interface{}); ok {
+					for k, v := range v {
+						accessTokenClaims[k] = v
+					}
+				}
+			case RequestedScopesExtensionName:
+				if values, ok := extension["scopes"].([]interface{}); ok {
+					for _, v := range values {
+						if s, ok := v.(string); ok {
+							requestedScopes = append(requestedScopes, s)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if accessTokenClaims != nil {
+		// Inject root claims as nested identity claims. The empty key is picked
+		// up by the access token signer and used to extend the root claims.
+		identityClaims[""] = accessTokenClaims
+	}
+	if requestedScopes != nil {
+		u.requestedScopes = requestedScopes
+	}
+
+	u.identityClaims = identityClaims
+
+	return u, nil
 }
 
 func (u *libreGraphUser) Subject() string {
@@ -106,45 +177,11 @@ func (u *libreGraphUser) UniqueID() string {
 }
 
 func (u *libreGraphUser) BackendClaims() map[string]interface{} {
-	identityClaims := make(map[string]interface{})
-	identityClaims[konnect.IdentifiedUserIDClaim] = u.ID
+	return u.identityClaims
+}
 
-	accessTokenClaims := make(map[string]interface{})
-
-	for _, extension := range u.Extensions {
-		if odataType, ok := extension["@odata.type"]; ok && odataType.(string) != OpenTypeExtensionType {
-			continue
-		}
-		if extensionName, ok := extension["extensionName"].(string); ok {
-			switch extensionName {
-			case IdentityClaimsExtensionName:
-				if v, ok := extension["claims"].(map[string]interface{}); ok {
-					for k, v := range v {
-						if k == "" {
-							// Ignore empty key, its used internally by
-							// AccessTokenClaimsExtensionName.
-							continue
-						}
-						identityClaims[k] = v
-					}
-				}
-			case AccessTokenClaimsExtensionName:
-				if v, ok := extension["claims"].(map[string]interface{}); ok {
-					for k, v := range v {
-						accessTokenClaims[k] = v
-					}
-				}
-			}
-		}
-	}
-
-	if len(accessTokenClaims) > 0 {
-		// Inject root claims as nested identity claims. The empty key is picked
-		// up by the access token signer and used to extend the root claims.
-		identityClaims[""] = accessTokenClaims
-	}
-
-	return identityClaims
+func (u *libreGraphUser) BackendScopes() []string {
+	return u.requestedScopes
 }
 
 func NewLibreGraphIdentifierBackend(
@@ -230,9 +267,7 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 		return false, nil, nil, nil, fmt.Errorf("libregraph identifier backend logon request unexpected response status: %d", response.StatusCode)
 	}
 
-	decoder := json.NewDecoder(response.Body)
-	user := &libreGraphUser{}
-	err = decoder.Decode(user)
+	user, err := decodeLibreGraphUser(response.Body)
 	if err != nil {
 		return false, nil, nil, nil, fmt.Errorf("libregraph identifier backend logon json decode error: %w", err)
 	}
@@ -256,7 +291,7 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 // GetUser implements the Backend interface, providing user meta data retrieval
 // for the user specified by the userID. Requests are bound to the provided
 // context.
-func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID string, sessionRef *string) (backends.UserFromBackend, error) {
+func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID string, sessionRef *string, requestedScopes map[string]bool) (backends.UserFromBackend, error) {
 	record, _ := identifier.FromRecordContext(ctx)
 	if record != nil && record.UserFromBackend != nil {
 		if user, ok := record.UserFromBackend.(*libreGraphUser); ok {
@@ -273,6 +308,15 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 	}
 
 	// Inject HTTP headers.
+	if requestedScopes != nil {
+		rawRequestedScopes := make([]string, 0)
+		for scope, enabled := range requestedScopes {
+			if enabled {
+				rawRequestedScopes = append(rawRequestedScopes, scope)
+			}
+		}
+		req.Header.Set("X-Scope", strings.Join(rawRequestedScopes, " "))
+	}
 	req.Header.Set("User-Agent", utils.DefaultHTTPUserAgent)
 
 	response, err := b.client.Do(req)
@@ -290,9 +334,7 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 		return nil, fmt.Errorf("libregraph identifier backend get user request unexpected response status: %d", response.StatusCode)
 	}
 
-	decoder := json.NewDecoder(response.Body)
-	user := &libreGraphUser{}
-	err = decoder.Decode(user)
+	user, err := decodeLibreGraphUser(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("libregraph identifier backend logon json decode error: %w", err)
 	}
@@ -305,7 +347,7 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 func (b *LibreGraphIdentifierBackend) ResolveUserByUsername(ctx context.Context, username string) (backends.UserFromBackend, error) {
 	// Libregraph backend accept both user name and ID lookups, so this is
 	// the same as GetUser without a session.
-	return b.GetUser(ctx, username, nil)
+	return b.GetUser(ctx, username, nil, nil)
 }
 
 // RefreshSession implements the Backend interface.

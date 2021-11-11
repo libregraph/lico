@@ -65,6 +65,10 @@ func (u *identifierUser) Subject() string {
 	return sub
 }
 
+func (u *identifierUser) Scopes() []string {
+	return u.IdentifiedUser.Scopes()
+}
+
 func asIdentifierUser(user *identifier.IdentifiedUser) *identifierUser {
 	return &identifierUser{user}
 }
@@ -183,9 +187,25 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 			// to ensure that the user data is refreshed and that the user still
 			// exists.
 			var found bool
-			auth, found, err = im.Fetch(ctx, user.Raw(), user.SessionRef(), nil, nil)
+			auth, found, err = im.Fetch(ctx, user.Raw(), user.SessionRef(), nil, nil, ar.Scopes)
 			if !found {
 				err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2ServerError, "user not found")
+			} else {
+				// Update ar.Scopes with the ones gotten from backend.
+				if bu, ok := auth.User().(*identifierUser); ok {
+					scopes := bu.Scopes()
+					if scopes != nil {
+						expanded := make(map[string]bool)
+						for _, scope := range scopes {
+							if enabled, ok := ar.Scopes[scope]; ok && !enabled {
+								// Skip already known but not enabled scopes.
+								continue
+							}
+							expanded[scope] = true
+						}
+						ar.Scopes = expanded
+					}
+				}
 			}
 		}
 	}
@@ -296,6 +316,15 @@ func (im *IdentifierIdentityManager) Authorize(ctx context.Context, rw http.Resp
 			claimsScopes := ar.Claims.Scopes(ar.Scopes)
 			if len(claimsScopes) > 0 {
 				query.Set("claims_scope", strings.Join(claimsScopes, " "))
+			}
+		}
+		if ar.Scopes != nil {
+			scopes := make([]string, 0)
+			for scope, ok := range ar.Scopes {
+				if ok {
+					scopes = append(scopes, scope)
+				}
+				query.Set("scope", strings.Join(scopes, " "))
 			}
 		}
 		u, _ := url.Parse(im.signInFormURI)
@@ -440,8 +469,8 @@ func (im *IdentifierIdentityManager) ApprovedScopes(ctx context.Context, sub str
 }
 
 // Fetch implements the identity.Manager interface.
-func (im *IdentifierIdentityManager) Fetch(ctx context.Context, userID string, sessionRef *string, scopes map[string]bool, requestedClaimsMaps []*payload.ClaimsRequestMap) (identity.AuthRecord, bool, error) {
-	u, err := im.identifier.GetUserFromID(ctx, userID, sessionRef)
+func (im *IdentifierIdentityManager) Fetch(ctx context.Context, userID string, sessionRef *string, scopes map[string]bool, requestedClaimsMaps []*payload.ClaimsRequestMap, requestedScopes map[string]bool) (identity.AuthRecord, bool, error) {
+	u, err := im.identifier.GetUserFromID(ctx, userID, sessionRef, requestedScopes)
 	if err != nil {
 		im.logger.WithError(err).Errorln("IdentifierIdentityManager: fetch failed to get user from userID")
 		return nil, false, fmt.Errorf("IdentifierIdentityManager: identifier error")

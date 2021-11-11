@@ -200,6 +200,10 @@ func (u *ldapUser) BackendClaims() map[string]interface{} {
 	return claims
 }
 
+func (u *ldapUser) BackendScopes() []string {
+	return nil
+}
+
 // NewLDAPIdentifierBackend creates a new LDAPIdentifierBackend with the provided
 // parameters.
 func NewLDAPIdentifierBackend(
@@ -445,7 +449,7 @@ func (b *LDAPIdentifierBackend) ResolveUserByUsername(ctx context.Context, usern
 // GetUser implements the Backend interface, providing user meta data retrieval
 // for the user specified by the userID. Requests are bound to the provided
 // context.
-func (b *LDAPIdentifierBackend) GetUser(ctx context.Context, entryID string, sessionRef *string) (backends.UserFromBackend, error) {
+func (b *LDAPIdentifierBackend) GetUser(ctx context.Context, entryID string, sessionRef *string, requestedScopes map[string]bool) (backends.UserFromBackend, error) {
 	l, err := b.connect(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("ldap identifier backend get user connect error: %v", err)
