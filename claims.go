@@ -30,6 +30,7 @@ const (
 	RefClaim              = "lg.r"
 	IdentityClaim         = "lg.i"
 	IdentityProviderClaim = "lg.p"
+	ScopesClaim           = "scp"
 )
 
 // Identifier identity sub claims used.
