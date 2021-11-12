@@ -4,6 +4,19 @@
 
 
 
+## v0.52.0 (2021-11-11)
+
+- Support accountEnabled property in libregraph identifier backend
+- Add support for identifier backends to expand the requested scopes
+- Add support to extend authorized scopes from backend
+- Update 3rd-party direct and transitive dependencies
+- Ensure user data is refreshed on token creation
+- Use lico specific unique salt for sub values
+- Simplify and unify built-in scopes and access/refresh token claims
+- Add support for top level at claims via in libregraph identifier backend
+- Retain received branding even on hello updates, until hello reset
+
+
 ## v0.51.1 (2021-10-15)
 
 - Ensure that app-icon.svg gets built with Makefile
