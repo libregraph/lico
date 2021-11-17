@@ -91,15 +91,6 @@ handleHelloLoop:
 			}
 		}
 
-		// Check frontend proxy injected auth (Eg. Kerberos/NTLM).
-		// TODO(longsleep): Add request validation before accepting incoming header.
-		forwardedUser := req.Header.Get("X-Forwarded-User")
-		if forwardedUser != "" {
-			response.Username = forwardedUser
-			response.Success = true
-			break
-		}
-
 		break
 	}
 

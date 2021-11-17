@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"stash.kopano.io/kgol/oidc-go"
 
 	"github.com/libregraph/lico/identity/authorities"
 	"github.com/libregraph/lico/utils"
@@ -217,34 +216,9 @@ func (i *Identifier) handleLogon(rw http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		promptLogin := false
 		audience := ""
 		if r.Hello != nil {
-			promptLogin, _ = r.Hello.Prompts[oidc.PromptLogin]
 			audience = r.Hello.ClientID
-		}
-
-		if !promptLogin {
-			// SSO support - check if request passed through a trusted proxy.
-			trusted, _ := utils.IsRequestFromTrustedSource(req, i.Config.Config.TrustedProxyIPs, i.Config.Config.TrustedProxyNets)
-			if trusted {
-				// Check frontend proxy injected auth (Eg. Kerberos/NTLM).
-				forwardedUser := req.Header.Get("X-Forwarded-User")
-				if forwardedUser != "" {
-					if forwardedUser == params[0] {
-						resolvedUser, resolveErr := i.resolveUser(req.Context(), params[0])
-						if resolveErr != nil {
-							i.logger.WithError(resolveErr).Errorln("identifier failed to resolve user with backend")
-							i.ErrorPage(rw, http.StatusInternalServerError, "", "failed to resolve user")
-							return
-						}
-
-						// Success, use resolved user.
-						user = resolvedUser
-					}
-					break
-				}
-			}
 		}
 
 		if paramSize < 3 {
