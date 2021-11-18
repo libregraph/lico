@@ -186,7 +186,9 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 			requestedScopesMap = authorizedClaimsRequest.IDToken.ScopesMap(nil)
 		}
 
-		freshAuth, found, fetchErr := auth.Manager().Fetch(ctx, userID, sessionRef, auth.AuthorizedScopes(), requestedClaimsMap, nil)
+		authorizedScopes := auth.AuthorizedScopes()
+
+		freshAuth, found, fetchErr := auth.Manager().Fetch(ctx, userID, sessionRef, authorizedScopes, requestedClaimsMap, authorizedScopes)
 		if fetchErr != nil {
 			p.logger.WithFields(utils.ErrorAsFields(fetchErr)).Errorln("identity manager fetch failed")
 			found = false

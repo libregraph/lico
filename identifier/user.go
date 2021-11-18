@@ -54,6 +54,8 @@ type IdentifiedUser struct {
 
 	logonAt      time.Time
 	expiresAfter *time.Time
+
+	lockedScopes []string
 }
 
 // Subject returns the associated users subject field. The subject is the main
@@ -167,6 +169,10 @@ func (u *IdentifiedUser) BackendName() string {
 	return u.backend.Name()
 }
 
+func (u *IdentifiedUser) LockedScopes() []string {
+	return u.lockedScopes
+}
+
 func (i *Identifier) logonUser(ctx context.Context, audience, username, password string) (*IdentifiedUser, error) {
 	success, subject, sessionRef, u, err := i.backend.Logon(ctx, audience, username, password)
 	if err != nil {
@@ -186,6 +192,8 @@ func (i *Identifier) logonUser(ctx context.Context, audience, username, password
 
 		sessionRef: sessionRef,
 		claims:     u.BackendClaims(),
+
+		lockedScopes: u.RequiredScopes(),
 	}
 
 	return user, nil
@@ -210,6 +218,8 @@ func (i *Identifier) resolveUser(ctx context.Context, username string) (*Identif
 		backend: i.backend,
 
 		claims: u.BackendClaims(),
+
+		lockedScopes: u.RequiredScopes(),
 	}
 
 	return user, nil

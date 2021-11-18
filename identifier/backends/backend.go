@@ -50,4 +50,5 @@ type UserFromBackend interface {
 	identity.UserWithUsername
 	BackendClaims() map[string]interface{}
 	BackendScopes() []string
+	RequiredScopes() []string
 }

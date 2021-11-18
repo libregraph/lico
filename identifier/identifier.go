@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/deckarep/golang-set"
@@ -284,6 +285,9 @@ func (i *Identifier) SetUserToLogonCookie(ctx context.Context, rw http.ResponseW
 	if externalAuthorityID := user.ExternalAuthorityID(); externalAuthorityID != nil {
 		userClaims[ExternalAuthorityIDClaim] = *externalAuthorityID
 	}
+	if lockedScopes := user.LockedScopes(); lockedScopes != nil {
+		userClaims[LockedScopesClaim] = strings.Join(lockedScopes, " ")
+	}
 
 	// Serialize and encrypt cookie value.
 	serialized, err := jwt.Encrypted(i.encrypter).Claims(claims).Claims(userClaims).CompactSerialize()
@@ -516,6 +520,13 @@ func (i *Identifier) GetUserFromLogonCookie(ctx context.Context, req *http.Reque
 		}
 	}
 
+	if v := userClaims[LockedScopesClaim]; v != nil {
+		lockedScopes := v.(string)
+		if lockedScopes != "" {
+			user.lockedScopes = strings.Split(lockedScopes, " ")
+		}
+	}
+
 	// Fill additional claim.
 	user.claims = make(map[string]interface{})
 	for k, v := range userClaims {
@@ -532,6 +543,9 @@ func (i *Identifier) GetUserFromLogonCookie(ctx context.Context, req *http.Reque
 			// Already handled above.
 			continue
 		case ExternalAuthorityIDClaim:
+			// Already handled above.
+			continue
+		case LockedScopesClaim:
 			// Already handled above.
 			continue
 		case ObsoleteUserClaimsClaim:
@@ -574,6 +588,8 @@ func (i *Identifier) GetUserFromID(ctx context.Context, userID string, sessionRe
 		sessionRef: sessionRef,
 		claims:     user.BackendClaims(),
 		scopes:     user.BackendScopes(),
+
+		lockedScopes: user.RequiredScopes(),
 	}
 	if userWithEmail, ok := user.(identity.UserWithEmail); ok {
 		identifiedUser.email = userWithEmail.Email()

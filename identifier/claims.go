@@ -22,6 +22,7 @@ const (
 	SessionIDClaim           = "sid"
 	LogonRefClaim            = "lref"
 	ExternalAuthorityIDClaim = "eaid"
+	LockedScopesClaim        = "lscp"
 )
 
 // History claims previously used by the identifier in its own tokens.

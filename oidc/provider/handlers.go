@@ -461,7 +461,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		// Load user record from identitymanager, without any scopes or claims.
-		auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, nil, nil, nil)
+		auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, nil, nil, authorizedScopes)
 		if !found {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, "user not found")
 			goto done
@@ -577,6 +577,7 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 	var auth identity.AuthRecord
 	var found bool
 	var requestedClaimsMap []*payload.ClaimsRequestMap
+	var authorizedScopes map[string]bool
 
 	userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.StandardClaims, claims.IdentityClaims)
 
@@ -596,7 +597,9 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 		requestedClaimsMap = []*payload.ClaimsRequestMap{claims.AuthorizedClaimsRequest.UserInfo}
 	}
 
-	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, claims.AuthorizedScopes(), requestedClaimsMap, nil)
+	authorizedScopes = claims.AuthorizedScopes()
+
+	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, authorizedScopes, requestedClaimsMap, authorizedScopes)
 	if err != nil {
 		p.logger.WithFields(utils.ErrorAsFields(err)).Errorln("identity manager fetch failed")
 		found = false
@@ -643,7 +646,7 @@ done:
 			return u
 		}
 	}()
-	authorizedScopes := auth.AuthorizedScopes()
+	authorizedScopes = auth.AuthorizedScopes()
 	var user identity.User
 
 	// Include additional Konnect specific claims when corresponding scopes are authorized.

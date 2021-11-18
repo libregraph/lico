@@ -20,6 +20,9 @@ package bslibregraph
 import (
 	"fmt"
 	"os"
+	"strings"
+
+	"github.com/cevaris/ordered_map"
 
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/identifier"
@@ -66,10 +69,26 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		config.SignedOutURI.Path = bs.MakeURIPath(bootstrap.APITypeSignin, "/goodbye")
 	}
 
+	defaultURI := os.Getenv("LIBREGRAPH_URI")
+
+	var scopedURIs *ordered_map.OrderedMap
+	if scopedURIsString := os.Getenv("LIBREGRAPH_SCOPED_URIS"); scopedURIsString != "" {
+		scopedURIs = ordered_map.NewOrderedMap()
+		// Format is <scope>:<url>,<scope>:<url>,...
+		for _, v := range strings.Split(scopedURIsString, ",") {
+			parts := strings.SplitN(v, ":", 2)
+			if len(parts) != 2 {
+				return nil, fmt.Errorf("failed to parse scoped URIs, format invalid")
+			}
+			scopedURIs.Set(parts[0], parts[1])
+		}
+	}
+
 	identifierBackend, identifierErr := libregraph.NewLibreGraphIdentifierBackend(
 		config.Config,
 		config.TLSClientConfig,
-		os.Getenv("LIBREGRAPH_URI"),
+		defaultURI,
+		scopedURIs,
 	)
 	if identifierErr != nil {
 		return nil, fmt.Errorf("failed to create identifier backend: %v", identifierErr)
