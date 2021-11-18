@@ -142,6 +142,10 @@ func (i *Identifier) writeSAML2AssertionConsumerService(rw http.ResponseWriter, 
 
 		username := &un
 
+		// TODO(longsleep): This flow currently does not provide a hello
+		// context, means that downwards a backend might fail to resolve the
+		// user when it requires additional information for multiple backend
+		// routing.
 		user, err = i.resolveUser(req.Context(), *username)
 		if err != nil {
 			i.logger.WithError(err).WithField("username", *username).Debugln("identifier failed to resolve saml2 acs user with backend")

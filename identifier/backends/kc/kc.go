@@ -181,6 +181,10 @@ func (u *kcUser) BackendScopes() []string {
 	return nil
 }
 
+func (u *kcUser) RequiredScopes() []string {
+	return nil
+}
+
 func (u *kcUser) splitFullName() [2]string {
 	// TODO(longsleep): Cache this, instead of doing every time.
 	parts := strings.SplitN(u.user.FullName, " ", 2)

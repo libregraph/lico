@@ -204,6 +204,10 @@ func (u *ldapUser) BackendScopes() []string {
 	return nil
 }
 
+func (u *ldapUser) RequiredScopes() []string {
+	return nil
+}
+
 // NewLDAPIdentifierBackend creates a new LDAPIdentifierBackend with the provided
 // parameters.
 func NewLDAPIdentifierBackend(

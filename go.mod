@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/beevik/etree v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cevaris/ordered_map v0.0.0-20190319150403-3adeae072e73
 	github.com/crewjam/httperr v0.2.0
 	github.com/crewjam/saml v0.4.5
 	github.com/deckarep/golang-set v1.7.1

@@ -69,6 +69,18 @@ func (u *identifierUser) Scopes() []string {
 	return u.IdentifiedUser.Scopes()
 }
 
+func (u *identifierUser) RequiredScopes() map[string]bool {
+	lockedScopes := u.IdentifiedUser.LockedScopes()
+	if lockedScopes == nil {
+		return nil
+	}
+	requiredScopes := make(map[string]bool)
+	for _, scope := range lockedScopes {
+		requiredScopes[scope] = true
+	}
+	return requiredScopes
+}
+
 func asIdentifierUser(user *identifier.IdentifiedUser) *identifierUser {
 	return &identifierUser{user}
 }
@@ -82,7 +94,7 @@ func NewIdentifierIdentityManager(c *identity.Config, i *identifier.Identifier) 
 
 		scopesSupported: setupSupportedScopes([]string{
 			oidc.ScopeOfflineAccess,
-		}, i.ScopesSupported(), c.ScopesSupported),
+		}, nil, c.ScopesSupported),
 		claimsSupported: []string{
 			oidc.NameClaim,
 			oidc.FamilyNameClaim,
@@ -183,6 +195,12 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 		}
 
 		if user != nil {
+			// Inject required scopes into request.
+			for scope, ok := range user.RequiredScopes() {
+				if ok {
+					ar.Scopes[scope] = true
+				}
+			}
 			// Load user record from identitymanager, without any scopes or claims
 			// to ensure that the user data is refreshed and that the user still
 			// exists.
@@ -497,7 +515,14 @@ func (im *IdentifierIdentityManager) Name() string {
 
 // ScopesSupported implements the identity.Manager interface.
 func (im *IdentifierIdentityManager) ScopesSupported(scopes map[string]bool) []string {
-	return im.scopesSupported
+	scopesSupported := make([]string, len(im.scopesSupported))
+	copy(scopesSupported, im.scopesSupported)
+
+	for _, scope := range im.identifier.ScopesSupported() {
+		scopesSupported = append(scopesSupported, scope)
+	}
+
+	return scopesSupported
 }
 
 // ClaimsSupported implements the identity.Manager interface.

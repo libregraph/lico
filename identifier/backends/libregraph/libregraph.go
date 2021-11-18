@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cevaris/ordered_map"
 	"github.com/sirupsen/logrus"
 	"stash.kopano.io/kgol/oidc-go"
 
@@ -49,6 +50,11 @@ const (
 	RequestedScopesExtensionName   = "libregraph.requestedScopes"
 )
 
+const (
+	apiPathMe    = "/api/v1/me"
+	apiPathUsers = "/api/v1/users"
+)
+
 var libreGraphSpportedScopes = []string{
 	oidc.ScopeProfile,
 	oidc.ScopeEmail,
@@ -62,9 +68,10 @@ type LibreGraphIdentifierBackend struct {
 	logger    logrus.FieldLogger
 	tlsConfig *tls.Config
 
-	client     *http.Client
-	getMeURL   string
-	getUserURL string
+	client *http.Client
+
+	baseURLMap          *ordered_map.OrderedMap
+	useMultipleBackends bool
 }
 
 type libreGraphUser struct {
@@ -80,6 +87,7 @@ type libreGraphUser struct {
 
 	identityClaims  map[string]interface{}
 	requestedScopes []string
+	selectedScope   string
 }
 
 func decodeLibreGraphUser(r io.Reader) (*libreGraphUser, error) {
@@ -186,6 +194,13 @@ func (u *libreGraphUser) BackendScopes() []string {
 	return u.requestedScopes
 }
 
+func (u *libreGraphUser) RequiredScopes() []string {
+	if u.selectedScope == "" {
+		return nil
+	}
+	return []string{u.selectedScope}
+}
+
 func withSelectQuery(r *http.Request) {
 	if r.Form == nil {
 		r.Form = make(url.Values)
@@ -197,6 +212,7 @@ func NewLibreGraphIdentifierBackend(
 	c *config.Config,
 	tlsConfig *tls.Config,
 	baseURI string,
+	baseURIByScope *ordered_map.OrderedMap,
 ) (*LibreGraphIdentifierBackend, error) {
 
 	if baseURI == "" {
@@ -206,6 +222,20 @@ func NewLibreGraphIdentifierBackend(
 	// Build supported scopes based on default scopes.
 	supportedScopes := make([]string, len(libreGraphSpportedScopes))
 	copy(supportedScopes, libreGraphSpportedScopes)
+
+	baseURLMap := ordered_map.NewOrderedMapWithArgs([]*ordered_map.KVPair{{
+		Key:   "",
+		Value: baseURI,
+	}})
+	if baseURIByScope != nil {
+		iter := baseURIByScope.IterFunc()
+		for kv, ok := iter(); ok; kv, ok = iter() {
+			if kv.Key == "" {
+				return nil, fmt.Errorf("scoped base uri with empty scope is not allowed")
+			}
+			baseURLMap.Set(kv.Key, kv.Value)
+		}
+	}
 
 	b := &LibreGraphIdentifierBackend{
 		supportedScopes: supportedScopes,
@@ -221,11 +251,12 @@ func NewLibreGraphIdentifierBackend(
 			},
 			Timeout: 60 * time.Second,
 		},
-		getMeURL:   baseURI + "/api/v1/me",
-		getUserURL: baseURI + "/api/v1/users",
+
+		baseURLMap:          baseURLMap,
+		useMultipleBackends: baseURLMap.Len() > 1,
 	}
 
-	b.logger.WithField("uri", baseURI).Infoln("libregraph server identified backend connection set up")
+	b.logger.WithField("map", baseURLMap).Infoln("libregraph server identified backend connection set up")
 
 	return b, nil
 }
@@ -238,13 +269,19 @@ func (b *LibreGraphIdentifierBackend) RunWithContext(ctx context.Context) error 
 // Logon implements the Backend interface, enabling Logon with user name and
 // password as provided. Requests are bound to the provided context.
 func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, username, password string) (bool, *string, *string, backends.UserFromBackend, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.getMeURL, nil)
+	record, _ := identifier.FromRecordContext(ctx)
+	var requestedScopes map[string]bool
+	if record != nil {
+		requestedScopes = record.HelloRequest.Scopes
+	}
+
+	selectedScope, meURL := b.getMeURL(requestedScopes)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, meURL, nil)
 	if err != nil {
 		return false, nil, nil, nil, fmt.Errorf("libregraph identifier backend logon request error: %w", err)
 	}
 	req.SetBasicAuth(username, password)
 
-	record, _ := identifier.FromRecordContext(ctx)
 	if record != nil {
 		// Inject HTTP headers.
 		if record.HelloRequest.Flow != "" {
@@ -288,12 +325,15 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 		return false, nil, nil, nil, nil
 	}
 
+	user.selectedScope = selectedScope
+
 	// Use the users subject as user id.
 	userID := user.Subject()
 
 	b.logger.WithFields(logrus.Fields{
 		"username": user.Username(),
 		"id":       userID,
+		"scope":    user.selectedScope,
 	}).Debugln("libregraph identifier backend logon")
 
 	// Put the user into the record (if any).
@@ -309,16 +349,22 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 // context.
 func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID string, sessionRef *string, requestedScopes map[string]bool) (backends.UserFromBackend, error) {
 	record, _ := identifier.FromRecordContext(ctx)
-	if record != nil && record.UserFromBackend != nil {
-		if user, ok := record.UserFromBackend.(*libreGraphUser); ok {
-			// Fastpath, if logon previously injected the user.
-			if user.ID == entryID {
-				return user, nil
+	if record != nil {
+		if record.UserFromBackend != nil {
+			if user, ok := record.UserFromBackend.(*libreGraphUser); ok {
+				// Fastpath, if logon previously injected the user.
+				if user.ID == entryID {
+					return user, nil
+				}
 			}
+		}
+		if requestedScopes == nil && record.HelloRequest != nil {
+			requestedScopes = record.HelloRequest.Scopes
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.getUserURL+"/"+entryID, nil)
+	selectedScope, userURL := b.getUserURL(requestedScopes)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, userURL+"/"+entryID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("libregraph identifier backend get user request error: %w", err)
 	}
@@ -362,6 +408,8 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 		return nil, nil
 	}
 
+	user.selectedScope = selectedScope
+
 	return user, nil
 }
 
@@ -404,4 +452,33 @@ func (b *LibreGraphIdentifierBackend) ScopesMeta() *scopes.Scopes {
 // Name implements the Backend interface.
 func (b *LibreGraphIdentifierBackend) Name() string {
 	return libreGraphIdentifierBackendName
+}
+
+func (b *LibreGraphIdentifierBackend) getBaseURL(requestedScopes map[string]bool) (string, string) {
+	if b.useMultipleBackends && requestedScopes != nil {
+		// Loop through configured backends for each requested scope.
+		for s, v := range requestedScopes {
+			if !v {
+				continue
+			}
+			if u, ok := b.baseURLMap.Get(s); ok {
+				return s, u.(string)
+			}
+		}
+	}
+	// If nothing found, return default.
+	u, _ := b.baseURLMap.Get("")
+	return "", u.(string)
+}
+
+func (b *LibreGraphIdentifierBackend) getMeURL(requestedScopes map[string]bool) (string, string) {
+	scope, baseURL := b.getBaseURL(requestedScopes)
+
+	return scope, baseURL + apiPathMe
+}
+
+func (b *LibreGraphIdentifierBackend) getUserURL(requestedScopes map[string]bool) (string, string) {
+	scope, baseURL := b.getBaseURL(requestedScopes)
+
+	return scope, baseURL + apiPathUsers
 }
