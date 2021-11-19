@@ -76,7 +76,12 @@ func (u *identifierUser) RequiredScopes() map[string]bool {
 	}
 	requiredScopes := make(map[string]bool)
 	for _, scope := range lockedScopes {
-		requiredScopes[scope] = true
+		if strings.HasPrefix(scope, "!") {
+			scope = strings.TrimLeft(scope, "!")
+			requiredScopes[scope] = false
+		} else {
+			requiredScopes[scope] = true
+		}
 	}
 	return requiredScopes
 }
@@ -197,9 +202,7 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 		if user != nil {
 			// Inject required scopes into request.
 			for scope, ok := range user.RequiredScopes() {
-				if ok {
-					ar.Scopes[scope] = true
-				}
+				ar.Scopes[scope] = ok
 			}
 			// Load user record from identitymanager, without any scopes or claims
 			// to ensure that the user data is refreshed and that the user still
