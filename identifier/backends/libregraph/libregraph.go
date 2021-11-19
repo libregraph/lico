@@ -87,7 +87,7 @@ type libreGraphUser struct {
 
 	identityClaims  map[string]interface{}
 	requestedScopes []string
-	selectedScope   string
+	requiredScopes  []string
 }
 
 func decodeLibreGraphUser(r io.Reader) (*libreGraphUser, error) {
@@ -195,10 +195,23 @@ func (u *libreGraphUser) BackendScopes() []string {
 }
 
 func (u *libreGraphUser) RequiredScopes() []string {
-	if u.selectedScope == "" {
-		return nil
+	return u.requiredScopes
+}
+
+func (u *libreGraphUser) setRequiredScopes(selectedScope string, scopeMap *ordered_map.OrderedMap) []string {
+	var requiredScopes []string
+
+	if selectedScope != "" {
+		requiredScopes = []string{selectedScope}
 	}
-	return []string{u.selectedScope}
+	iter := scopeMap.IterFunc()
+	for kv, ok := iter(); ok; kv, ok = iter() {
+		if scope := kv.Key.(string); scope != selectedScope {
+			requiredScopes = append(requiredScopes, "!"+scope)
+		}
+	}
+	u.requiredScopes = requiredScopes
+	return requiredScopes
 }
 
 func withSelectQuery(r *http.Request) {
@@ -325,7 +338,7 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 		return false, nil, nil, nil, nil
 	}
 
-	user.selectedScope = selectedScope
+	requiredScopes := user.setRequiredScopes(selectedScope, b.baseURLMap)
 
 	// Use the users subject as user id.
 	userID := user.Subject()
@@ -333,7 +346,7 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 	b.logger.WithFields(logrus.Fields{
 		"username": user.Username(),
 		"id":       userID,
-		"scope":    user.selectedScope,
+		"scope":    requiredScopes,
 	}).Debugln("libregraph identifier backend logon")
 
 	// Put the user into the record (if any).
@@ -408,7 +421,7 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 		return nil, nil
 	}
 
-	user.selectedScope = selectedScope
+	user.setRequiredScopes(selectedScope, b.baseURLMap)
 
 	return user, nil
 }
