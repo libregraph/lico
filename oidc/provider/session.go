@@ -28,6 +28,7 @@ import (
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identity"
+	"github.com/libregraph/lico/oidc"
 	"github.com/libregraph/lico/oidc/payload"
 )
 
@@ -111,7 +112,7 @@ func (p *Provider) unserializeSession(value string) (*payload.Session, error) {
 	return &session, nil
 }
 
-func (p *Provider) getUserIDAndSessionRefFromClaims(claims *jwt.StandardClaims, identityClaims jwt.MapClaims) (string, *string) {
+func (p *Provider) getUserIDAndSessionRefFromClaims(claims *jwt.StandardClaims, sessionClaims *oidc.SessionClaims, identityClaims jwt.MapClaims) (string, *string) {
 	if claims == nil || identityClaims == nil {
 		return "", nil
 	}
@@ -123,6 +124,13 @@ func (p *Provider) getUserIDAndSessionRefFromClaims(claims *jwt.StandardClaims, 
 	userClaim, _ := identityClaims[konnect.IdentifiedUserClaim].(string)
 	if userClaim == "" {
 		userClaim = userIDClaim
+	}
+
+	if sessionClaims != nil {
+		sessionIDClaim := sessionClaims.SessionID
+		if sessionIDClaim != "" {
+			return userIDClaim, &sessionIDClaim
+		}
 	}
 
 	// NOTE(longsleep): Return the userID from claims and generate a session ref

@@ -417,7 +417,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 
 		// TODO(longsleep): Compare standard claims issuer.
 
-		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.StandardClaims, claims.IdentityClaims)
+		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.StandardClaims, nil, claims.IdentityClaims)
 		if userID == "" {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidToken, "missing data in kc.identity claim")
 			goto done
@@ -579,7 +579,7 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 	var requestedClaimsMap []*payload.ClaimsRequestMap
 	var authorizedScopes map[string]bool
 
-	userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.StandardClaims, claims.IdentityClaims)
+	userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.StandardClaims, claims.SessionClaims, claims.IdentityClaims)
 
 	ctx := konnect.NewClaimsContext(req.Context(), claims)
 

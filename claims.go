@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 
+	"github.com/libregraph/lico/oidc"
 	"github.com/libregraph/lico/oidc/payload"
 )
 
@@ -70,6 +71,8 @@ type AccessTokenClaims struct {
 
 	IdentityClaims   jwt.MapClaims `json:"lg.i"`
 	IdentityProvider string        `json:"lg.p,omitempty"`
+
+	*oidc.SessionClaims
 }
 
 // Valid implements the jwt.Claims interface.
