@@ -4,7 +4,15 @@
 
 
 
-## v0.52.0 (2021-11-11)
+## v0.53.0 (2021-12-01)
+
+- Add support for sessions when using the libregraph identifier backend
+- Blacklist other selective scopes for multiple libregraph backend support
+- Add scope based backend selection for libregraph identity backend
+- Remove auth pass through from request headers
+
+
+## v0.52.0 (2021-11-12)
 
 - Support accountEnabled property in libregraph identifier backend
 - Add support for identifier backends to expand the requested scopes
