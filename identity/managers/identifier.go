@@ -232,6 +232,11 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 	}
 
 	if err != nil {
+		if ar.Prompts[oidc.PromptNone] == true {
+			// Never show sign-in, directly return error.
+			return nil, err
+		}
+
 		// Build login URL.
 		query, err := url.ParseQuery(req.URL.RawQuery)
 		if err != nil {
