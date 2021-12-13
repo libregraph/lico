@@ -4,6 +4,13 @@
 
 
 
+## v0.53.1 (2021-12-13)
+
+- Injecty identifier identity into context in token requests
+- Fix panic when client request has no client_id
+- Do not show sign-in screen when prompt=none when no user
+
+
 ## v0.53.0 (2021-12-01)
 
 - Add support for sessions when using the libregraph identifier backend
