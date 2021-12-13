@@ -400,6 +400,10 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 			}
 		}
 
+		if _, ok := identity.FromContext(req.Context()); !ok {
+			req = req.WithContext(identity.NewContext(req.Context(), auth))
+		}
+
 	case oidc.GrantTypeRefreshToken:
 		if tr.RefreshToken == nil {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, "missing refresh_token")
