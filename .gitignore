@@ -7,6 +7,7 @@
 !.gitlab-ci.yml
 !.env
 !.chglog
+!.dependabot.yml
 
 /vendor
 /bin
