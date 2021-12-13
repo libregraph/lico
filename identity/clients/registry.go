@@ -346,19 +346,21 @@ func (r *Registry) Get(ctx context.Context, clientID string) (*ClientRegistratio
 func (r *Registry) getDynamicClient(clientID string) (*ClientRegistration, bool) {
 	var registration *ClientRegistration
 
-	tokenString := clientID[len(DynamicStatelessClientIDPrefix):]
-	if token, err := jwt.ParseWithClaims(tokenString, &RegistrationClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if r.StatelessValidator == nil {
-			return nil, fmt.Errorf("no validator for dynamic client ids")
-		}
-		return r.StatelessValidator(token)
-	}); err == nil {
-		if claims, ok := token.Claims.(*RegistrationClaims); ok && token.Valid {
-			// TODO(longsleep): Add secure client secret.
-			registration = claims.ClientRegistration
-			registration.ID = clientID
-			registration.Secret = claims.StandardClaims.Subject
-			registration.Dynamic = true
+	if len(clientID) >= len(DynamicStatelessClientIDPrefix) {
+		tokenString := clientID[len(DynamicStatelessClientIDPrefix):]
+		if token, err := jwt.ParseWithClaims(tokenString, &RegistrationClaims{}, func(token *jwt.Token) (interface{}, error) {
+			if r.StatelessValidator == nil {
+				return nil, fmt.Errorf("no validator for dynamic client ids")
+			}
+			return r.StatelessValidator(token)
+		}); err == nil {
+			if claims, ok := token.Claims.(*RegistrationClaims); ok && token.Valid {
+				// TODO(longsleep): Add secure client secret.
+				registration = claims.ClientRegistration
+				registration.ID = clientID
+				registration.Secret = claims.StandardClaims.Subject
+				registration.Dynamic = true
+			}
 		}
 	}
 
