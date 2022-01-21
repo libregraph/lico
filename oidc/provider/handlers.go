@@ -815,7 +815,7 @@ done:
 			p.logger.WithError(err).Errorln("endsession request failed writing response")
 		}
 	} else {
-		p.Found(rw, uri, response, false)
+		p.Found(rw, uri, nil, false)
 	}
 }
 
