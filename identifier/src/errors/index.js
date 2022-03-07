@@ -10,27 +10,27 @@ export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATE = 'konnect.error.http.unexpect
 // Translatable error messages.
 const translations = defineMessages({
   [ERROR_LOGIN_VALIDATE_MISSINGUSERNAME]: {
-    id: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
+    id: 'konnect.error.login.validate.missingUsername',
     defaultMessage: 'Enter a valid {what}.'
   },
   [ERROR_LOGIN_VALIDATE_MISSINGPASSWORD]: {
-    id: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
+    id: 'konnect.error.login.validate.missingPassword',
     defaultMessage: 'Enter your password.'
   },
   [ERROR_LOGIN_FAILED]: {
-    id: ERROR_LOGIN_FAILED,
+    id: 'konnect.error.login.failed',
     defaultMessage: 'Logon failed. Please verify your credentials and try again.'
   },
   [ERROR_HTTP_NETWORK_ERROR]: {
-    id: ERROR_HTTP_NETWORK_ERROR,
+    id: 'konnet.error.http.networkError',
     defaultMessage: 'Network error. Please check your connection and try again.'
   },
   [ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS]: {
-    id: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
+    id: 'konnect.error.http.unexpectedResponseStatus',
     defaultMessage: 'Unexpected HTTP response: {status}. Please check your connection and try again.'
   },
   [ERROR_HTTP_UNEXPECTED_RESPONSE_STATE]: {
-    id: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
+    id: 'konnect.error.http.unexpectedResponseState',
     defaultMessage: 'Unexpected response state: {state}'
   }
 });
