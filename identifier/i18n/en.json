@@ -1,19 +1,4 @@
 {
-  "9pBa/R": {
-    "defaultMessage": "Enter a password"
-  },
-  "RqphQQ": {
-    "defaultMessage": "Network error. Please check your connection and try again."
-  },
-  "c5Ty8T": {
-    "defaultMessage": "Enter an username"
-  },
-  "f3MCem": {
-    "defaultMessage": "Unexpected HTTP response: {status}. Please check your connection and try again."
-  },
-  "hLSkha": {
-    "defaultMessage": "Logon failed. Please verify your credentials and try again."
-  },
   "konnect.chooseaccount.headline": {
     "defaultMessage": "Choose an account"
   },
@@ -46,6 +31,21 @@
   },
   "konnect.consent.tooltip.client": {
     "defaultMessage": "Clicking \"Allow\" will redirect you to: {redirectURI}"
+  },
+  "konnect.error.http.unexpectedResponseState": {
+    "defaultMessage": "Unexpected response state: {state}"
+  },
+  "konnect.error.http.unexpectedResponseStatus": {
+    "defaultMessage": "Unexpected HTTP response: {status}. Please check your connection and try again."
+  },
+  "konnect.error.login.failed": {
+    "defaultMessage": "Logon failed. Please verify your credentials and try again."
+  },
+  "konnect.error.login.validate.missingPassword": {
+    "defaultMessage": "Enter your password."
+  },
+  "konnect.error.login.validate.missingUsername": {
+    "defaultMessage": "Enter a valid {what}."
   },
   "konnect.goodbye.confirm.headline": {
     "defaultMessage": "Hello {displayName}"
@@ -83,7 +83,7 @@
   "konnect.login.retryButton.label": {
     "defaultMessage": "Retry"
   },
-  "konnect.login.usernameField.label": {
+  "konnect.login.usernameField.placeholder": {
     "defaultMessage": "Username"
   },
   "konnect.scopeDescription.aliasBasic": {
@@ -104,19 +104,7 @@
   "konnect.welcome.signoutButton.label": {
     "defaultMessage": "Sign out"
   },
-  "kpop.loader.error.message": {
-    "defaultMessage": "Error!"
-  },
-  "kpop.loader.loading.message": {
-    "defaultMessage": "Loading..."
-  },
-  "kpop.loader.longtime.message": {
-    "defaultMessage": "Taking a long time..."
-  },
-  "kpop.loader.retry": {
-    "defaultMessage": "retry"
-  },
-  "rfDUoy": {
-    "defaultMessage": "Unexpected response state: {state}"
+  "konnet.error.http.networkError": {
+    "defaultMessage": "Network error. Please check your connection and try again."
   }
 }
