@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
-"POT-Creation-Date: 2022-03-09T10:29:32.094Z\n"
+"POT-Creation-Date: 2022-03-09T16:52:23.560Z\n"
 "PO-Revision-Date: 2022-03-09 11:22+0100\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: \n"
@@ -161,7 +161,7 @@ msgstr ""
 
 #. From: konnect##welcome##headline
 #: konnect##welcome##headline
-msgid "Welcome {displayName}"
+msgid "Welcome {{displayName}}"
 msgstr ""
 
 #. From: konnect##welcome##message
