@@ -23,14 +23,14 @@ json:
 	done
 	$(YARN) node i18n/build-json.js src/locales/locales.json $(POS)
 
-dev-translations.json: FORCE
+dev-translation.json: FORCE
 	$(YARN) i18next --fail-on-warnings
 
 .PHONY: extract
 extract: pot
 
 .PHONY: pot
-pot: dev-translations.json
+pot: dev-translation.json
 	@tmpfile1=$(shell mktemp).po; \
 	tmpfile2=$(shell mktemp).po; \
 	trap 'rm -f "$$tmpfile1" "$$tmpfile2"' EXIT; \

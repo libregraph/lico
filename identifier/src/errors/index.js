@@ -40,7 +40,7 @@ function ErrorMessageComponent(props) {
 
   switch (messageDescriptor.id) {
     case ERROR_LOGIN_VALIDATE_MISSINGUSERNAME:
-      return t("konnect.error.login.validate.missingUsername", "Enter a valid {{what}}.", values);
+      return t("konnect.error.login.validate.missingUsername", "Enter a valid value.", values);
     case ERROR_LOGIN_VALIDATE_MISSINGPASSWORD:
       return t("konnect.error.login.validate.missingPassword", "Enter your password.");
     case ERROR_LOGIN_FAILED:

@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import renderIf from 'render-if';
 
@@ -58,8 +58,9 @@ function Login(props) {
     classes,
     username,
     password,
-    t,
   } = props;
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (hello && hello.state && history.action !== 'PUSH') {
@@ -87,7 +88,22 @@ function Login(props) {
     });
   };
 
-  const usernamePlaceHolder = hello?.details?.branding?.usernameHintText ? hello.details.branding.usernameHintText : t("konnect.login.usernameField.placeholder", "Username");
+  const usernamePlaceHolder = useMemo(() => {
+    if (hello?.details?.branding?.usernameHintText ) {
+      switch (hello.details.branding.usernameHintText) {
+        case "Username":
+          break;
+        case "Email":
+          return t("konnect.login.usernameField.placeholder.email", "Email");
+        case "Identity":
+          return t("konnect.login.usernameField.placeholder.identity", "Identity");
+        default:
+          return hello.details.branding.usernameHintText;
+      }
+    }
+
+    return t("konnect.login.usernameField.placeholder.username", "Username");
+  }, [hello, t]);
 
   return (
     <DialogContent>
@@ -99,7 +115,7 @@ function Login(props) {
         <TextField
           placeholder={usernamePlaceHolder}
           error={!!errors.username}
-          helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder.charAt(0).toLowerCase() + usernamePlaceHolder.slice(1)}}></ErrorMessage>}
+          helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}}></ErrorMessage>}
           fullWidth
           margin="dense"
           autoFocus
@@ -151,7 +167,6 @@ function Login(props) {
 
 Login.propTypes = {
   classes: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired,
 
   loading: PropTypes.string.isRequired,
   username: PropTypes.string.isRequired,
@@ -180,4 +195,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Login)));
+export default connect(mapStateToProps)(withStyles(styles)(Login));
