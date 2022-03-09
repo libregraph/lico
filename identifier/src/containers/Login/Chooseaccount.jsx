@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { FormattedMessage } from 'react-intl';
+import { withTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
@@ -45,7 +45,7 @@ class Chooseaccount extends React.PureComponent {
   }
 
   render() {
-    const { loading, errors, classes, hello } = this.props;
+    const { loading, errors, classes, hello, t } = this.props;
 
     let errorMessage = null;
     if (errors.http) {
@@ -62,11 +62,10 @@ class Chooseaccount extends React.PureComponent {
     return (
       <DialogContent className={classes.content}>
         <Typography variant="h5" component="h3">
-          <FormattedMessage id="konnect.chooseaccount.headline" defaultMessage="Choose an account"></FormattedMessage>
+          {t("konnect.chooseaccount.headline", "Choose an account")}
         </Typography>
         <Typography variant="subtitle1" className={classes.subHeader}>
-          <FormattedMessage id="konnect.chooseaccount.subHeader" defaultMessage="to sign in">
-          </FormattedMessage>
+          {t("konnect.chooseaccount.subHeader", "to sign in")}
         </Typography>
 
         <form action="" onSubmit={(event) => this.logon(event)}>
@@ -89,16 +88,12 @@ class Chooseaccount extends React.PureComponent {
             >
               <ListItemAvatar>
                 <Avatar>
-                  <FormattedMessage id="konnect.chooseaccount.useOther.persona.label" defaultMessage="?">
-                  </FormattedMessage>
+                  {t("konnect.chooseaccount.useOther.persona.label", "?")}
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
                 primary={
-                  <FormattedMessage
-                    id="konnect.chooseaccount.useOther.label"
-                    defaultMessage="Use another account">
-                  </FormattedMessage>
+                  t("konnect.chooseaccount.useOther.label", "Use another account")
                 }
               />
             </ListItem>
@@ -131,6 +126,7 @@ class Chooseaccount extends React.PureComponent {
 
 Chooseaccount.propTypes = {
   classes: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 
   loading: PropTypes.string.isRequired,
   errors: PropTypes.object.isRequired,
@@ -151,4 +147,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(Chooseaccount));
+export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Chooseaccount)));

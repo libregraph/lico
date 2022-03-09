@@ -2,8 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
+import { withTranslation } from 'react-i18next';
+
 import renderIf from 'render-if';
-import { FormattedMessage } from 'react-intl';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -30,7 +31,7 @@ class Goodbyescreen extends React.PureComponent {
   }
 
   render() {
-    const { classes, branding, hello } = this.props;
+    const { classes, branding, hello, t } = this.props;
 
     const loading = hello === null;
     return (
@@ -38,39 +39,27 @@ class Goodbyescreen extends React.PureComponent {
         {renderIf(hello !== null && !hello.state)(() => (
           <div>
             <Typography variant="h5" component="h3">
-              <FormattedMessage id="konnect.goodbye.headline" defaultMessage="Goodbye"></FormattedMessage>
+              {t("konnect.goodbye.headline", "Goodbye")}
             </Typography>
             <Typography variant="subtitle1" className={classes.subHeader}>
-              <FormattedMessage id="konnect.goodbye.subHeader"
-                defaultMessage="you have been signed out from your account">
-              </FormattedMessage>
+              {t("konnect.goodbye.subHeader", "you have been signed out from your account")}
             </Typography>
             <Typography gutterBottom>
-              <FormattedMessage id="konnect.goodbye.message.close"
-                defaultMessage="You can close this window now.">
-              </FormattedMessage>
+              {t("konnect.goodbye.message.close", "You can close this window now.")}
             </Typography>
           </div>
         ))}
         {renderIf(hello !== null && hello.state === true)(() => (
           <div>
             <Typography variant="h5" component="h3">
-              <FormattedMessage
-                id="konnect.goodbye.confirm.headline"
-                defaultMessage="Hello {displayName}"
-                values={{displayName: hello.displayName}}>
-              </FormattedMessage>
+              {t("konnect.goodbye.confirm.headline", "Hello {{displayName}}", { displayName: hello.displayName })}
             </Typography>
             <Typography variant="subtitle1" className={classes.subHeader}>
-              <FormattedMessage id="konnect.goodbye.confirm.subHeader"
-                defaultMessage="please confirm sign out">
-              </FormattedMessage>
+              {t("konnect.goodbye.confirm.subHeader", "please confirm sign out")}
             </Typography>
 
             <Typography gutterBottom>
-              <FormattedMessage id="konnect.goodbye.message.confirm"
-                defaultMessage="Press the button below, to sign out from your Kopano account now.">
-              </FormattedMessage>
+              {t("konnect.goodbye.message.confirm", "Press the button below, to sign out from your account now.")}
             </Typography>
 
             <DialogActions>
@@ -81,8 +70,7 @@ class Goodbyescreen extends React.PureComponent {
                   className={classes.button}
                   onClick={(event) => this.logoff(event)}
                 >
-                  <FormattedMessage id="konnect.goodbye.signoutButton.label"
-                    defaultMessage="Sign out"></FormattedMessage>
+                  {t("konnect.goodbye.signoutButton.label", "Sign out")}
                 </Button>
               </div>
             </DialogActions>
@@ -108,6 +96,7 @@ class Goodbyescreen extends React.PureComponent {
 
 Goodbyescreen.propTypes = {
   classes: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 
   branding: PropTypes.object,
   hello: PropTypes.object,
@@ -125,4 +114,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(Goodbyescreen));
+export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Goodbyescreen)));
