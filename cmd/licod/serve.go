@@ -97,6 +97,7 @@ func commandServe() *cobra.Command {
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultBannerLogo, "identifier-default-banner-logo", "", "Path to a default banner logo that appears on sign-in page.")
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultSignInPageText, "identifier-default-sign-in-page-text", "", "Default text that appears at the bottom of the sign-in box.")
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultUsernameHintText, "identifier-default-username-hint-text", "", "Default string that shows as the hint in the username textbox on the sign-in screen.")
+	serveCmd.Flags().StringArrayVar(&cfg.IdentifierUILocales, "identifier-ui-locale", nil, "Enabled user interface locales (can be used multiple times, if not set all supported locales are enabled)")
 	serveCmd.Flags().BoolVar(&cfg.Insecure, "insecure", false, "Disable TLS certificate and hostname validation")
 	serveCmd.Flags().StringArrayVar(&cfg.TrustedProxy, "trusted-proxy", nil, "Trusted proxy IP or IP network (can be used multiple times)")
 	serveCmd.Flags().StringArrayVar(&cfg.AllowScope, "allow-scope", nil, "Allow OAuth 2 scope (can be used multiple times, if not set default scopes are allowed)")

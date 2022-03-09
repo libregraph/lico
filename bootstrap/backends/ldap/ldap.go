@@ -123,6 +123,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		DefaultBannerLogo:       config.IdentifierDefaultBannerLogo,
 		DefaultSignInPageText:   config.IdentifierDefaultSignInPageText,
 		DefaultUsernameHintText: config.IdentifierDefaultUsernameHintText,
+		UILocales:               config.IdentifierUILocales,
 
 		Backend: identifierBackend,
 	})

@@ -33,6 +33,7 @@ const styles = theme => ({
   },
   actions: {
     marginTop: -40,
+    minHeight: 45,
     justifyContent: 'flex-start',
     paddingLeft: theme.spacing(3),
     paddingRight: theme.spacing(3)
@@ -73,7 +74,7 @@ const ResponsiveScreen = (props) => {
           {logo}
           {content}
         </div>
-        <DialogActions className={classes.actions} disableSpacing><LocaleSelect disableUnderline/></DialogActions>
+        {!loading && <DialogActions className={classes.actions} disableSpacing><LocaleSelect disableUnderline locales={branding?.locales}/></DialogActions>}
       </ResponsiveDialog>
     </Grid>
   );
