@@ -18,7 +18,9 @@
 package bsldap
 
 import (
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -87,9 +89,24 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		subMapping = strings.Split(subMappingString, " ")
 	}
 
+	// Use a clone here to avoid changing the config of other possible users of the config.
+	tlsConfig := config.TLSClientConfig.Clone()
+	if caCertFile := os.Getenv("LDAP_TLS_CACERT"); caCertFile != "" {
+		if pemBytes, err := ioutil.ReadFile(caCertFile); err == nil {
+			rpool, _ := x509.SystemCertPool()
+			if rpool.AppendCertsFromPEM(pemBytes) {
+				tlsConfig.RootCAs = rpool
+			} else {
+				return nil, fmt.Errorf("failed to append CA certificate(s) from '%s' to pool", caCertFile)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to read CA certificate(s) from '%s': %w", caCertFile, err)
+		}
+	}
+
 	identifierBackend, identifierErr := ldap.NewLDAPIdentifierBackend(
 		config.Config,
-		config.TLSClientConfig,
+		tlsConfig,
 		os.Getenv("LDAP_URI"),
 		os.Getenv("LDAP_BINDDN"),
 		os.Getenv("LDAP_BINDPW"),
