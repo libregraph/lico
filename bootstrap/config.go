@@ -50,6 +50,7 @@ type Config struct {
 	IdentifierDefaultBannerLogo       []byte
 	IdentifierDefaultSignInPageText   *string
 	IdentifierDefaultUsernameHintText *string
+	IdentifierUILocales               []string
 
 	EncryptionSecret []byte
 	SigningMethod    jwt.SigningMethod

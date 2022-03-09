@@ -42,6 +42,7 @@ type Config struct {
 	DefaultBannerLogo       []byte
 	DefaultSignInPageText   *string
 	DefaultUsernameHintText *string
+	UILocales               []string
 
 	Backend backends.Backend
 }
