@@ -18,10 +18,14 @@
     "@types/redux-logger": "^3.0.9",
     "axios": "^0.22.0",
     "classnames": "^2.2.6",
-    "query-string": "^5.0.1",
+    "i18next": "^21.6.13",
+    "i18next-browser-languagedetector": "^6.1.3",
+    "i18next-http-backend": "^1.3.2",
+    "i18next-resources-to-backend": "^1.0.0",
+    "query-string": "^7.1.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-intl": "^5.20.12",
+    "react-i18next": "^11.15.6",
     "react-redux": "^7.2.5",
     "react-router": "^5.2.1",
     "react-router-dom": "5.2.1",
@@ -44,9 +48,10 @@
     "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "devDependencies": {
-    "@formatjs/cli": "^4.3.1",
-    "@formatjs/ts-transformer": "^3.5.0",
-    "eslint-plugin-formatjs": "^2.17.8",
+    "cldr": "^7.1.1",
+    "eslint-plugin-i18next": "^5.1.2",
+    "i18next-conv": "^12.1.0",
+    "i18next-parser": "^5.4.0",
     "source-map-explorer": "^1.8.0",
     "yarn-deduplicate": "^1.1.1"
   },
@@ -57,12 +62,13 @@
   },
   "eslintConfig": {
     "plugins": [
-      "formatjs"
+      "i18next"
     ],
     "extends": [
       "react-app",
       "react-app/jest",
-      "plugin:@typescript-eslint/recommended"
+      "plugin:@typescript-eslint/recommended",
+      "plugin:i18next/recommended"
     ],
     "rules": {
       "no-unused-vars": "off",
@@ -73,7 +79,12 @@
       "@typescript-eslint/no-use-before-define": [
         "error"
       ],
-      "formatjs/no-offset": "error"
+      "i18next/no-literal-string": [
+        "off",
+        {
+          "markupOnly": true
+        }
+      ]
     }
   },
   "browserslist": {

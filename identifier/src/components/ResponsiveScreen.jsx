@@ -4,11 +4,13 @@ import classNames from 'classnames';
 
 import { withStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
+import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 
 import ResponsiveDialog from './ResponsiveDialog';
 import Logo from '../images/app-icon.svg';
 import Loading from './Loading';
+import LocaleSelect from './LocaleSelect';
 
 const styles = theme => ({
   root: {
@@ -71,6 +73,7 @@ const ResponsiveScreen = (props) => {
           {logo}
           {content}
         </div>
+        <DialogActions className={classes.actions} disableSpacing><LocaleSelect disableUnderline/></DialogActions>
       </ResponsiveDialog>
     </Grid>
   );
@@ -92,7 +95,6 @@ ResponsiveScreen.propTypes = {
   className: PropTypes.string,
   PaperProps: PropTypes.object,
   DialogProps: PropTypes.object
-
 };
 
 export default withStyles(styles)(ResponsiveScreen);

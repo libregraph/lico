@@ -24,3 +24,4 @@ yarn-error.log*
 
 # i18n
 src/locales/*.json
+src/locales/**/*.json

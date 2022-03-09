@@ -2,12 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
+import { withTranslation, Trans } from 'react-i18next';
+
 import renderIf from 'render-if';
-import { FormattedMessage } from 'react-intl';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
-import Tooltip from '@material-ui/core/Tooltip';
+import BaseTooltip from '@material-ui/core/Tooltip';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import green from '@material-ui/core/colors/green';
 import Typography from '@material-ui/core/Typography';
@@ -50,6 +51,12 @@ const styles = theme => ({
   }
 });
 
+const Tooltip = ({children, ...other } = {}) => {
+  // Ensures that there is only a single child for the tooltip element to
+  // make it compatible with the Trans component.
+  return <BaseTooltip {...other}><span>{children}</span></BaseTooltip>;
+}
+
 class Consent extends React.PureComponent {
   componentDidMount() {
     const { dispatch, hello, history, client } = this.props;
@@ -81,7 +88,7 @@ class Consent extends React.PureComponent {
   }
 
   render() {
-    const { classes, loading, hello, errors, client } = this.props;
+    const { classes, loading, hello, errors, client, t } = this.props;
 
     const scopes = hello.details.scopes || {};
     const meta = hello.details.meta || {};
@@ -89,52 +96,31 @@ class Consent extends React.PureComponent {
     return (
       <DialogContent>
         <Typography variant="h5" component="h3">
-          <FormattedMessage
-            id="konnect.consent.headline"
-            defaultMessage="Hi {displayName}"
-            values={{displayName: hello.displayName}}>
-          </FormattedMessage>
+          {t("konnect.consent.headline", "Hi {{displayName}}", { displayName: hello.displayName })}
         </Typography>
         <Typography variant="subtitle1" className={classes.subHeader}>
           {hello.username}
         </Typography>
 
         <Typography variant="subtitle1" gutterBottom>
-          <FormattedMessage
-            id="konnect.consent.message"
-            defaultMessage="{clientDisplayName} wants to"
-            values={{clientDisplayName:
-              <Tooltip
-                placement="bottom"
-                title={<FormattedMessage
-                  id="konnect.consent.tooltip.client"
-                  defaultMessage='Clicking "Allow" will redirect you to: {redirectURI}'
-                  values={{
-                    redirectURI: client.redirect_uri
-                  }}
-                ></FormattedMessage>}
-              >
-                <em><ClientDisplayName client={client}/></em>
-              </Tooltip>
-            }}
-          ></FormattedMessage>
+          <Trans t={t} i18nKey="konnect.consent.message">
+            <Tooltip
+              placement="bottom"
+              title={t("konnect.consent.tooltip.client", 'Clicking "Allow" will redirect you to: {{redirectURI}}', { redirectURI: client.redirect_uri })}
+            >
+              <em><ClientDisplayName client={client}/></em>
+            </Tooltip> wants to
+          </Trans>
         </Typography>
         <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta.scopes}></ScopesList>
 
         <Typography variant="subtitle1" gutterBottom>
-          <FormattedMessage
-            id="konnect.consent.question"
-            defaultMessage="Allow {clientDisplayName} to do this?"
-            values={{
-              clientDisplayName: <em><ClientDisplayName client={client}/></em>
-            }}
-          ></FormattedMessage>
+          <Trans t={t} i18nKey="konnect.consent.question">
+            Allow <em><ClientDisplayName client={client}/></em> to do this?
+          </Trans>
         </Typography>
         <Typography color="secondary">
-          <FormattedMessage
-            id="konnect.consent.consequence"
-            defaultMessage="By clicking Allow, you allow this app to use your information.">
-          </FormattedMessage>
+          {t("konnect.consent.consequence", "By clicking Allow, you allow this app to use your information.")}
         </Typography>
 
         <form action="" onSubmit={this.action(undefined, scopes)}>
@@ -147,7 +133,7 @@ class Consent extends React.PureComponent {
                 disabled={!!loading}
                 onClick={this.action(false, scopes)}
               >
-                <FormattedMessage id="konnect.consent.cancelButton.label" defaultMessage="Cancel"></FormattedMessage>
+                {t("konnect.consent.cancelButton.label", "Cancel")}
               </Button>
               {(loading && loading !== REQUEST_CONSENT_ALLOW) &&
                 <CircularProgress size={24} className={classes.buttonProgress} />}
@@ -161,7 +147,7 @@ class Consent extends React.PureComponent {
                 disabled={!!loading}
                 onClick={this.action(true, scopes)}
               >
-                <FormattedMessage id="konnect.consent.allowButton.label" defaultMessage="Allow"></FormattedMessage>
+                {t("konnect.consent.allowButton.label", "Allow")}
               </Button>
               {loading === REQUEST_CONSENT_ALLOW && <CircularProgress size={24} className={classes.buttonProgress} />}
             </div>
@@ -180,6 +166,7 @@ class Consent extends React.PureComponent {
 
 Consent.propTypes = {
   classes: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 
   loading: PropTypes.string.isRequired,
   errors: PropTypes.object.isRequired,
@@ -202,4 +189,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(Consent));
+export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Consent)));

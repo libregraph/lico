@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { FormattedMessage } from 'react-intl';
+import { withTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import LinearProgress from '@material-ui/core/LinearProgress';
@@ -34,7 +34,7 @@ const styles = theme => ({
 
 class Loading extends React.PureComponent {
   render() {
-    const { classes, error } = this.props;
+    const { classes, error, t } = this.props;
 
     return (
       <Grid container direction="column" alignItems="center" justifyContent="center" spacing={0} className={classes.root}>
@@ -45,8 +45,7 @@ class Loading extends React.PureComponent {
           {renderIf(error !== null)(() => (
             <div>
               <Typography variant="h5" gutterBottom align="center">
-                <FormattedMessage id="konnect.loading.error.headline" defaultMessage="Failed to connect to server">
-                </FormattedMessage>
+                {t("konnect.loading.error.headline", "Failed to connect to server")}
               </Typography>
               <Typography  gutterBottom align="center" color="error">
                 <ErrorMessage error={error}></ErrorMessage>
@@ -58,7 +57,7 @@ class Loading extends React.PureComponent {
                 className={classes.button}
                 onClick={(event) => this.retry(event)}
               >
-                <FormattedMessage id="konnect.login.retryButton.label" defaultMessage="Retry"></FormattedMessage>
+                {t("konnect.login.retryButton.label", "Retry")}
               </Button>
             </div>
           ))}
@@ -76,10 +75,11 @@ class Loading extends React.PureComponent {
 
 Loading.propTypes = {
   classes: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 
   error: PropTypes.object,
 
-  dispatch: PropTypes.func.isRequired
+  dispatch: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (state) => {
@@ -90,4 +90,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(Loading));
+export default connect(mapStateToProps)(withTranslation()(withStyles(styles)(Loading)));

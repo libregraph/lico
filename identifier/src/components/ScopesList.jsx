@@ -6,7 +6,7 @@ import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import Checkbox from '@material-ui/core/Checkbox';
 
-import { injectIntl, defineMessages, FormattedMessage } from 'react-intl';
+import { useTranslation } from 'react-i18next';
 
 const styles = () => ({
   row: {
@@ -15,19 +15,10 @@ const styles = () => ({
   }
 });
 
-const scopeIDTranslations = defineMessages({
-  'scope_alias_basic': {
-    id: 'konnect.scopeDescription.aliasBasic',
-    defaultMessage: 'Access your basic account information'
-  },
-  'scope_offline_access': {
-    id: 'konnect.scopeDescription.offlineAccess',
-    defaultMessage: 'Keep the allowed access persistently and forever'
-  }
-});
-
-const ScopesList = ({scopes, meta, classes, intl, ...rest}) => {
+const ScopesList = ({scopes, meta, classes, ...rest}) => {
   const { mapping, definitions } = meta;
+
+  const { t } = useTranslation();
 
   const rows = [];
   const known = {};
@@ -47,24 +38,23 @@ const ScopesList = ({scopes, meta, classes, intl, ...rest}) => {
       id = scope;
     }
     let definition = definitions[id];
-    let label ;
+    let label;
     if (definition) {
-      if (definition.id) {
-        const translation = scopeIDTranslations[definition.id];
-        if (translation) {
-          label = intl.formatMessage(translation);
-        }
+      switch (definition.id) {
+        case 'scope_alias_basic':
+          label = t("konnect.scopeDescription.aliasBasic", "Access your basic account information");
+          break;
+        case 'scope_offline_access':
+          label = t("konnect.scopeDescription.offlineAccess", "Keep the allowed access persistently and forever");
+          break;
+        default:
       }
       if (!label) {
         label = definition.description;
       }
     }
     if (!label) {
-      label = <FormattedMessage
-        id="konnect.scopeDescription.scope"
-        defaultMessage="Scope: {scope}"
-        values={{scope}}
-      />;
+      label = t("konnect.scopeDescription.scope", "Scope: {{scope}}", { scope });
     }
 
     rows.push(
@@ -92,10 +82,9 @@ const ScopesList = ({scopes, meta, classes, intl, ...rest}) => {
 
 ScopesList.propTypes = {
   classes: PropTypes.object.isRequired,
-  intl: PropTypes.object.isRequired,
 
   scopes: PropTypes.object.isRequired,
   meta: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(injectIntl(ScopesList));
+export default withStyles(styles)(ScopesList);

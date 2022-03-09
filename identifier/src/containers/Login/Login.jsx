@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
+import { withTranslation } from 'react-i18next';
+
 import renderIf from 'render-if';
-import { injectIntl, FormattedMessage, defineMessages } from 'react-intl';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -46,17 +47,6 @@ const styles = theme => ({
   }
 });
 
-const loginTranslations = defineMessages({
-  login_username_placeholder: {
-    id: 'konnect.login.usernameField.placeholder',
-    defaultMessage: 'Username'
-  },
-  login_password_placeholder: {
-    id: 'konnect.login.passwordField.label',
-    defaultMessage: 'Password'
-  },
-});
-
 function Login(props) {
   const {
     hello,
@@ -68,7 +58,7 @@ function Login(props) {
     classes,
     username,
     password,
-    intl,
+    t,
   } = props;
 
   useEffect(() => {
@@ -97,12 +87,12 @@ function Login(props) {
     });
   };
 
-  const usernamePlaceHolder = hello?.details?.branding?.usernameHintText ? hello.details.branding.usernameHintText : intl.formatMessage(loginTranslations.login_username_placeholder);
+  const usernamePlaceHolder = hello?.details?.branding?.usernameHintText ? hello.details.branding.usernameHintText : t("konnect.login.usernameField.placeholder", "Username");
 
   return (
     <DialogContent>
       <Typography variant="h5" component="h3" gutterBottom>
-        <FormattedMessage id="konnect.login.headline" defaultMessage="Sign in"></FormattedMessage>
+        {t("konnect.login.headline", "Sign in")}
       </Typography>
 
       <form action="" onSubmit={(event) => this.logon(event)}>
@@ -123,7 +113,7 @@ function Login(props) {
         />
         <TextField
           type="password"
-          placeholder={intl.formatMessage(loginTranslations.login_password_placeholder)}
+          placeholder={t("konnect.login.passwordField.label", "Password")}
           error={!!errors.password}
           helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
           fullWidth
@@ -141,7 +131,7 @@ function Login(props) {
               disabled={!!loading}
               onClick={handleNextClick}
             >
-              <FormattedMessage id="konnect.login.nextButton.label" defaultMessage="Next"></FormattedMessage>
+              {t("konnect.login.nextButton.label", "Next")}
             </Button>
             {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
           </div>
@@ -161,7 +151,7 @@ function Login(props) {
 
 Login.propTypes = {
   classes: PropTypes.object.isRequired,
-  intl: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 
   loading: PropTypes.string.isRequired,
   username: PropTypes.string.isRequired,
@@ -190,4 +180,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(injectIntl(Login)));
+export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Login)));

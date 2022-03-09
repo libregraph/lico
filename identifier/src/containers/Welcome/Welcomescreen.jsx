@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { FormattedMessage } from 'react-intl';
+import { withTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -24,25 +24,20 @@ const styles = theme => ({
 
 class Welcomescreen extends React.PureComponent {
   render() {
-    const { classes, branding, hello } = this.props;
+    const { classes, branding, hello, t } = this.props;
 
     const loading = hello === null;
     return (
       <ResponsiveScreen loading={loading} branding={branding}>
         <Typography variant="h5" component="h3">
-          <FormattedMessage
-            id="konnect.welcome.headline"
-            defaultMessage="Welcome {displayName}"
-            values={{displayName: hello.displayName}}>
-          </FormattedMessage>
+          {t("konnect.welcome.headline", "Welcome {{displayName}}", {displayName: hello.displayName})}
         </Typography>
         <Typography variant="subtitle1" className={classes.subHeader}>
           {hello.username}
         </Typography>
 
         <Typography gutterBottom>
-          <FormattedMessage id="konnect.welcome.message"
-            defaultMessage="You are signed in - awesome!"></FormattedMessage>
+          {t("konnect.welcome.message", "You are signed in - awesome!")}
         </Typography>
 
         <DialogActions>
@@ -52,7 +47,7 @@ class Welcomescreen extends React.PureComponent {
             variant="contained"
             onClick={(event) => this.logoff(event)}
           >
-            <FormattedMessage id="konnect.welcome.signoutButton.label" defaultMessage="Sign out"></FormattedMessage>
+            {t("konnect.welcome.signoutButton.label", "Sign out")}
           </Button>
         </DialogActions>
       </ResponsiveScreen>
@@ -74,6 +69,7 @@ class Welcomescreen extends React.PureComponent {
 
 Welcomescreen.propTypes = {
   classes: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 
   branding: PropTypes.object,
   hello: PropTypes.object,
@@ -91,4 +87,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(withStyles(styles)(Welcomescreen));
+export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Welcomescreen)));
