@@ -1,4 +1,5 @@
 module.exports = {
+  createOldCatalogs: false,
   input: [
     'src/**/*.{js,jsx,ts,tsx}',
     // Use ! to filter out files or directories
@@ -6,7 +7,8 @@ module.exports = {
     '!src/i18n/**',
     '!**/node_modules/**',
   ],
-  resetDefaultValueLocale: true,
+  resetDefaultValueLocale: 'dev',
   output: './i18n/$LOCALE-$NAMESPACE.json',
   locales: ['dev'],
+  verbose: true,
 }

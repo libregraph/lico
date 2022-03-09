@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2022-03-09T16:52:23.560Z\n"
-"PO-Revision-Date: 2022-03-09 18:50+0100\n"
+"POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
+"PO-Revision-Date: 2022-03-09 20:33+0100\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: German <http://translate.kopano.io/projects/kopano/konnect/de/>\n"
 "Language: de\n"
@@ -57,10 +57,15 @@ msgstr "Konto auswählen"
 msgid "Clicking \"Allow\" will redirect you to: {{redirectURI}}"
 msgstr "Wenn Sie \"Einverstanden\" klicken werden Sie zu {{redirectURI}} weitergeleitet"
 
+#. From: konnect##login##usernameField##placeholder##email
+#: konnect##login##usernameField##placeholder##email
+msgid "Email"
+msgstr "E-Mail"
+
 #. From: konnect##error##login##validate##missingUsername
 #: konnect##error##login##validate##missingUsername
-msgid "Enter a valid {{what}}."
-msgstr "Bitte {{what}} eingeben."
+msgid "Enter a valid value."
+msgstr "Geben Sie einen gültigen Wert ein."
 
 #. From: konnect##error##login##validate##missingPassword
 #: konnect##error##login##validate##missingPassword
@@ -86,6 +91,11 @@ msgstr "Hallo {{displayName}}"
 #: konnect##consent##headline
 msgid "Hi {{displayName}}"
 msgstr "Hallo {{displayName}}"
+
+#. From: konnect##login##usernameField##placeholder##identity
+#: konnect##login##usernameField##placeholder##identity
+msgid "Identity"
+msgstr "Identität"
 
 #. From: konnect##scopeDescription##offlineAccess
 #: konnect##scopeDescription##offlineAccess
@@ -154,8 +164,8 @@ msgstr "Unerwarteter Antwort-Status: {{state}}"
 msgid "Use another account"
 msgstr "Anderes Konto"
 
-#. From: konnect##login##usernameField##placeholder
-#: konnect##login##usernameField##placeholder
+#. From: konnect##login##usernameField##placeholder##username
+#: konnect##login##usernameField##placeholder##username
 msgid "Username"
 msgstr "Benutzername"
 
