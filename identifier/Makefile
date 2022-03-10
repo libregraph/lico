@@ -48,7 +48,7 @@ vendor: .yarninstall
 
 .PHONY: licenses
 licenses:
-	echo "## Konnect identifier webapp\n"
+	echo "## LibreGraph Connect identifier web app\n"
 	@$(YARN) run  -s licenses
 
 .PHONY: clean ; $(info cleaning identifier Webapp ...)	@
