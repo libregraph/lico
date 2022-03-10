@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
 	"stash.kopano.io/kgol/oidc-go"
@@ -304,6 +304,12 @@ func NewLDAPIdentifierBackend(
 	case "ldaps":
 		if uri.Port() == "" {
 			addr += ":636"
+		}
+		// To be able to verify the servers TLS certificate we need to set the
+		// server's hostname. (Normally tls.DialWithDialer() would take care of
+		// that, but we're not using that in LDAPIdentifierBackend.connect())
+		if !tlsConfig.InsecureSkipVerify && tlsConfig.ServerName == "" {
+			tlsConfig.ServerName = uri.Hostname()
 		}
 		isTLS = true
 	default:
