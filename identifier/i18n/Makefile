@@ -8,7 +8,7 @@ MSGFMT ?= msgfmt
 # Variables
 
 POT = translation.pot
-POS = $(wildcard *.po)
+POS ?= $(wildcard *.po)
 
 # Translations
 
