@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
-"PO-Revision-Date: 2022-03-09 20:33+0100\n"
+"PO-Revision-Date: 2022-03-10 09:40+0100\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: German <http://translate.kopano.io/projects/kopano/konnect/de/>\n"
 "Language: de\n"
@@ -125,7 +125,7 @@ msgstr "Passwort"
 #. From: konnect##goodbye##message##confirm
 #: konnect##goodbye##message##confirm
 msgid "Press the button below, to sign out from your account now."
-msgstr "Klicken Sie auf die Schaltfläche unten um sich aus Ihrem Kopano Konto abzumelden."
+msgstr "Klicken Sie auf die Schaltfläche unten um sich aus Ihrem Konto abzumelden."
 
 #. From: konnect##login##retryButton##label
 #: konnect##login##retryButton##label
