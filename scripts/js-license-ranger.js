@@ -3,7 +3,7 @@
  * js-license-ranger. A simple script to generate a 3rd party license file out
  * of javascript bundles. Requires https://www.npmjs.com/package/source-map-explorer.
  *
- * Copyright 2018 Kopano and its licensors
+ * Copyright 2018-2022 Kopano and its licensors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +20,16 @@
  *
  */
 
-'use strict';
+/* eslint-disable no-console, strict */
 
-/* eslint-disable no-console */
+'use strict';
 
 const fs = require('fs'),
   glob = require('glob'),
   path = require('path'),
   sourcemapExplorer = require('source-map-explorer');
 
-const version = '20191220-1'; // eslint-disable-line
+const version = '20220310-1'; // eslint-disable-line
 
 const licenseFilenames = [
   'LICENSE',
@@ -64,8 +64,11 @@ function findModuleViaPackageJSON(mp) {
 
 function findLicense(mp) {
   const json = JSON.parse(fs.readFileSync(mp + '/package.json', 'utf-8'));
-  if (json.type === 'module' && Object.keys(json).length === 1) {
-    return;
+  if (json.type === 'module') {
+    delete json['version'];
+    if (Object.keys(json).length === 1) {
+      return;
+    }
   }
   if (json.module && json.module.indexOf('../') === 0) {
     return;
@@ -157,7 +160,7 @@ function printLicensesDocument(modules) {
     const key = keys[i];
     const entry = modules[key];
     if (!entry) {
-      console.error('> skipped: ' + key);
+      console.error('> skipped' + key);
       continue;
     }
 
@@ -196,12 +199,16 @@ if (require.main === module) { // eslint-disable-line no-undef
   console.error('Bundles:', files);
 
   files.forEach((f) => {
-    console.error('> processing', f);
-    const data = sourcemapExplorer.loadSourceMap(f, `${f}.map`);
-    const sizes = sourcemapExplorer.computeGeneratedFileSizes(data.mapConsumer, data.jsData);
+    if (fs.existsSync(`${f}.map`)) {
+      console.error('> processing', f);
+      const data = sourcemapExplorer.loadSourceMap(f, `${f}.map`);
+      const sizes = sourcemapExplorer.computeGeneratedFileSizes(data.mapConsumer, data.jsData);
 
-    const files = sourcemapExplorer.adjustSourcePaths(sizes.files, false);
-    updateThirdPartyModules(modules, files);
+      const files = sourcemapExplorer.adjustSourcePaths(sizes.files, false);
+      updateThirdPartyModules(modules, files);
+    } else {
+      console.warn('> skipped', f, '(no map file)');
+    }
   });
 
   console.error(`Found: ${Object.keys(modules).length} modules`);
