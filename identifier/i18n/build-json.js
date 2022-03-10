@@ -17,15 +17,34 @@ function localeCapitalize(s, locale) {
 }
 
 function Locale(locale, overrides={}) {
-  const [code, country] = locale.split('-', 2);
+  let ietf = null;
+  let [code, country] = locale.split('-', 2);
+  switch(locale) {
+    // Additional mapping.
+    case 'zh-CN':
+      code = 'zh_hans';
+      ietf = code;
+      country = null;
+      break;
+    case 'zh-TW':
+      code = 'zh_hant';
+      ietf = code;
+      country = null;
+      break;
+    default:
+  }
+  overrides = ietf ? {
+    ietf,
+    ...overrides,
+  } : overrides;
 
   const languageDisplayNames = cldr.extractLanguageDisplayNames(code);
   if (languageDisplayNames) {
     let name = localeCapitalize(englishLanguageDisplayNames[code], 'en');
-    let nativeName = localeCapitalize(languageDisplayNames[code], code);
+    let nativeName = localeCapitalize(languageDisplayNames[code], locale);
     if (name && nativeName) {
       if (country) {
-        let countryNative = localeCapitalize(cldr.extractTerritoryDisplayNames(code)[country], code);
+        let countryNative = localeCapitalize(cldr.extractTerritoryDisplayNames(code)[country], locale);
         nativeName = `${nativeName} (${countryNative})`;
         name = `${name} (${localeCapitalize(englishTerritoryDisplayNames[country], 'en')})`;
       }
