@@ -8,6 +8,12 @@ import queryString from 'query-string';
 
 import locales from './locales';
 
+const config = {
+  uiLocalesQueryName: 'ui_locales', // Same as OIDC uses.
+  uiLocaleCookieName: 'ui_locale',  // For domain wide syncing, not set here.
+  uiLocaleLocalStorageName: 'lico.identifier_ui_locale', // Sufficiently unique, set here.
+}
+
 const supportedLanguages = locales.map((locale) => {
   return locale.locale;
 });
@@ -16,7 +22,7 @@ const queryUiLocalesDetector: CustomDetector = {
   name: 'queryUiLocales',
   lookup: (options): string | string[] | undefined => {
     const query = queryString.parse(document.location.search);
-    const ui_locales = query.ui_locales;
+    const ui_locales = query[config.uiLocalesQueryName];
     if (!ui_locales) {
       return;
     }
@@ -60,8 +66,9 @@ i18n
 
     detection: {
       /* https://github.com/i18next/i18next-browser-languageDetector */
-      order: [queryUiLocalesDetector.name, 'localStorage', 'navigator'],
-      lookupLocalStorage: 'ui_locales',
+      order: [queryUiLocalesDetector.name, 'cookie', 'localStorage', 'navigator'],
+      lookupCookie: config.uiLocaleCookieName,
+      lookupLocalStorage: config.uiLocaleLocalStorageName,
       caches: ['localStorage'],
     },
 
