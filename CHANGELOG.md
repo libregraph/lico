@@ -4,7 +4,30 @@
 
 
 
-## v0.53.1 (2021-12-13)
+## v0.54.0 (2022-02-15)
+
+- Bump follow-redirects from 1.14.4 to 1.14.8 in /identifier
+- Bump github.com/crewjam/saml to v0.4.6
+- Server Servername on TLS config
+- Allow to set a CA certificate for LDAPS connections
+- Use LibreGraph branded names when generating 3rd-party license overview
+- Update JavaScript license ranger to latest version
+- Add identifier i18n via ietf code to support Chinese better
+- Add cookie support for identifier locale selection
+- Allow i18n Makefile to operate on individual po files
+- Update German translation
+- Add support to limit the available identifier web app locales
+- Improve i18n of identifier web app
+- Bring back translations for German, French and Dutch
+- Update README to reflect LibreGraph
+- Update third party dependencies
+- Bring back i18n for identifier web app
+- Use fixed translation ids for error messages
+- Avoid adding state twice to endsession callback URL query
+- Enable dependabot for Go modules
+
+
+## v0.53.1 (2021-12-20)
 
 - Injecty identifier identity into context in token requests
 - Fix panic when client request has no client_id
