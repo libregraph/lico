@@ -374,12 +374,16 @@ func (ar *saml2AuthorityRegistration) MakeRedirectAuthenticationRequestURL(state
 		return nil, nil, errors.New("not ready")
 	}
 
-	authReq, err := ar.serviceProvider.MakeAuthenticationRequest(ar.serviceProvider.GetSSOBindingLocation(saml.HTTPRedirectBinding))
+	authReq, err := ar.serviceProvider.MakeAuthenticationRequest(ar.serviceProvider.GetSSOBindingLocation(saml.HTTPRedirectBinding), saml.HTTPRedirectBinding, saml.HTTPPostBinding)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	uri := authReq.Redirect(state)
+	uri, err := authReq.Redirect(state, ar.serviceProvider)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return uri, map[string]interface{}{
 		"rid": authReq.ID,
 	}, nil
@@ -601,7 +605,11 @@ func getCertsFromMetadata(md *saml.EntityDescriptor, use string) ([]*x509.Certif
 	for _, idpSSODescriptor := range md.IDPSSODescriptors {
 		for _, keyDescriptor := range idpSSODescriptor.KeyDescriptors {
 			if keyDescriptor.Use == use {
-				certStrs = append(certStrs, keyDescriptor.KeyInfo.Certificate)
+				for _, cert := range keyDescriptor.KeyInfo.X509Data.X509Certificates {
+					if cert.Data != "" {
+						certStrs = append(certStrs, cert.Data)
+					}
+				}
 			}
 		}
 	}
@@ -610,8 +618,12 @@ func getCertsFromMetadata(md *saml.EntityDescriptor, use string) ([]*x509.Certif
 	if len(certStrs) == 0 {
 		for _, idpSSODescriptor := range md.IDPSSODescriptors {
 			for _, keyDescriptor := range idpSSODescriptor.KeyDescriptors {
-				if keyDescriptor.Use == "" && keyDescriptor.KeyInfo.Certificate != "" {
-					certStrs = append(certStrs, keyDescriptor.KeyInfo.Certificate)
+				if keyDescriptor.Use == "" {
+					for _, cert := range keyDescriptor.KeyInfo.X509Data.X509Certificates {
+						if cert.Data != "" {
+							certStrs = append(certStrs, cert.Data)
+						}
+					}
 					break
 				}
 			}

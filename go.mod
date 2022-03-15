@@ -7,7 +7,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cevaris/ordered_map v0.0.0-20190319150403-3adeae072e73
 	github.com/crewjam/httperr v0.2.0
-	github.com/crewjam/saml v0.4.5
+	github.com/crewjam/saml v0.4.6
 	github.com/deckarep/golang-set v1.7.1
 	github.com/gabriel-vasile/mimetype v1.4.0
 	github.com/ghodss/yaml v1.0.0
@@ -18,7 +18,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/longsleep/go-metrics v1.0.0
-	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mendsley/gojwk v0.0.0-20141217222730-4d5ec6e58103
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
