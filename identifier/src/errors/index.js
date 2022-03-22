@@ -40,7 +40,7 @@ function ErrorMessageComponent(props) {
 
   switch (messageDescriptor.id) {
     case ERROR_LOGIN_VALIDATE_MISSINGUSERNAME:
-      return t("konnect.error.login.validate.missingUsername", "Enter a valid value.", values);
+      return t("konnect.error.login.validate.missingUsername", "Enter a valid value.", messageDescriptor.values);
     case ERROR_LOGIN_VALIDATE_MISSINGPASSWORD:
       return t("konnect.error.login.validate.missingPassword", "Enter your password.");
     case ERROR_LOGIN_FAILED:
@@ -48,14 +48,14 @@ function ErrorMessageComponent(props) {
     case ERROR_HTTP_NETWORK_ERROR:
       return t("konnect.error.http.networkError", "Network error. Please check your connection and try again.");
     case ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS:
-      return t("konnect.error.http.unexpectedResponseStatus", "Unexpected HTTP response: {{status}}. Please check your connection and try again.");
+      return t("konnect.error.http.unexpectedResponseStatus", "Unexpected HTTP response: {{status}}. Please check your connection and try again.", messageDescriptor.values);
     case ERROR_HTTP_UNEXPECTED_RESPONSE_STATE:
-      return t("konnect.error.http.unexpectedResponseState", "Unexpected response state: {{state}}", values);
+      return t("konnect.error.http.unexpectedResponseState", "Unexpected response state: {{state}}", messageDescriptor.values);
     default:
   }
 
   const f = t;
-  return f(messageDescriptor.defaultMessage, values);
+  return f(messageDescriptor.defaultMessage, messageDescriptor.values);
 }
 
 export const ErrorMessage = withTranslation()(ErrorMessageComponent);
