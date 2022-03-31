@@ -4,7 +4,13 @@
 
 
 
-## v0.54.0 (2022-02-15)
+## v0.54.1 (2022-03-25)
+
+- Update dependencies and move to different uuid package
+- Interpolate identifier error message translations correctly
+
+
+## v0.54.0 (2022-03-15)
 
 - Bump follow-redirects from 1.14.4 to 1.14.8 in /identifier
 - Bump github.com/crewjam/saml to v0.4.6
