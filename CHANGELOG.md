@@ -4,7 +4,13 @@
 
 
 
-## v0.54.1 (2022-03-25)
+## v0.55.0 (2022-04-13)
+
+- Update to current browserlist database
+- Bump to require Go 1.18
+
+
+## v0.54.1 (2022-03-31)
 
 - Update dependencies and move to different uuid package
 - Interpolate identifier error message translations correctly
