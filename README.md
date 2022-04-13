@@ -40,7 +40,7 @@ combine the implementation details.
 
 ## Build dependencies
 
-Make sure you have Go 1.16 or later installed. This project uses Go Modules.
+Make sure you have Go 1.18 or later installed. This project uses Go Modules.
 
 Lico also includes a modern web app which requires a couple of additional
 build dependencies which are furthermore also assumed to be in your $PATH.

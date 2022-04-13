@@ -53,7 +53,10 @@ ASMFLAGS ?=
 GCFLAGS  ?=
 
 .PHONY: all
-all: fmt vendor | $(CMDS) identifier-webapp
+all: vendor | $(CMDS) identifier-webapp
+
+.PHONY: commands
+commands: $(CMDS)
 
 .PHONY: $(CMDS)
 $(CMDS): vendor ; $(info building $@ ...) @
@@ -157,12 +160,13 @@ dlv: ; $(info attaching Delve debugger ...)
 
 # Mod
 
+.PHONY: go.sum
 go.sum: go.mod ; $(info updating dependencies ...)
 	@$(GO) mod tidy -v
 	@touch $@
 
 .PHONY: vendor
-vendor: go.sum ; $(info retrieving dependencies ...)
+vendor: go.mod ; $(info retrieving dependencies ...)
 	@$(GO) mod vendor -v
 	@touch $@
 
