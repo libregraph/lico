@@ -28,6 +28,7 @@ import (
 	"github.com/libregraph/lico/identifier"
 	"github.com/libregraph/lico/identifier/backends/libregraph"
 	"github.com/libregraph/lico/identity"
+	identityClients "github.com/libregraph/lico/identity/clients"
 	"github.com/libregraph/lico/identity/managers"
 )
 
@@ -84,11 +85,19 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		}
 	}
 
+	var clients *identityClients.Registry
+	if clientsRecord, ok := bs.Managers().Get("clients"); ok {
+		clients = clientsRecord.(*identityClients.Registry)
+	} else {
+		return nil, fmt.Errorf("clients manager not found but is required")
+	}
+
 	identifierBackend, identifierErr := libregraph.NewLibreGraphIdentifierBackend(
 		config.Config,
 		config.TLSClientConfig,
 		defaultURI,
 		scopedURIs,
+		clients,
 	)
 	if identifierErr != nil {
 		return nil, fmt.Errorf("failed to create identifier backend: %v", identifierErr)

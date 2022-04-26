@@ -340,6 +340,7 @@ func (bs *bootstrap) setup(ctx context.Context, settings *Settings) error {
 	if err != nil {
 		return err
 	}
+	bs.managers = managers
 
 	identityManager, err := bs.setupIdentity(ctx, settings)
 	if err != nil {
@@ -371,7 +372,6 @@ func (bs *bootstrap) setup(ctx context.Context, settings *Settings) error {
 		return fmt.Errorf("failed to initialize provider metadata: %v", err)
 	}
 
-	bs.managers = managers
 	return nil
 }
 

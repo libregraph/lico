@@ -153,6 +153,14 @@ func (p *Provider) AuthorizeHandler(rw http.ResponseWriter, req *http.Request) {
 		goto done
 	}
 
+	// Inject implicit scopes set by client registration.
+	if registration, _ := p.clients.Get(req.Context(), ar.ClientID); registration != nil {
+		err = registration.ApplyImplicitScopes(ar.Scopes)
+		if err != nil {
+			p.logger.WithError(err).Debugln("failed to apply implicit scopes")
+		}
+	}
+
 	// Find session if any, ignoring errors.
 	ar.Session, err = p.getSession(req)
 	if err != nil {
