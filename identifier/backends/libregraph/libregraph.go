@@ -37,6 +37,7 @@ import (
 	"github.com/libregraph/lico/identifier"
 	"github.com/libregraph/lico/identifier/backends"
 	"github.com/libregraph/lico/identifier/meta/scopes"
+	identityClients "github.com/libregraph/lico/identity/clients"
 	"github.com/libregraph/lico/utils"
 )
 
@@ -73,6 +74,8 @@ type LibreGraphIdentifierBackend struct {
 
 	baseURLMap          *ordered_map.OrderedMap
 	useMultipleBackends bool
+
+	clients *identityClients.Registry
 }
 
 type libreGraphUser struct {
@@ -247,6 +250,7 @@ func NewLibreGraphIdentifierBackend(
 	tlsConfig *tls.Config,
 	baseURI string,
 	baseURIByScope *ordered_map.OrderedMap,
+	clients *identityClients.Registry,
 ) (*LibreGraphIdentifierBackend, error) {
 
 	if baseURI == "" {
@@ -288,6 +292,8 @@ func NewLibreGraphIdentifierBackend(
 
 		baseURLMap:          baseURLMap,
 		useMultipleBackends: baseURLMap.Len() > 1,
+
+		clients: clients,
 	}
 
 	b.logger.WithField("map", baseURLMap).Infoln("libregraph server identified backend connection set up")
@@ -307,6 +313,15 @@ func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, usern
 	var requestedScopes map[string]bool
 	if record != nil {
 		requestedScopes = record.HelloRequest.Scopes
+	}
+
+	// Inject implicit scopes set by client registration. This is needed here,
+	// as the requested scopes might not have the implicit scopes applied yet,
+	// based on the calling stack chain and since we use the scopes to select
+	// the backend.
+	registration, _ := b.clients.Get(ctx, audience)
+	if registration != nil {
+		_ = registration.ApplyImplicitScopes(requestedScopes)
 	}
 
 	selectedScope, meURL := b.getMeURL(requestedScopes)

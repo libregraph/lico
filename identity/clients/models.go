@@ -52,6 +52,8 @@ type ClientRegistration struct {
 	TrustedScopes []string `yaml:"trusted_scopes" json:"-"`
 	Insecure      bool     `yaml:"insecure" json:"-"`
 
+	ImplicitScopes []string `yaml:"implicit_scopes" json:"-"`
+
 	Dynamic         bool  `yaml:"-" json:"-"`
 	IDIssuedAt      int64 `yaml:"-" json:"-"`
 	SecretExpiresAt int64 `yaml:"-" json:"-"`
@@ -184,6 +186,17 @@ func (cr *ClientRegistration) SetDynamic(ctx context.Context, creator func(ctx c
 	cr.ID = DynamicStatelessClientIDPrefix + id
 	cr.Secret = secret
 
+	return nil
+}
+
+// ApplyImplicitScopes apples the associated registration's implicit scopes to
+// the provided scopes map.
+func (cr *ClientRegistration) ApplyImplicitScopes(scopes map[string]bool) error {
+	for _, scope := range cr.ImplicitScopes {
+		if scope != "" {
+			scopes[scope] = true
+		}
+	}
 	return nil
 }
 

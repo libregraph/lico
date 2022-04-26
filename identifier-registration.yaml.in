@@ -13,6 +13,8 @@ clients:
 #  - id: playground-trusted.js
 #    name: Trusted OIDC Playground
 #    trusted: yes
+#    implicit_scopes:
+#        - Implicitly.Added
 #    application_type: web
 #    redirect_uris:
 #       - https://my-host:8509/
