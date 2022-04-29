@@ -91,7 +91,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 
 	// Use a clone here to avoid changing the config of other possible users of the config.
 	tlsConfig := config.TLSClientConfig.Clone()
-	if caCertFile := os.Getenv("LDAP_TLS_CACERT"); caCertFile != "" {
+	if caCertFile := os.Getenv("LDAP_TLS_CACERT"); caCertFile != "" && !tlsConfig.InsecureSkipVerify {
 		if pemBytes, err := ioutil.ReadFile(caCertFile); err == nil {
 			rpool, _ := x509.SystemCertPool()
 			if rpool.AppendCertsFromPEM(pemBytes) {
