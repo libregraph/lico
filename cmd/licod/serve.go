@@ -38,6 +38,7 @@ import (
 	"github.com/libregraph/lico/server"
 	"github.com/libregraph/lico/version"
 
+	cs3BackendSupport "github.com/libregraph/lico/bootstrap/backends/cs3"
 	dummyBackendSupport "github.com/libregraph/lico/bootstrap/backends/dummy"
 	guestBackendSupport "github.com/libregraph/lico/bootstrap/backends/guest"
 	kcBackendSupport "github.com/libregraph/lico/bootstrap/backends/kc"
@@ -53,7 +54,7 @@ func commandServe() *cobra.Command {
 		Short: "Start server and listen for requests",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				return fmt.Errorf("identity-manager argument missing, use one of kc, ldap, cookie, dummy")
+				return fmt.Errorf("identity-manager argument missing, use one of kc, ldap, cs3, cookie, dummy")
 			}
 
 			bootstrapConfig.IdentityManager = args[0]
@@ -64,6 +65,12 @@ func commandServe() *cobra.Command {
 				bootstrapConfig.CookieBackendURI = args[1]
 				cookieNames := args[2]
 				bootstrapConfig.CookieNames = strings.Split(cookieNames, " ")
+			}
+			if bootstrapConfig.IdentityManager == "cs3" {
+				if len(args) < 2 {
+					return fmt.Errorf("CS3 gateway-url required")
+				}
+				bootstrapConfig.CS3GatewayURI = args[1]
 			}
 
 			return nil
@@ -150,6 +157,7 @@ func serve(cmd *cobra.Command, args []string) error {
 	dummyBackendSupport.MustRegister()
 	kcBackendSupport.MustRegister()
 	libreGraphBackendSupport.MustRegister()
+	cs3BackendSupport.MustRegister()
 
 	// Boot our setup.
 	bs, err := bootstrap.Boot(ctx, bootstrapConfig, &config.Config{

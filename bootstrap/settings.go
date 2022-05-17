@@ -46,8 +46,12 @@ type Settings struct {
 	SigningMethod                     string
 	SigningPrivateKeyFiles            []string
 	ValidationKeysPath                string
-	CookieBackendURI                  string
-	CookieNames                       []string
+
+	CookieBackendURI string
+	CookieNames      []string
+
+	CS3GatewayURI string
+
 	AccessTokenDurationSeconds        uint64
 	IDTokenDurationSeconds            uint64
 	RefreshTokenDurationSeconds       uint64

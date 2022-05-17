@@ -7,6 +7,7 @@ require (
 	github.com/cevaris/ordered_map v0.0.0-20190319150403-3adeae072e73
 	github.com/crewjam/httperr v0.2.0
 	github.com/crewjam/saml v0.4.6
+	github.com/cs3org/go-cs3apis v0.0.0-20220512100524-551800f020d8
 	github.com/deckarep/golang-set v1.8.0
 	github.com/gabriel-vasile/mimetype v1.4.0
 	github.com/ghodss/yaml v1.0.0
@@ -27,6 +28,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
+	google.golang.org/grpc v1.46.2
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	stash.kopano.io/kgol/kcc-go/v5 v5.0.1
@@ -55,5 +57,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
