@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # go-license-ranger. A simple script to generate a 3rd party license file out o
 # a Go dependency tree. Requires [Go modules](https://github.com/golang/go/wiki/Modules), 
