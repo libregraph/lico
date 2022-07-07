@@ -4,6 +4,14 @@
 
 
 
+## v0.56.0 (2022-07-07)
+
+- Update oidc-go to v0.3.4
+- Retain issuer subpath when computing well-known configuration URI
+- Bump all internal Python scripts to run with Python 3
+- Add support for implicit scopes for server registered clients
+
+
 ## v0.55.0 (2022-04-13)
 
 - Update to current browserlist database
