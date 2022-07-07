@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -97,12 +98,15 @@ func newOIDCAuthorityRegistration(registry *Registry, registrationData *authorit
 		if ar.data.Iss == "" {
 			return nil, fmt.Errorf("oidc authority iss is empty")
 		}
-		if metadataEndpoint, mdeErr := url.Parse(ar.data.Iss); mdeErr == nil {
-			metadataEndpoint.Path = "/.well-known/openid-configuration"
-			ar.metadataEndpoint = metadataEndpoint
+		if issuer, err := url.Parse(ar.data.Iss); err == nil {
+			relativeWellKnownURI, parseErr := url.Parse(strings.TrimRight(issuer.Path, "/") + "/.well-known/openid-configuration")
+			if parseErr != nil {
+				return nil, parseErr
+			}
+			ar.metadataEndpoint = issuer.ResolveReference(relativeWellKnownURI)
 			ar.discover = true
 		} else {
-			return nil, fmt.Errorf("invalid iss value: %v", mdeErr)
+			return nil, fmt.Errorf("invalid iss value: %v", err)
 		}
 	}
 
