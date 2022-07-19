@@ -4,6 +4,11 @@
 
 
 
+## v0.56.1 (2022-07-19)
+
+- Fix HTTP2 support for libregraph backend connections
+
+
 ## v0.56.0 (2022-07-07)
 
 - Update oidc-go to v0.3.4
