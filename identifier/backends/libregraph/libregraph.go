@@ -275,6 +275,10 @@ func NewLibreGraphIdentifierBackend(
 		}
 	}
 
+	transport := utils.HTTPTransportWithTLSClientConfig(tlsConfig)
+	transport.MaxIdleConns = 100
+	transport.IdleConnTimeout = 30 * time.Second
+
 	b := &LibreGraphIdentifierBackend{
 		supportedScopes: supportedScopes,
 
@@ -282,12 +286,8 @@ func NewLibreGraphIdentifierBackend(
 		tlsConfig: tlsConfig,
 
 		client: &http.Client{
-			Transport: &http.Transport{
-				MaxIdleConns:    100,
-				IdleConnTimeout: 30 * time.Second,
-				TLSClientConfig: tlsConfig,
-			},
-			Timeout: 60 * time.Second,
+			Transport: transport,
+			Timeout:   60 * time.Second,
 		},
 
 		baseURLMap:          baseURLMap,
