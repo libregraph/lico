@@ -29,6 +29,7 @@ require (
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
+	sigs.k8s.io/yaml v1.3.0
 	stash.kopano.io/kgol/kcc-go/v5 v5.0.1
 	stash.kopano.io/kgol/ksurveyclient-go v0.6.1
 	stash.kopano.io/kgol/oidc-go v0.3.4

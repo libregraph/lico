@@ -596,6 +596,8 @@ honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
+sigs.k8s.io/yaml v1.3.0 h1:a2VclLzOGrwOHDiV8EfBGhvjHvP46CtW5j6POvhYGGo=
+sigs.k8s.io/yaml v1.3.0/go.mod h1:GeOyir5tyXNByN85N/dRIT9es5UQNerPYEKK56eTBm8=
 stash.kopano.io/kgol/kcc-go/v5 v5.0.1 h1:urR9hOR6TnTKjGkzZKac/a9cA8ws1WecWLTgiYubLQw=
 stash.kopano.io/kgol/kcc-go/v5 v5.0.1/go.mod h1:0ZmjWapy3zp+TAjZI6iCrcfh+BthZbB2WM1VfhDgNB4=
 stash.kopano.io/kgol/ksurveyclient-go v0.6.1 h1:07u90TynOe1mRl3BaVWEi2JVIo8RZCxE0NM8X54ESnE=

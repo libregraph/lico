@@ -32,41 +32,41 @@ const (
 )
 
 type authorityRegistrationData struct {
-	ID            string `yaml:"id"`
-	Name          string `yaml:"name"`
-	AuthorityType string `yaml:"authority_type"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	AuthorityType string `json:"authority_type"`
 
-	Iss string `yaml:"iss"`
+	Iss string `json:"iss"`
 
-	ClientID     string `yaml:"client_id"`
-	ClientSecret string `yaml:"client_secret"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
 
-	EntityID string `yaml:"entity_id"`
+	EntityID string `json:"entity_id"`
 
-	Trusted  bool  `yaml:"trusted"`
-	Insecure bool  `yaml:"insecure"`
-	Default  bool  `yaml:"default"`
-	Discover *bool `yaml:"discover"`
+	Trusted  bool  `json:"trusted"`
+	Insecure bool  `json:"insecure"`
+	Default  bool  `json:"default"`
+	Discover *bool `json:"discover"`
 
-	Scopes              []string `yaml:"scopes"`
-	ResponseType        string   `yaml:"response_type"`
-	CodeChallengeMethod string   `yaml:"code_challenge_method"`
+	Scopes              []string `json:"scopes"`
+	ResponseType        string   `json:"response_type"`
+	CodeChallengeMethod string   `json:"code_challenge_method"`
 
-	RawMetadataEndpoint      string `yaml:"metadata_endpoint"`
-	RawAuthorizationEndpoint string `yaml:"authorization_endpoint"`
+	RawMetadataEndpoint      string `json:"metadata_endpoint"`
+	RawAuthorizationEndpoint string `json:"authorization_endpoint"`
 
-	JWKS *jose.JSONWebKeySet `yaml:"jwks"`
+	JWKS *jose.JSONWebKeySet `json:"jwks"`
 
-	IdentityClaimName string `yaml:"identity_claim_name"`
+	IdentityClaimName string `json:"identity_claim_name"`
 
-	IdentityAliases       map[string]string `yaml:"identity_aliases,flow"`
-	IdentityAliasRequired bool              `yaml:"identity_alias_required"`
+	IdentityAliases       map[string]string `json:"identity_aliases"`
+	IdentityAliasRequired bool              `json:"identity_alias_required"`
 
-	EndSessionEnabled bool `yaml:"end_session_enabled"`
+	EndSessionEnabled bool `json:"end_session_enabled"`
 }
 
 type authorityRegistryData struct {
-	Authorities []*authorityRegistrationData `yaml:"authorities,flow"`
+	Authorities []*authorityRegistrationData `json:"authorities"`
 }
 
 // AuthorityRegistration defines an authority with its properties.
