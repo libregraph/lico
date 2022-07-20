@@ -19,6 +19,7 @@ package authorities
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -26,7 +27,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 // Registry implements the registry for registered authorities.
@@ -52,7 +53,15 @@ func NewRegistry(ctx context.Context, baseURI *url.URL, registrationConfFilepath
 			return nil, err
 		}
 
-		err = yaml.Unmarshal(registryFile, registryData)
+		// NOTE(longsleep): Convert YAML to JSON for parsing. This is done to be
+		// able to use jose.JSONWebKeySet custom JSON unmarshaller which is not
+		// available for YAML. We could use sigs.k8s.io/yaml directly as it has
+		// the same behavior, but we do it explicitly to be clear.
+		j, err := yaml.YAMLToJSON(registryFile)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(j, registryData)
 		if err != nil {
 			return nil, err
 		}
