@@ -22,6 +22,7 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -265,6 +266,7 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 	bs.config.SigningKeyID = settings.SigningKid
 	bs.config.Signers = make(map[string]crypto.Signer)
 	bs.config.Validators = make(map[string]crypto.PublicKey)
+	bs.config.Certificates = make(map[string][]*x509.Certificate)
 
 	signingMethodString := settings.SigningMethod
 	bs.config.SigningMethod = jwt.GetSigningMethod(signingMethodString)
@@ -509,6 +511,13 @@ func (bs *bootstrap) setupOIDCProvider(ctx context.Context) (*oidcProvider.Provi
 	// Add all validators.
 	for id, publicKey := range bs.config.Validators {
 		err = provider.SetValidationKey(id, publicKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Add all certificates.
+	for id, certificate := range bs.config.Certificates {
+		err = provider.SetCertificate(id, certificate)
 		if err != nil {
 			return nil, err
 		}

@@ -19,6 +19,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -62,22 +63,22 @@ func jwkFromPem(cmd *cobra.Command, args []string) error {
 	asYaml, _ := cmd.Flags().GetBool("yaml")
 	fn := args[0]
 
-	key, err := func() (interface{}, error) {
+	certificates, key, err := func() ([]*x509.Certificate, interface{}, error) {
 		signerKid, signer, err := bootstrap.LoadSignerFromFile(fn)
 		if err == nil {
 			if kid == "" {
 				kid = signerKid
 			}
-			return signer, nil
+			return nil, signer, nil
 		}
-		validatorKid, validator, err := bootstrap.LoadValidatorFromFile(fn)
+		validatorKid, certificates, validator, err := bootstrap.LoadCertificatesAndValidatorFromFile(fn)
 		if err == nil {
 			if kid == "" {
 				kid = validatorKid
 			}
-			return validator, nil
+			return certificates, validator, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}()
 	if err != nil {
 		return fmt.Errorf("failed to load pem file: %v", err)
@@ -89,7 +90,7 @@ func jwkFromPem(cmd *cobra.Command, args []string) error {
 		kid = strings.TrimSuffix(fn, filepath.Ext(fn))
 	}
 
-	priv := jose.JSONWebKey{Key: key, KeyID: kid, Use: use}
+	priv := jose.JSONWebKey{Key: key, KeyID: kid, Use: use, Certificates: certificates}
 	if !priv.Valid() {
 		return fmt.Errorf("parsed key is not valid")
 	}
