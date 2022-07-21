@@ -108,9 +108,22 @@ func parsePEMSigner(pemBytes []byte) (crypto.Signer, error) {
 //
 // Supported formats are JSON-JWK and PEM
 func LoadValidatorFromFile(fn string) (string, crypto.PublicKey, error) {
+	kid, _, key, err := loadValidatorFromFile(fn)
+	return kid, key, err
+}
+
+// LoadCertificatesAndValidatorFromFile loads chain of certificates and a
+// public-key used for validation.
+//
+// Supported formats are JSON-JWK and PEM
+func LoadCertificatesAndValidatorFromFile(fn string) (string, []*x509.Certificate, crypto.PublicKey, error) {
+	return loadValidatorFromFile(fn)
+}
+
+func loadValidatorFromFile(fn string) (string, []*x509.Certificate, crypto.PublicKey, error) {
 	readBytes, errRead := ioutil.ReadFile(fn)
 	if errRead != nil {
-		return "", nil, fmt.Errorf("failed to parse key file: %v", errRead)
+		return "", nil, nil, fmt.Errorf("failed to parse key file: %v", errRead)
 	}
 
 	ext := filepath.Ext(fn)
@@ -118,32 +131,33 @@ func LoadValidatorFromFile(fn string) (string, crypto.PublicKey, error) {
 	case ".json":
 		k, err := parseJSONWebKey(readBytes)
 		if err != nil {
-			return "", nil, fmt.Errorf("failed to parse key file as JWK: %v", err)
+			return "", nil, nil, fmt.Errorf("failed to parse key file as JWK: %v", err)
 		}
 		if !k.Valid() {
-			return "", nil, fmt.Errorf("json file is not a valid JWK")
+			return "", nil, nil, fmt.Errorf("json file is not a valid JWK")
 		}
 		if !k.IsPublic() {
 			public := k.Public()
 			k = &public
 		}
-		return k.KeyID, k.Key, nil
+		return k.KeyID, k.Certificates, k.Key, nil
 
 	case ".pem":
 		fallthrough
 	default:
 		// Try PEM if not otherwise detected.
-		validator, err := parsePEMValidator(readBytes)
-		return "", validator, err
+		certificates, validator, err := parsePEMValidator(readBytes)
+		return "", certificates, validator, err
 	}
 }
 
-func parsePEMValidator(pemBytes []byte) (crypto.PublicKey, error) {
+func parsePEMValidator(pemBytes []byte) ([]*x509.Certificate, crypto.PublicKey, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
-		return nil, fmt.Errorf("no PEM block found")
+		return nil, nil, fmt.Errorf("no PEM block found")
 	}
 
+	var certificates []*x509.Certificate
 	var validator crypto.PublicKey
 	for {
 		pkixPubKey, errParse0 := x509.ParsePKIXPublicKey(block.Bytes)
@@ -168,7 +182,7 @@ func parsePEMValidator(pemBytes []byte) (crypto.PublicKey, error) {
 		if errParse3 == nil {
 			signerSigner, ok := pkcs8Key.(crypto.Signer)
 			if !ok {
-				return nil, fmt.Errorf("failed to use key as crypto signer")
+				return nil, nil, fmt.Errorf("failed to use key as crypto signer")
 			}
 			validator = signerSigner.Public()
 			break
@@ -180,10 +194,17 @@ func parsePEMValidator(pemBytes []byte) (crypto.PublicKey, error) {
 			break
 		}
 
-		return nil, fmt.Errorf("failed to parse validator key - valid PKCS#1, PKCS#8 ...? %v, %v, %v, %v, %v", errParse0, errParse1, errParse2, errParse3, errParse4)
+		certs, errParse5 := x509.ParseCertificates(block.Bytes)
+		if errParse5 == nil {
+			validator = certs[0].PublicKey
+			certificates = append(certificates, certs...)
+			break
+		}
+
+		return nil, nil, fmt.Errorf("failed to parse validator key - valid PKCS#1, PKCS#8 ...? %v, %v, %v, %v, %v, %v", errParse0, errParse1, errParse2, errParse3, errParse4, errParse5)
 	}
 
-	return validator, nil
+	return certificates, validator, nil
 }
 
 func addSignerWithIDFromFile(fn string, kid string, bs *bootstrap) error {
@@ -318,7 +339,7 @@ func addValidatorsFromPath(pn string, bs *bootstrap) error {
 	}
 
 	for _, file := range files {
-		kid, validator, err := LoadValidatorFromFile(file)
+		kid, certificates, validator, err := loadValidatorFromFile(file)
 		if err != nil {
 			bs.config.Config.Logger.WithError(err).WithField("path", file).Warnln("failed to load validator key")
 			continue
@@ -342,6 +363,9 @@ func addValidatorsFromPath(pn string, bs *bootstrap) error {
 			}).Debugln("loaded validator key")
 		}
 		bs.config.Validators[kid] = validator
+		if certificates != nil {
+			bs.config.Certificates[kid] = certificates
+		}
 	}
 
 	return nil

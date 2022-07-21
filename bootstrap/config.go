@@ -20,6 +20,7 @@ package bootstrap
 import (
 	"crypto"
 	"crypto/tls"
+	"crypto/x509"
 	"net/url"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -57,6 +58,7 @@ type Config struct {
 	SigningKeyID     string
 	Signers          map[string]crypto.Signer
 	Validators       map[string]crypto.PublicKey
+	Certificates     map[string][]*x509.Certificate
 
 	AccessTokenDurationSeconds        uint64
 	IDTokenDurationSeconds            uint64

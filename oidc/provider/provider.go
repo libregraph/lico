@@ -22,6 +22,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -70,6 +71,7 @@ type Provider struct {
 	signingKeys          map[jwt.SigningMethod]*SigningKey
 	signingMethodDefault jwt.SigningMethod
 	validationKeys       map[string]crypto.PublicKey
+	certificates         map[string][]*x509.Certificate
 
 	browserStateCookiePath string
 	browserStateCookieName string
@@ -101,6 +103,7 @@ func NewProvider(c *Config) (*Provider, error) {
 
 		signingKeys:    make(map[jwt.SigningMethod]*SigningKey),
 		validationKeys: make(map[string]crypto.PublicKey),
+		certificates:   make(map[string][]*x509.Certificate),
 
 		browserStateCookiePath: c.BrowserStateCookiePath,
 		browserStateCookieName: c.BrowserStateCookieName,
@@ -355,6 +358,18 @@ func (p *Provider) GetValidationKey(id string) (crypto.PublicKey, bool) {
 func (p *Provider) getValidationKey(id string) (crypto.PublicKey, bool) {
 	vk, ok := p.validationKeys[id]
 	return vk, ok
+}
+
+// SetCertificate sets the provider certificate chain for a particular key.
+func (p *Provider) SetCertificate(id string, certificates []*x509.Certificate) error {
+	p.logger.WithFields(logrus.Fields{
+		"chain_size": len(certificates),
+		"id":         id,
+	}).Infoln("set provider certificate")
+
+	p.certificates[id] = certificates
+
+	return nil
 }
 
 // InitializeMetadata creates the accociated providers meta data document. Call

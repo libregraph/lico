@@ -64,10 +64,12 @@ func (p *Provider) JwksHandler(rw http.ResponseWriter, req *http.Request) {
 		Keys: make([]jose.JSONWebKey, 0),
 	}
 	for kid, key := range validationKeys {
+		certificates, _ := p.certificates[kid]
 		keyJwk := jose.JSONWebKey{
-			Key:   key,
-			KeyID: kid,
-			Use:   "sig", // https://tools.ietf.org/html/rfc7517#section-4.2
+			Key:          key,
+			KeyID:        kid,
+			Use:          "sig", // https://tools.ietf.org/html/rfc7517#section-4.2
+			Certificates: certificates,
 		}
 		if keyJwk.Valid() {
 			jwks.Keys = append(jwks.Keys, keyJwk.Public())
