@@ -47,6 +47,7 @@ const (
 	OpenTypeExtensionType = "#microsoft.graph.openTypeExtension"
 
 	IdentityClaimsExtensionName    = "libregraph.identityClaims"
+	IDTokenClaimsExtensionName     = "libregraph.idTokenClaims"
 	AccessTokenClaimsExtensionName = "libregraph.accessTokenClaims"
 	RequestedScopesExtensionName   = "libregraph.requestedScopes"
 	SessionExtensionName           = "libregraph.session"
@@ -104,6 +105,7 @@ func decodeLibreGraphUser(r io.Reader) (*libreGraphUser, error) {
 	identityClaims := make(map[string]interface{})
 	identityClaims[konnect.IdentifiedUserIDClaim] = u.ID
 
+	var idTokenClaims map[string]interface{}
 	var accessTokenClaims map[string]interface{}
 	var requestedScopes []string
 
@@ -116,12 +118,21 @@ func decodeLibreGraphUser(r io.Reader) (*libreGraphUser, error) {
 			case IdentityClaimsExtensionName:
 				if v, ok := extension["claims"].(map[string]interface{}); ok {
 					for k, v := range v {
-						if k == "" {
-							// Ignore empty key, its used internally by
-							// AccessTokenClaimsExtensionName.
+						if k == konnect.InternalExtraIDTokenClaimsClaim || k == konnect.InternalExtraAccessTokenClaimsClaim {
+							// Ignore keys which areused internally by IDTokenClaimsExtensionName
+							// and AccessTokenClaimsExtensionName.
 							continue
 						}
 						identityClaims[k] = v
+					}
+				}
+			case IDTokenClaimsExtensionName:
+				if idTokenClaims == nil {
+					idTokenClaims = make(map[string]interface{})
+				}
+				if v, ok := extension["claims"].(map[string]interface{}); ok {
+					for k, v := range v {
+						idTokenClaims[k] = v
 					}
 				}
 			case AccessTokenClaimsExtensionName:
@@ -154,10 +165,16 @@ func decodeLibreGraphUser(r io.Reader) (*libreGraphUser, error) {
 		}
 	}
 
+	if idTokenClaims != nil {
+		// Inject claims as nested identity claim. The key is picket up by the
+		// token signer and used to extend ID token root claims.
+		identityClaims[konnect.InternalExtraIDTokenClaimsClaim] = idTokenClaims
+	}
 	if accessTokenClaims != nil {
-		// Inject root claims as nested identity claims. The empty key is picked
-		// up by the access token signer and used to extend the root claims.
-		identityClaims[""] = accessTokenClaims
+		// Inject claims as nested identity claims. The key is picked up by the
+		// token signer and userinfo handler  to extend ID and access token root
+		// claims based on the request.
+		identityClaims[konnect.InternalExtraAccessTokenClaimsClaim] = accessTokenClaims
 	}
 	if requestedScopes != nil {
 		u.requestedScopes = requestedScopes
