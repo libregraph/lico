@@ -44,6 +44,12 @@ const (
 	IdentifiedUserIsGuest      = "gu"
 )
 
+// Internal claim names used for special things.
+const (
+	InternalExtraIDTokenClaimsClaim     = "$lico.id.extra"
+	InternalExtraAccessTokenClaimsClaim = "$lico.at.extra"
+)
+
 // TokenType defines the token type value.
 type TokenTypeValue string
 

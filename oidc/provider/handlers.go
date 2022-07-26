@@ -700,7 +700,7 @@ done:
 	}
 
 	// Inject extra claims.
-	extraClaims := auth.Claims("")[0]
+	extraClaims := auth.Claims(konnect.InternalExtraAccessTokenClaimsClaim)[0]
 	if extraClaims != nil {
 		if extraClaimsMap, ok := extraClaims.(jwt.MapClaims); ok {
 			for claim, value := range extraClaimsMap {

@@ -72,16 +72,18 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 	// Support additional custom user specific claims.
 	var finalAccessTokenClaims jwt.Claims = accessTokenClaims
 	if accessTokenClaims.IdentityClaims != nil {
-		// Look for special empty key, if its a map all claims in there are
-		// elevated to top level.
-		extraClaimsMap, _ := accessTokenClaims.IdentityClaims[""].(map[string]interface{})
-		if extraClaimsMap != nil {
-			delete(accessTokenClaims.IdentityClaims, "")
-			accessTokenClaimsMap, err := payload.ToMap(accessTokenClaims)
-			if err != nil {
-				return "", err
-			}
+		accessTokenClaimsMap, err := payload.ToMap(accessTokenClaims)
+		if err != nil {
+			return "", err
+		}
 
+		delete(accessTokenClaimsMap[konnect.IdentityClaim].(map[string]interface{}), konnect.InternalExtraIDTokenClaimsClaim)
+		delete(accessTokenClaimsMap[konnect.IdentityClaim].(map[string]interface{}), konnect.InternalExtraAccessTokenClaimsClaim)
+
+		// Look for special internal key, if its a map all claims in there are
+		// elevated to top level.
+		extraClaimsMap, _ := accessTokenClaims.IdentityClaims[konnect.InternalExtraAccessTokenClaimsClaim].(map[string]interface{})
+		if extraClaimsMap != nil {
 			// Inject extra claims.
 			for claim, value := range extraClaimsMap {
 				switch claim {
@@ -100,9 +102,9 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 				}
 				accessTokenClaimsMap[claim] = value
 			}
-
-			finalAccessTokenClaims = jwt.MapClaims(accessTokenClaimsMap)
 		}
+
+		finalAccessTokenClaims = jwt.MapClaims(accessTokenClaimsMap)
 	}
 
 	accessToken := jwt.NewWithClaims(sk.SigningMethod, finalAccessTokenClaims)
@@ -133,6 +135,8 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 		},
 	}
 
+	accessTokenClaims := konnect.AccessTokenClaims{}
+
 	if session != nil {
 		// Include session data in ID token.
 		idTokenClaims.SessionClaims = &konnectoidc.SessionClaims{
@@ -149,6 +153,14 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 	withAuthTime := ar.MaxAge > 0
 	withIDTokenClaimsRequest := authorizedClaimsRequest != nil && authorizedClaimsRequest.IDToken != nil
 
+	user := auth.User()
+	if user == nil {
+		return "", fmt.Errorf("no user")
+	}
+	if userWithClaims, ok := user.(identity.UserWithClaims); ok {
+		accessTokenClaims.IdentityClaims = userWithClaims.Claims()
+	}
+
 	if withIDTokenClaimsRequest {
 		// Apply additional information from ID token claims request.
 		if _, ok := authorizedClaimsRequest.IDToken.Get(oidc.AuthTimeClaim); !withAuthTime && ok {
@@ -158,15 +170,9 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 	}
 
 	if !withAccessToken || withIDTokenClaimsRequest {
-		user := auth.User()
-		if user == nil {
-			return "", fmt.Errorf("no user")
-		}
-
 		var userID string
-		if userWithClaims, ok := user.(identity.UserWithClaims); ok {
-			identityClaims := userWithClaims.Claims()
-			if userIDString, ok := identityClaims[konnect.IdentifiedUserIDClaim]; ok {
+		if accessTokenClaims.IdentityClaims != nil {
+			if userIDString, ok := accessTokenClaims.IdentityClaims[konnect.IdentifiedUserIDClaim]; ok {
 				userID = userIDString.(string)
 			}
 		}
@@ -236,31 +242,38 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 		}
 	}
 
-	// Support extra non-standard claims in ID token.
-	var finalIDTokenClaims jwt.Claims = idTokenClaims
-	if !withAccessToken {
-		// Include requested scope data in ID token when no access token is
-		// generated - additional custom user specific claims.
-		idTokenClaimsMap, err := payload.ToMap(idTokenClaims)
-		if err != nil {
-			return "", err
-		}
+	// To support extra non-standard claims in ID token, convert claim set to
+	// map.
+	idTokenClaimsMap, err := payload.ToMap(idTokenClaims)
+	if err != nil {
+		return "", err
+	}
 
-		// Inject extra claims.
-		extraClaims := auth.Claims("")[0]
-		if extraClaims != nil {
-			if extraClaimsMap, ok := extraClaims.(jwt.MapClaims); ok {
-				for claim, value := range extraClaimsMap {
-					idTokenClaimsMap[claim] = value
-				}
+	if accessTokenClaims.IdentityClaims != nil {
+		// Inject available extra ID token claims.
+		extraClaimsMap, _ := accessTokenClaims.IdentityClaims[konnect.InternalExtraIDTokenClaimsClaim].(map[string]interface{})
+		if extraClaimsMap != nil {
+			for claim, value := range extraClaimsMap {
+				idTokenClaimsMap[claim] = value
 			}
 		}
+	}
 
-		finalIDTokenClaims = jwt.MapClaims(idTokenClaimsMap)
+	if !withAccessToken && accessTokenClaims.IdentityClaims != nil {
+		// Include requested scope data in ID token when no access token is
+		// generated - additional custom user specific claims.
+
+		// Inject extra claims.
+		extraClaimsMap, _ := accessTokenClaims.IdentityClaims[konnect.InternalExtraAccessTokenClaimsClaim].(map[string]interface{})
+		if extraClaimsMap != nil {
+			for claim, value := range extraClaimsMap {
+				idTokenClaimsMap[claim] = value
+			}
+		}
 	}
 
 	// Create signed token.
-	idToken := jwt.NewWithClaims(sk.SigningMethod, finalIDTokenClaims)
+	idToken := jwt.NewWithClaims(sk.SigningMethod, jwt.MapClaims(idTokenClaimsMap))
 	idToken.Header[oidc.JWTHeaderKeyID] = sk.ID
 
 	return idToken.SignedString(sk.PrivateKey)
