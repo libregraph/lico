@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Allow backends to set top level ID token claims
+- Support loading validators from PEM encoded certificates
+- Fix parsing of JWKS in authorities registration YAML
 
 
 ## v0.56.1 (2022-07-19)
