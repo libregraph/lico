@@ -4218,7 +4218,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^5.5.0":
+"@typescript-eslint/eslint-plugin@npm:^5.34.0, @typescript-eslint/eslint-plugin@npm:^5.5.0":
   version: 5.34.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.34.0"
   dependencies:
@@ -4252,7 +4252,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^5.5.0":
+"@typescript-eslint/parser@npm:^5.34.0, @typescript-eslint/parser@npm:^5.5.0":
   version: 5.34.0
   resolution: "@typescript-eslint/parser@npm:5.34.0"
   dependencies:
@@ -7461,7 +7461,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint@npm:^8.3.0":
+"eslint@npm:^8.22.0, eslint@npm:^8.3.0":
   version: 8.22.0
   resolution: "eslint@npm:8.22.0"
   dependencies:
@@ -8284,7 +8284,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^8.0.1":
+"glob@npm:^8.0.1, glob@npm:^8.0.3":
   version: 8.0.3
   resolution: "glob@npm:8.0.3"
   dependencies:
@@ -8901,10 +8901,15 @@ __metadata:
     "@types/react-dom": ^17.0.17
     "@types/react-redux": ^7.1.24
     "@types/redux-logger": ^3.0.9
+    "@typescript-eslint/eslint-plugin": ^5.34.0
+    "@typescript-eslint/parser": ^5.34.0
     axios: ^0.22.0
     classnames: ^2.3.1
     cldr: ^7.2.0
+    eslint: ^8.22.0
+    eslint-config-react-app: ^7.0.1
     eslint-plugin-i18next: ^5.2.1
+    glob: ^8.0.3
     i18next: ^21.9.1
     i18next-browser-languagedetector: ^6.1.5
     i18next-conv: ^12.1.1
