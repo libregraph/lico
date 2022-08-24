@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
+    - name: Set up Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    - name: Bootstrap
+      run: |
+        go version
+        corepack enable
+
+    - name: Vendor
+      run: make vendor
+
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: latest
+        skip-pkg-cache: true
+        skip-build-cache: true
+        skip-go-installation: true
+        only-new-issues: true
+
+    - name: Build
+      run: |
+        make DATE=reproducible
+        ./bin/licod version && sha256sum ./bin/licod
+
+    - name: Test
+      run: make test
+
+    - name: Dist
+      run: |
+        test -z "$(git diff --shortstat 2>/dev/null |tail -n1)" && echo "Clean check passed."
+        make check
+        make dist
