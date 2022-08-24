@@ -7,6 +7,7 @@
     "@fontsource/roboto": "^4.5.1",
     "@material-ui/core": "^4.12.3",
     "@material-ui/icons": "^4.11.2",
+    "@testing-library/dom": "^8.17.1",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -30,9 +31,9 @@
     "react-router": "^5.2.1",
     "react-router-dom": "5.2.1",
     "react-scripts": "4.0.3",
-    "redux": "^3.7.2",
+    "redux": "^4.2.0",
     "redux-logger": "^3.0.6",
-    "redux-thunk": "^2.2.0",
+    "redux-thunk": "^2.4.1",
     "render-if": "^0.1.1",
     "typescript": "^4.1.2",
     "web-vitals": "^1.0.1"
@@ -44,7 +45,6 @@
     "eject": "react-scripts eject",
     "lint": "eslint ./src/**/*.{tsx,ts,jsx,js}",
     "licenses": "NODE_PATH=./node_modules node ../scripts/js-license-ranger.js",
-    "deduplicate": "yarn-deduplicate -s fewer yarn.lock",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "devDependencies": {
@@ -52,8 +52,7 @@
     "eslint-plugin-i18next": "^5.1.2",
     "i18next-conv": "^12.1.0",
     "i18next-parser": "^5.4.0",
-    "source-map-explorer": "^1.8.0",
-    "yarn-deduplicate": "^1.1.1"
+    "source-map-explorer": "^1.8.0"
   },
   "jest": {
     "collectCoverageFrom": [
@@ -98,5 +97,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "packageManager": "yarn@3.2.2"
 }
