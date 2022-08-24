@@ -8,6 +8,7 @@
 !.env
 !.chglog
 !.dependabot.yml
+!.github
 
 /vendor
 /bin
