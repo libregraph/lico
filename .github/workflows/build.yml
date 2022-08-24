@@ -29,7 +29,10 @@ jobs:
         corepack enable
 
     - name: Vendor
-      run: make vendor
+      run: |
+        make vendor
+        yarn config set network-timeout 120000 -g
+        make -C identifier vendor
 
     - name: Lint
       uses: golangci/golangci-lint-action@v2
