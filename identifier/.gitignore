@@ -28,6 +28,7 @@ src/locales/**/*.json
 
 # yarn
 .pnp.*
+!.yarnrc.yml
 !.yarn/
 .yarn/*
 !.yarn/patches
