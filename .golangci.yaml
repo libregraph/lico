@@ -1,5 +1,6 @@
 run:
   modules-download-mode: vendor
+  issues-exit-code: 0
 
 linters-settings:
   govet:
@@ -72,3 +73,6 @@ linters:
   # - depguard - until https://github.com/OpenPeeDeeP/depguard/issues/7 gets fixed
   # - maligned,prealloc
   # - gochecknoglobals
+
+severity:
+  default-severity: warning
