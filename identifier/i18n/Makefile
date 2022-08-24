@@ -19,9 +19,9 @@ build: json
 json:
 	@for po in $(POS); do \
 		lang=$$(echo $$po | sed "s/\.po//"); \
-		$(YARN) i18next-conv -K --skipUntranslated -l $$lang -s i18n/$$po -t src/locales/$$lang/translation.json; \
+		$(YARN) i18next-conv -K --skipUntranslated -l $$lang -s $$po -t ../src/locales/$$lang/translation.json; \
 	done
-	$(YARN) node i18n/build-json.js src/locales/locales.json $(POS)
+	$(YARN) node build-json.js ../src/locales/locales.json $(POS)
 
 dev-translation.json: FORCE
 	$(YARN) i18next --fail-on-warnings
@@ -34,8 +34,8 @@ pot: dev-translation.json
 	@tmpfile1=$(shell mktemp).po; \
 	tmpfile2=$(shell mktemp).po; \
 	trap 'rm -f "$$tmpfile1" "$$tmpfile2"' EXIT; \
-	$(YARN) i18next-conv --project "LibreGraph Connect Identifier" -K -l en -s i18n/dev-translation.json -t $$tmpfile1; \
-	$(YARN) node i18n/build-pot.js $$tmpfile1 $$tmpfile2; \
+	$(YARN) i18next-conv --project "LibreGraph Connect Identifier" -K -l en -s dev-translation.json -t $$tmpfile1; \
+	$(YARN) node build-pot.js $$tmpfile1 $$tmpfile2; \
 	$(MSGCAT) --no-wrap -o $(POT) $$tmpfile2
 
 .PHONY: merge

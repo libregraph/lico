@@ -41,7 +41,7 @@ lint-checkstyle: vendor ; $(info running eslint checkstyle ...)	@
 vendor: .yarninstall
 
 .yarninstall: package.json ; $(info getting depdencies with yarn ...)   @
-	@$(YARN) install --silent
+	@$(YARN) install --immutable
 	@touch $@
 
 # Stuff
@@ -49,7 +49,7 @@ vendor: .yarninstall
 .PHONY: licenses
 licenses:
 	echo "## LibreGraph Connect identifier web app\n"
-	@$(YARN) run  -s licenses
+	@$(YARN) run licenses
 
 .PHONY: clean ; $(info cleaning identifier Webapp ...)	@
 clean:
