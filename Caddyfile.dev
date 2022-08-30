@@ -26,7 +26,7 @@
 		header_downstream Referrer-Policy origin
 		header_downstream Content-Security-Policy "object-src 'none'; script-src 'self'; base-uri 'none'; frame-ancestors 'none';"
 	}
-	proxy /sockjs-node 127.0.0.1:3001 {
+	proxy /ws 127.0.0.1:3001 {
 		websocket
 	}
 	proxy /static 127.0.0.1:3001
