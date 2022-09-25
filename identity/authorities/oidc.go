@@ -40,7 +40,8 @@ import (
 // Authority default values.
 var (
 	oidcAuthorityDefaultScopes              = []string{oidc.ScopeOpenID, oidc.ScopeProfile}
-	oidcAuthorityDefaultResponseType        = oidc.ResponseTypeIDToken
+	oidcAuthorityDefaultResponseType        = oidc.ResponseTypeCode
+	oidcAuthorityDefaultResponseMode        = oidc.ResponseModeQuery
 	oidcAuthorityDefaultCodeChallengeMethod = oidc.S256CodeChallengeMethod
 	oidcAuthorityDefaultIdentityClaimName   = oidc.PreferredUsernameClaim
 )
@@ -52,12 +53,16 @@ type oidcAuthorityRegistration struct {
 	discover              bool
 	metadataEndpoint      *url.URL
 	authorizationEndpoint *url.URL
+	tokenEndpoint         *url.URL
 	endSessionEndpoint    *url.URL
+	userInfoEndpoint      *url.URL
 
 	validationKeys map[string]crypto.PublicKey
 
 	mutex sync.RWMutex
 	ready bool
+
+	wellKnown *oidc.WellKnown
 }
 
 func newOIDCAuthorityRegistration(registry *Registry, registrationData *authorityRegistrationData) (*oidcAuthorityRegistration, error) {
@@ -82,6 +87,28 @@ func newOIDCAuthorityRegistration(registry *Registry, registrationData *authorit
 			ar.authorizationEndpoint = u
 		} else {
 			return nil, fmt.Errorf("invalid authorization_endpoint value: %v", err)
+		}
+	}
+	if ar.data.RawTokenEndpoint != "" {
+		if u, err := url.Parse(ar.data.RawTokenEndpoint); err == nil {
+			if u.Scheme != "https" {
+				return nil, errors.New("token_endpoint must be https")
+			}
+
+			ar.tokenEndpoint = u
+		} else {
+			return nil, fmt.Errorf("invalid token_endpoint value: %v", err)
+		}
+	}
+	if ar.data.UserInfoEndpoint != "" {
+		if u, err := url.Parse(ar.data.UserInfoEndpoint); err == nil {
+			if u.Scheme != "https" {
+				return nil, errors.New("userinfo_endpoint must be https")
+			}
+
+			ar.userInfoEndpoint = u
+		} else {
+			return nil, fmt.Errorf("invalid userinfo_endpoint value: %v", err)
 		}
 	}
 	if ar.data.JWKS != nil {
@@ -148,6 +175,7 @@ func (ar *oidcAuthorityRegistration) Authority() *Details {
 
 		Scopes:              ar.data.Scopes,
 		ResponseType:        ar.data.ResponseType,
+		ResponseMode:        ar.data.ResponseMode,
 		CodeChallengeMethod: ar.data.CodeChallengeMethod,
 
 		EndSessionEnabled: ar.data.EndSessionEnabled,
@@ -208,6 +236,9 @@ func (ar *oidcAuthorityRegistration) Validate() error {
 	}
 	if ar.data.ResponseType == "" {
 		ar.data.ResponseType = oidcAuthorityDefaultResponseType
+	}
+	if ar.data.ResponseMode == "" {
+		ar.data.ResponseMode = oidcAuthorityDefaultResponseMode
 	}
 	if ar.data.CodeChallengeMethod == "" {
 		ar.data.CodeChallengeMethod = oidcAuthorityDefaultCodeChallengeMethod
@@ -345,7 +376,16 @@ func (ar *oidcAuthorityRegistration) ValidateIdpEndSessionResponse(res interface
 }
 
 func (ar *oidcAuthorityRegistration) Metadata() AuthorityMetadata {
-	return nil
+	ar.mutex.RLock()
+	defer ar.mutex.RUnlock()
+
+	return &oidc.WellKnown{
+		Issuer:                ar.data.Iss,
+		AuthorizationEndpoint: ar.authorizationEndpoint.String(),
+		TokenEndpoint:         ar.tokenEndpoint.String(),
+		UserInfoEndpoint:      ar.userInfoEndpoint.String(),
+		EndSessionEndpoint:    ar.endSessionEndpoint.String(),
+	}
 }
 
 type oidcProviderLogger struct {
@@ -423,10 +463,26 @@ func initializeOIDC(ctx context.Context, logger logrus.FieldLogger, ar *oidcAuth
 					}
 				}
 
+				if pd.WellKnown != nil && pd.WellKnown.TokenEndpoint != "" {
+					if ar.tokenEndpoint, err = url.Parse(pd.WellKnown.TokenEndpoint); err != nil {
+						providerLogger.WithError(err).Errorln("failed to parse oidc provider discover document token_endpoint")
+					}
+				}
+
+				if pd.WellKnown != nil && pd.WellKnown.UserInfoEndpoint != "" {
+					if ar.userInfoEndpoint, err = url.Parse(pd.WellKnown.UserInfoEndpoint); err != nil {
+						providerLogger.WithError(err).Errorln("failed to parse oidc provider discover document userinfo_endpoint")
+					}
+				}
+
 				if pd.JWKS != jwks {
 					if err := ar.setValidationKeysFromJWKS(pd.JWKS, true); err != nil {
 						providerLogger.Errorf("failed to set authority keys from oidc provider jwks: %v", err)
 					}
+				}
+
+				if pd.WellKnown != nil {
+					ar.wellKnown = pd.WellKnown
 				}
 
 				ready := ar.ready

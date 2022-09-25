@@ -50,10 +50,13 @@ type authorityRegistrationData struct {
 
 	Scopes              []string `json:"scopes"`
 	ResponseType        string   `json:"response_type"`
+	ResponseMode        string   `json:"response_mode"`
 	CodeChallengeMethod string   `json:"code_challenge_method"`
 
 	RawMetadataEndpoint      string `json:"metadata_endpoint"`
 	RawAuthorizationEndpoint string `json:"authorization_endpoint"`
+	RawTokenEndpoint         string `json:"token_endpoint"`
+	UserInfoEndpoint         string `json:"user_info_endpoint"`
 
 	JWKS *jose.JSONWebKeySet `json:"jwks"`
 
