@@ -18,6 +18,8 @@
 package identifier
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -26,6 +28,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/oauth2"
 	"stash.kopano.io/kgol/oidc-go"
 	"stash.kopano.io/kgol/rndm"
 
@@ -66,17 +69,11 @@ func (i *Identifier) writeOAuth2Start(rw http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	clientID := authority.ClientID
-	scopes := authority.Scopes
-	responseType := authority.ResponseType
-	codeVerifier := rndm.GenerateRandomString(32)
-	codeChallengeMethod := authority.CodeChallengeMethod
-
 	sd := &StateData{
 		State:    rndm.GenerateRandomString(32),
 		RawQuery: req.URL.RawQuery,
 
-		ClientID: clientID,
+		ClientID: authority.ClientID,
 		Ref:      authority.ID,
 	}
 
@@ -87,21 +84,30 @@ func (i *Identifier) writeOAuth2Start(rw http.ResponseWriter, req *http.Request,
 		i.ErrorPage(rw, http.StatusInternalServerError, "", "oauth2 start failed")
 		return
 	}
-	sd.Extra = extra
+	if extra != nil {
+		sd.Extra = extra
+	} else {
+		sd.Extra = make(map[string]interface{})
+	}
 
 	query := uri.Query()
-	query.Add("client_id", clientID)
-	if responseType != "" {
-		query.Add("response_type", responseType)
+	query.Add("client_id", authority.ClientID)
+	if authority.ResponseType != "" {
+		query.Add("response_type", authority.ResponseType)
 	}
-	query.Add("response_mode", oidc.ResponseModeQuery)
-	query.Add("scope", strings.Join(scopes, " "))
+	if authority.ResponseMode != "" {
+		query.Add("response_mode", authority.ResponseMode)
+	}
+	query.Add("scope", strings.Join(authority.Scopes, " "))
 	query.Add("redirect_uri", i.oauth2CbEndpointURI.String())
 	query.Add("nonce", rndm.GenerateRandomString(32))
-	if codeChallengeMethod != "" {
-		if codeChallenge, err := oidc.MakeCodeChallenge(codeChallengeMethod, codeVerifier); err == nil {
+	if authority.CodeChallengeMethod != "" {
+		codeVerifier := rndm.GenerateRandomString(32)
+		sd.Extra["code_verifier"] = codeVerifier
+		codeChallenge := ""
+		if codeChallenge, err = oidc.MakeCodeChallenge(authority.CodeChallengeMethod, codeVerifier); err == nil {
 			query.Add("code_challenge", codeChallenge)
-			query.Add("code_challenge_method", codeChallengeMethod)
+			query.Add("code_challenge_method", authority.CodeChallengeMethod)
 		} else {
 			i.logger.WithError(err).Debugln("identifier failed to create oauth2 code challenge")
 			i.ErrorPage(rw, http.StatusInternalServerError, "", "failed to create code challenge")
@@ -145,7 +151,7 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 	var err error
 	var sd *StateData
 	var user *IdentifiedUser
-	var claims jwt.MapClaims
+	var userInfoClaims jwt.MapClaims
 	var authority *authorities.Details
 
 	for {
@@ -205,6 +211,70 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+		if authority.ResponseType == oidc.ResponseTypeCode ||
+			authority.ResponseType == oidc.ResponseTypeCodeIDToken ||
+			authority.ResponseType == oidc.ResponseTypeCodeIDTokenToken {
+			// Exchange code for ID token.
+			md := authority.Metadata().(*oidc.WellKnown)
+			config := &oauth2.Config{
+				ClientID:     authority.ClientID,
+				ClientSecret: authority.ClientSecret,
+
+				RedirectURL: i.oauth2CbEndpointURI.String(),
+
+				Endpoint: oauth2.Endpoint{
+					TokenURL: md.TokenEndpoint,
+				},
+
+				Scopes: authority.Scopes,
+			}
+			var httpClient *http.Client
+			if authority.Insecure {
+				httpClient = utils.InsecureHTTPClient
+			} else {
+				httpClient = utils.DefaultHTTPClient
+			}
+			t, exchangeErr := config.Exchange(
+				context.WithValue(req.Context(), oauth2.HTTPClient, httpClient),
+				req.Form.Get("code"),
+				oauth2.SetAuthURLParam("code_verifier",
+					sd.Extra["code_verifier"].(string)),
+			)
+			if exchangeErr != nil {
+				err = fmt.Errorf("failed to exchange code for token: %v", exchangeErr)
+				break
+			}
+			// Inject found data into request for later parse.
+			req.Form.Set("access_token", t.AccessToken)
+			req.Form.Set("token_type", t.TokenType)
+			req.Form.Set("refresh_token", t.RefreshToken)
+			if v, ok := t.Extra("expires_in").(string); ok {
+				req.Form.Set("expires_in", v)
+			}
+			if v, ok := t.Extra("id_token").(string); ok {
+				req.Form.Set("id_token", v)
+			}
+			// Fetch userinfo.
+			uiReq, requestErr := http.NewRequest(http.MethodGet, md.UserInfoEndpoint, http.NoBody)
+			if requestErr != nil {
+				err = fmt.Errorf("failed to create userinfo request: %v", requestErr)
+				break
+			}
+			t.SetAuthHeader(uiReq)
+			uiResp, responseErr := httpClient.Do(uiReq)
+			if responseErr != nil {
+				err = fmt.Errorf("failed to get userinfo: %v", responseErr)
+				break
+			}
+			// Decode userinfo as JSON, directly into the claims set.
+			if decodeErr := json.NewDecoder(uiResp.Body).Decode(&userInfoClaims); decodeErr != nil {
+				err = fmt.Errorf("failed to decode userinfo response: %v", decodeErr)
+				uiResp.Body.Close()
+				break
+			}
+			uiResp.Body.Close()
+		}
+
 		// Parse incoming state response.
 		var authenticationSuccess *payload.AuthenticationSuccess
 		if authenticationSuccessRaw, parseErr := authority.ParseStateResponse(req, sd.State, sd.Extra); parseErr == nil {
@@ -215,7 +285,7 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		// Parse and validate IDToken.
-		idToken, idTokenParseErr := jwt.ParseWithClaims(authenticationSuccess.IDToken, jwt.MapClaims{}, authority.JWTKeyfunc())
+		idToken, idTokenParseErr := jwt.ParseWithClaims(authenticationSuccess.IDToken, userInfoClaims, authority.JWTKeyfunc())
 		if idTokenParseErr != nil {
 			if authority.Insecure {
 				i.logger.WithField("client_id", sd.ClientID).WithError(idTokenParseErr).Warnln("identifier ignoring validation error for insecure authority")
@@ -225,8 +295,7 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 				break
 			}
 		}
-		claims, _ = idToken.Claims.(jwt.MapClaims)
-		if claims == nil {
+		if claims, _ := idToken.Claims.(jwt.MapClaims); claims == nil {
 			err = errors.New("invalid id token claims")
 			break
 		}

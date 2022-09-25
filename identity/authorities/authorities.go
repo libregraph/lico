@@ -42,6 +42,7 @@ type Details struct {
 
 	Scopes              []string
 	ResponseType        string
+	ResponseMode        string
 	CodeChallengeMethod string
 
 	EndSessionEnabled bool
