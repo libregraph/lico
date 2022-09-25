@@ -297,7 +297,6 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 	query, _ := url.ParseQuery(sd.RawQuery)
 	query.Del("flow")
 	query.Set("identifier", MustBeSignedIn)
-	query.Set("prompt", oidc.PromptNone)
 
 	switch typedErr := err.(type) {
 	case nil:
