@@ -4,7 +4,23 @@
 
 
 
-## v0.57.0 (2022-08-04)
+## v0.58.0 (2022-09-26)
+
+- Implement code flow for external OIDC authorities
+- Don't enforce prompt=None for external OIDC auth
+- Fix development server listner and proxy address
+- Ensure to commit Yarn 2 config
+- Add missing build dependencies
+- Allow build to succeed in CI even with eslint warnings
+- Fetch identifier vendor dependencies in vendor CI step
+- Make Go linter errors non-fatal
+- Add build CI
+- Add dependabot config
+- Upgrade to Yarn 2
+- Use Yarn 2
+
+
+## v0.57.0 (2022-08-23)
 
 - Allow backends to set top level ID token claims
 - Support loading validators from PEM encoded certificates
