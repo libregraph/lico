@@ -157,7 +157,7 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 	for {
 		sd, err = i.GetStateFromStateCookie(req.Context(), rw, req, "oauth2/cb", req.Form.Get("state"))
 		if err != nil {
-			err = fmt.Errorf("failed to decode oauth2 cb state: %v", err)
+			err = fmt.Errorf("failed to decode oauth2 cb state: %w", err)
 			break
 		}
 		if sd == nil {
@@ -241,7 +241,7 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 					sd.Extra["code_verifier"].(string)),
 			)
 			if exchangeErr != nil {
-				err = fmt.Errorf("failed to exchange code for token: %v", exchangeErr)
+				err = fmt.Errorf("failed to exchange code for token: %w", exchangeErr)
 				break
 			}
 			// Inject found data into request for later parse.
@@ -257,18 +257,18 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 			// Fetch userinfo.
 			uiReq, requestErr := http.NewRequest(http.MethodGet, md.UserInfoEndpoint, http.NoBody)
 			if requestErr != nil {
-				err = fmt.Errorf("failed to create userinfo request: %v", requestErr)
+				err = fmt.Errorf("failed to create userinfo request: %w", requestErr)
 				break
 			}
 			t.SetAuthHeader(uiReq)
 			uiResp, responseErr := httpClient.Do(uiReq)
 			if responseErr != nil {
-				err = fmt.Errorf("failed to get userinfo: %v", responseErr)
+				err = fmt.Errorf("failed to get userinfo: %w", responseErr)
 				break
 			}
 			// Decode userinfo as JSON, directly into the claims set.
 			if decodeErr := json.NewDecoder(uiResp.Body).Decode(&userInfoClaims); decodeErr != nil {
-				err = fmt.Errorf("failed to decode userinfo response: %v", decodeErr)
+				err = fmt.Errorf("failed to decode userinfo response: %w", decodeErr)
 				uiResp.Body.Close()
 				break
 			}
