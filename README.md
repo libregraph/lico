@@ -149,6 +149,18 @@ The base URL of the frontend proxy is what will become the value of the `--iss`
 parameter when starting up Lico. OIDC requires the Issuer Identifier to be
 secure (https:// required).
 
+### LibreGraph backend
+
+Generic backend support is available through the LibreGraph API. Any service can
+provide the required endpoints and Lico connects to them.
+
+```
+export LIBREGRAPH_URI=http://your-backend.local:5050
+bin/licod serve --listen=127.0.0.1:8777 \
+  --iss=https://mylico.local \
+  libregraph
+```
+
 ### LDAP backend
 
 This assumes that Lico can directly connect to an LDAP server via TCP.
