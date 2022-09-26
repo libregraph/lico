@@ -171,28 +171,6 @@ bin/licod serve --listen=127.0.0.1:8777 \
   ldap
 ```
 
-### Cookie backend
-
-A cookie backend is also there for testing. It has limited amount of features
-and should not be used in production. Essentially this backend assumes a login
-area uses a HTTP cookie for authentication and Lico is runnig in the same
-scope as this cookie so the Lico request can read and validate the cookie
-using an internal proxy request.
-
-This assumes that you have a set-up Kopano with a reverse proxy on
-`https://mykopano.local` together with the proper proxy configuration to
-pass through all requests to the `/konnect/v1/` prefix to `127.0.0.1:8777`.
-Kopano Webapp supports the `?continue=` request parameter and the domains
-of possible OIDC clients need to be added into `webapp/config.php` with the
-`REDIRECT_ALLOWED_DOMAINS` setting.
-
-```
-bin/licod serve --listen=127.0.0.1:8777 \
-  --iss=https://mykopano.local \
-  --sign-in-uri=https://mykopano.local/webapp/ \
-  cookie https://mykopano.local/webapp/?load=custom&name=oidcuser "KOPANO_WEBAPP encryption-store-key"
-```
-
 ### Build Lico Docker image
 
 This project includes a `Dockerfile` which can be used to build a Docker
