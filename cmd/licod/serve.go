@@ -38,7 +38,6 @@ import (
 	"github.com/libregraph/lico/server"
 	"github.com/libregraph/lico/version"
 
-	dummyBackendSupport "github.com/libregraph/lico/bootstrap/backends/dummy"
 	guestBackendSupport "github.com/libregraph/lico/bootstrap/backends/guest"
 	ldapBackendSupport "github.com/libregraph/lico/bootstrap/backends/ldap"
 	libreGraphBackendSupport "github.com/libregraph/lico/bootstrap/backends/libregraph"
@@ -52,7 +51,7 @@ func commandServe() *cobra.Command {
 		Short: "Start server and listen for requests",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				return fmt.Errorf("identity-manager argument missing, use one of kc, ldap, cookie, dummy")
+				return fmt.Errorf("identity-manager argument missing")
 			}
 
 			bootstrapConfig.IdentityManager = args[0]
@@ -146,7 +145,6 @@ func serve(cmd *cobra.Command, args []string) error {
 	// Register imported plugable backends.
 	guestBackendSupport.MustRegister()
 	ldapBackendSupport.MustRegister()
-	dummyBackendSupport.MustRegister()
 	libreGraphBackendSupport.MustRegister()
 
 	// Boot our setup.
