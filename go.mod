@@ -8,7 +8,7 @@ require (
 	github.com/crewjam/httperr v0.2.0
 	github.com/crewjam/saml v0.4.6
 	github.com/deckarep/golang-set v1.8.0
-	github.com/gabriel-vasile/mimetype v1.4.0
+	github.com/gabriel-vasile/mimetype v1.4.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ldap/ldap/v3 v3.4.2
 	github.com/gofrs/uuid v4.2.0+incompatible
@@ -25,7 +25,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.5.0
 	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
 	gopkg.in/square/go-jose.v2 v2.6.0
