@@ -23,7 +23,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/russellhaering/goxmldsig v1.1.1
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
