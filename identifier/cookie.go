@@ -145,7 +145,7 @@ func (i *Identifier) setStateCookie(rw http.ResponseWriter, scope string, state 
 	cookie := http.Cookie{
 		Name:   name,
 		Value:  value,
-		MaxAge: 60,
+		MaxAge: 600,
 
 		Path:     i.pathPrefix + "/identifier/" + scope,
 		Secure:   true,
