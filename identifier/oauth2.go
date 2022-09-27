@@ -117,7 +117,9 @@ func (i *Identifier) writeOAuth2Start(rw http.ResponseWriter, req *http.Request,
 	if display := req.Form.Get("display"); display != "" {
 		query.Add("display", display)
 	}
-	if prompt := req.Form.Get("prompt"); prompt != "" {
+	if prompt := req.Form.Get("prompt"); prompt != "" && prompt != oidc.PromptConsent {
+		// Pass along all prompt values, except consent to external provider and
+		// handle consent as needed ourselves.
 		query.Add("prompt", prompt)
 	}
 	if maxAge := req.Form.Get("max_age"); maxAge != "" {
@@ -366,6 +368,11 @@ func (i *Identifier) writeOAuth2Cb(rw http.ResponseWriter, req *http.Request) {
 	query, _ := url.ParseQuery(sd.RawQuery)
 	query.Del("flow")
 	query.Set("identifier", MustBeSignedIn)
+	if query.Get("prompt") == oidc.PromptSelectAccount {
+		// Remove select_acount prompt for our secondary indentifier, it was
+		// already processed by the external provider.
+		query.Del("prompt")
+	}
 
 	switch typedErr := err.(type) {
 	case nil:

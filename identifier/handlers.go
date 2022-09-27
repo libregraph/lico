@@ -133,23 +133,21 @@ func (i *Identifier) handleIdentifier(rw http.ResponseWriter, req *http.Request)
 	}
 
 	switch req.Form.Get("flow") {
-	case FlowOIDC:
-		fallthrough
-	case FlowOAuth:
-		fallthrough
-	case "":
-		//  Check if there is a default authority, if so use that.
-		authority := i.authorities.Default(req.Context())
-		if authority != nil {
-			switch authority.AuthorityType {
-			case authorities.AuthorityTypeOIDC:
-				i.writeOAuth2Start(rw, req, authority)
-			case authorities.AuthorityTypeSAML2:
-				i.writeSAML2Start(rw, req, authority)
-			default:
-				i.ErrorPage(rw, http.StatusNotImplemented, "", "unknown authority type")
+	case FlowOIDC, FlowOAuth, "":
+		if req.Form.Get("identifier") != MustBeSignedIn {
+			//  Check if there is a default authority, if so use that.
+			authority := i.authorities.Default(req.Context())
+			if authority != nil {
+				switch authority.AuthorityType {
+				case authorities.AuthorityTypeOIDC:
+					i.writeOAuth2Start(rw, req, authority)
+				case authorities.AuthorityTypeSAML2:
+					i.writeSAML2Start(rw, req, authority)
+				default:
+					i.ErrorPage(rw, http.StatusNotImplemented, "", "unknown authority type")
+				}
+				return
 			}
-			return
 		}
 	}
 
