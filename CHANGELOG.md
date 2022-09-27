@@ -4,6 +4,21 @@
 
 
 
+## v0.59.0 (2022-09-27)
+
+- Switch CI pipeline to Go 1.18
+- Increase state cookie duration to 10 minutes
+- Properly handle prompt select_account and consent for external oidc
+- Update transient go dependencies
+- Use error wrapping in oauth2 callback propertly
+- Add short instructions for libregraph backend
+- Remove obsolete dummy backend
+- Remove obsolete cookie backend
+- Remove kc backend
+- Bump github.com/prometheus/client_golang from 1.12.1 to 1.13.0
+- Bump github.com/spf13/cobra from 1.4.0 to 1.5.0
+
+
 ## v0.58.0 (2022-09-26)
 
 - Implement code flow for external OIDC authorities
