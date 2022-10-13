@@ -33,7 +33,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 	stash.kopano.io/kgol/ksurveyclient-go v0.6.1
 	stash.kopano.io/kgol/oidc-go v0.3.4
-	stash.kopano.io/kgol/rndm v1.1.1
+	stash.kopano.io/kgol/rndm v1.1.2
 )
 
 require (
