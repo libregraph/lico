@@ -4,6 +4,11 @@
 
 
 
+## v0.59.1 (2022-10-13)
+
+- Update rndm to 1.1.2
+
+
 ## v0.59.0 (2022-09-27)
 
 - Switch CI pipeline to Go 1.18
