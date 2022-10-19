@@ -4,6 +4,13 @@
 
 
 
+## v0.59.2 (2022-10-14)
+
+- Fix a bunch of eslint warnings
+- Bump identifier third party dependencies
+- Bump caniuse-lite to latest version
+
+
 ## v0.59.1 (2022-10-13)
 
 - Update rndm to 1.1.2
