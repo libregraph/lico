@@ -25,8 +25,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
-	"stash.kopano.io/kgol/oidc-go"
-	"stash.kopano.io/kgol/rndm"
+	"github.com/libregraph/oidc-go"
+	"github.com/longsleep/rndm"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identity"

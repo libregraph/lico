@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"stash.kopano.io/kgol/oidc-go"
+	"github.com/libregraph/oidc-go"
 
 	konnectoidc "github.com/libregraph/lico/oidc"
 )

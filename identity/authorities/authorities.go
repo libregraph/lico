@@ -25,7 +25,7 @@ import (
 	"net/url"
 
 	"github.com/golang-jwt/jwt/v4"
-	"stash.kopano.io/kgol/oidc-go"
+	"github.com/libregraph/oidc-go"
 )
 
 // Details hold immutable information about external authorities identified by ID.

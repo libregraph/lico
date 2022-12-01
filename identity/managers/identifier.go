@@ -25,9 +25,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/libregraph/oidc-go"
+	"github.com/longsleep/rndm"
 	"github.com/sirupsen/logrus"
-	"stash.kopano.io/kgol/oidc-go"
-	"stash.kopano.io/kgol/rndm"
 
 	"github.com/libregraph/lico/identifier"
 	"github.com/libregraph/lico/identity"

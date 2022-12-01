@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"stash.kopano.io/kgol/oidc-go"
+	"github.com/libregraph/oidc-go"
 )
 
 var scopedClaims = map[string]string{

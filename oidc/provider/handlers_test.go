@@ -25,7 +25,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"stash.kopano.io/kgol/oidc-go"
+	"github.com/libregraph/oidc-go"
 )
 
 func TestWellKnownHandler(t *testing.T) {

@@ -28,9 +28,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/libregraph/oidc-go"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"stash.kopano.io/kgol/oidc-go"
 )
 
 // Registry implements the registry for registered clients.

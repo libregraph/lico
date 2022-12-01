@@ -25,9 +25,9 @@ import (
 	"time"
 
 	"github.com/crewjam/saml"
+	"github.com/libregraph/oidc-go"
+	"github.com/longsleep/rndm"
 	"github.com/sirupsen/logrus"
-	"stash.kopano.io/kgol/oidc-go"
-	"stash.kopano.io/kgol/rndm"
 
 	"github.com/libregraph/lico/identity/authorities"
 	konnectoidc "github.com/libregraph/lico/oidc"

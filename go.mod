@@ -16,7 +16,9 @@ require (
 	github.com/google/go-querystring v1.1.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
+	github.com/libregraph/oidc-go v1.0.0
 	github.com/longsleep/go-metrics v1.0.0
+	github.com/longsleep/rndm v1.2.0
 	github.com/mendsley/gojwk v0.0.0-20141217222730-4d5ec6e58103
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.13.0
@@ -32,8 +34,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.3.0
 	stash.kopano.io/kgol/ksurveyclient-go v0.6.1
-	stash.kopano.io/kgol/oidc-go v0.3.4
-	stash.kopano.io/kgol/rndm v1.1.2
 )
 
 require (

@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"stash.kopano.io/kgol/oidc-go"
-	"stash.kopano.io/kgol/rndm"
+	"github.com/libregraph/oidc-go"
+	"github.com/longsleep/rndm"
 
 	"github.com/libregraph/lico/identifier/meta"
 	"github.com/libregraph/lico/identifier/meta/scopes"

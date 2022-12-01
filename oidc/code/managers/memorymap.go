@@ -21,8 +21,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/longsleep/rndm"
 	"github.com/orcaman/concurrent-map"
-	"stash.kopano.io/kgol/rndm"
 
 	"github.com/libregraph/lico/oidc/code"
 )

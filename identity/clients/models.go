@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/longsleep/rndm"
 	"github.com/mendsley/gojwk"
 	"golang.org/x/crypto/blake2b"
 	_ "gopkg.in/yaml.v2" // Make sure we have yaml.
-	"stash.kopano.io/kgol/rndm"
 )
 
 // Constat data used with dynamic stateless clients.

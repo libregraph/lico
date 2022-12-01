@@ -33,8 +33,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/longsleep/rndm"
 	"github.com/sirupsen/logrus"
-	"stash.kopano.io/kgol/rndm"
 
 	"github.com/libregraph/lico/config"
 	"github.com/libregraph/lico/encryption"

@@ -30,9 +30,9 @@ import (
 
 	"github.com/go-ldap/ldap/v3"
 	uuid "github.com/gofrs/uuid"
+	"github.com/libregraph/oidc-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
-	"stash.kopano.io/kgol/oidc-go"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/config"

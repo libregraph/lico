@@ -28,9 +28,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/libregraph/oidc-go"
+	"github.com/longsleep/rndm"
 	"golang.org/x/oauth2"
-	"stash.kopano.io/kgol/oidc-go"
-	"stash.kopano.io/kgol/rndm"
 
 	"github.com/libregraph/lico/identity/authorities"
 	konnectoidc "github.com/libregraph/lico/oidc"

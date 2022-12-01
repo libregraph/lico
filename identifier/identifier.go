@@ -30,10 +30,10 @@ import (
 
 	"github.com/deckarep/golang-set"
 	"github.com/gorilla/mux"
+	"github.com/longsleep/rndm"
 	"github.com/sirupsen/logrus"
 	jose "gopkg.in/square/go-jose.v2"
 	jwt "gopkg.in/square/go-jose.v2/jwt"
-	"stash.kopano.io/kgol/rndm"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identifier/backends"
@@ -44,7 +44,7 @@ import (
 	"github.com/libregraph/lico/identity/clients"
 	"github.com/libregraph/lico/managers"
 	"github.com/libregraph/lico/utils"
-	"stash.kopano.io/kgol/oidc-go"
+	"github.com/libregraph/oidc-go"
 )
 
 // audienceMarker defines the value which gets included in logon cookies. Valid

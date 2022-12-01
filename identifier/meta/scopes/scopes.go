@@ -20,9 +20,9 @@ package scopes
 import (
 	"io/ioutil"
 
+	"github.com/libregraph/oidc-go"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"stash.kopano.io/kgol/oidc-go"
 
 	konnect "github.com/libregraph/lico"
 )

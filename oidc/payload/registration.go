@@ -25,8 +25,8 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/libregraph/oidc-go"
 	"github.com/mendsley/gojwk"
-	"stash.kopano.io/kgol/oidc-go"
 
 	"github.com/libregraph/lico/identity/clients"
 	konnectoidc "github.com/libregraph/lico/oidc"

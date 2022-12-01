@@ -24,10 +24,10 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/libregraph/oidc-go"
+	"github.com/longsleep/rndm"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/square/go-jose.v2"
-	"stash.kopano.io/kgol/oidc-go"
-	"stash.kopano.io/kgol/rndm"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identity"

@@ -25,8 +25,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/longsleep/rndm"
 	"golang.org/x/crypto/blake2b"
-	"stash.kopano.io/kgol/rndm"
 
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/oidc/payload"

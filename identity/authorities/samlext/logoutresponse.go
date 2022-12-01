@@ -26,7 +26,7 @@ import (
 	"net/url"
 
 	"github.com/crewjam/saml"
-	"stash.kopano.io/kgol/rndm"
+	"github.com/longsleep/rndm"
 )
 
 func MakeLogoutResponse(sp *saml.ServiceProvider, req *saml.LogoutRequest, status *saml.Status, binding string) (*LogoutResponse, error) {

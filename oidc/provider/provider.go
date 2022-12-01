@@ -30,10 +30,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/libregraph/oidc-go"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ed25519"
-	"stash.kopano.io/kgol/oidc-go"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identity"

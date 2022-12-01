@@ -29,8 +29,8 @@ import (
 	"time"
 
 	"github.com/cevaris/ordered_map"
+	"github.com/libregraph/oidc-go"
 	"github.com/sirupsen/logrus"
-	"stash.kopano.io/kgol/oidc-go"
 
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/config"
