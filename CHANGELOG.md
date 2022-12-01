@@ -4,7 +4,18 @@
 
 
 
-## v0.59.2 (2022-10-14)
+## v0.59.3 (2022-11-16)
+
+- Bump loader-utils from 2.0.0 to 2.0.4 in /identifier
+- Bump github.com/golang-jwt/jwt/v4 from 4.3.0 to 4.4.3
+- Bump github.com/sirupsen/logrus from 1.8.1 to 1.9.0
+- Bump github.com/crewjam/saml from 0.4.6 to 0.4.10
+- Update oidc and rndm external dependencies
+- Bump github.com/gabriel-vasile/mimetype from 1.4.0 to 1.4.1
+- Bump [@xmldom](https://github.com/xmldom/)/xmldom from 0.8.2 to 0.8.5 in /identifier
+
+
+## v0.59.2 (2022-10-19)
 
 - Fix a bunch of eslint warnings
 - Bump identifier third party dependencies
