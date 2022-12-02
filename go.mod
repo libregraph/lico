@@ -11,7 +11,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ldap/ldap/v3 v3.4.2
-	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/google/go-querystring v1.1.0
 	github.com/gorilla/mux v1.8.0
