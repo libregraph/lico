@@ -4,7 +4,12 @@
 
 
 
-## v0.59.3 (2022-11-16)
+## v0.59.4 (2022-12-02)
+
+- Pull survey client dependency from Github
+
+
+## v0.59.3 (2022-12-01)
 
 - Bump loader-utils from 2.0.0 to 2.0.4 in /identifier
 - Bump github.com/golang-jwt/jwt/v4 from 4.3.0 to 4.4.3
