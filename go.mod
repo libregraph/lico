@@ -58,3 +58,5 @@ require (
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
+
+replace stash.kopano.io/kgol/ksurveyclient-go => github.com/kopano-dev/ksurveyclient-go v0.6.1
