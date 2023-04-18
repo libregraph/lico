@@ -115,7 +115,7 @@ func newLdapUser(entryID string, mapping ldapAttributeMapping, entry *ldap.Entry
 		for n, mapped := range mapping {
 			// LDAP attribute descriptors / short names are case insensitive. See
 			// https://tools.ietf.org/html/rfc4512#page-4.
-			if strings.ToLower(attribute.Name) == strings.ToLower(mapped) {
+			if strings.EqualFold(attribute.Name, mapped) {
 				// Check if we need conversion.
 				switch mapping[fmt.Sprintf("%s_type", n)] {
 				case AttributeValueTypeBinary:
