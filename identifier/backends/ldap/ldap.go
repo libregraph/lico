@@ -26,6 +26,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
@@ -71,6 +72,9 @@ type LDAPIdentifierBackend struct {
 
 	timeout int
 	limiter *rate.Limiter
+
+	mutex sync.Mutex
+	conn  *ldap.Conn
 }
 
 type ldapAttributeMapping map[string]string
@@ -370,9 +374,8 @@ func (b *LDAPIdentifierBackend) Logon(ctx context.Context, audience, username, p
 
 	l, err := b.connect(ctx)
 	if err != nil {
-		return false, nil, nil, nil, fmt.Errorf("ldap identifier backend logon connect error: %v", err)
+		return false, nil, nil, nil, fmt.Errorf("ldap identifier backend logon global connect error: %v", err)
 	}
-	defer l.Close()
 
 	// Search for the given username.
 	entry, err := b.searchUsername(l, username, b.attributeMapping.attributes())
@@ -387,8 +390,15 @@ func (b *LDAPIdentifierBackend) Logon(ctx context.Context, audience, username, p
 		return false, nil, nil, nil, fmt.Errorf("ldap identifier backend logon search returned wrong user")
 	}
 
-	// Bind as the user to verify the password.
-	err = l.Bind(entry.DN, password)
+	// Use a temporary connection for the user Bind to verify the password.
+	ul, err := b.createConnection(ctx, entry.DN, password)
+	if err != nil {
+		return false, nil, nil, nil, fmt.Errorf("ldap identifier backend logon user connect error: %v", err)
+	}
+	// Always close the temporary connection
+	defer ul.Close()
+
+	err = ul.Bind(entry.DN, password)
 	switch {
 	case ldap.IsErrorWithCode(err, ldap.LDAPResultInvalidCredentials):
 		return false, nil, nil, nil, nil
@@ -431,7 +441,6 @@ func (b *LDAPIdentifierBackend) ResolveUserByUsername(ctx context.Context, usern
 	if err != nil {
 		return nil, fmt.Errorf("ldap identifier backend resolve connect error: %v", err)
 	}
-	defer l.Close()
 
 	// Search for the given username.
 	entry, err := b.searchUsername(l, username, b.attributeMapping.attributes())
@@ -464,7 +473,6 @@ func (b *LDAPIdentifierBackend) GetUser(ctx context.Context, entryID string, ses
 	if err != nil {
 		return nil, fmt.Errorf("ldap identifier backend get user connect error: %v", err)
 	}
-	defer l.Close()
 
 	entry, err := b.getUser(l, entryID, b.attributeMapping.attributes())
 	if err != nil {
@@ -517,7 +525,7 @@ func (b *LDAPIdentifierBackend) Name() string {
 	return ldapIdentifierBackendName
 }
 
-func (b *LDAPIdentifierBackend) connect(parentCtx context.Context) (*ldap.Conn, error) {
+func (b *LDAPIdentifierBackend) createConnection(parentCtx context.Context, bindDN, bindPassword string) (*ldap.Conn, error) {
 	// A timeout for waiting for a limiter slot. The timeout also includes the
 	// time to connect to the LDAP server which as a consequence means that both
 	// getting a free slot and establishing the connection are one timeout.
@@ -550,15 +558,28 @@ func (b *LDAPIdentifierBackend) connect(parentCtx context.Context) (*ldap.Conn, 
 
 	l.Start()
 
-	// Bind with general user (which is preferably read only).
-	if b.bindDN != "" {
-		err = l.Bind(b.bindDN, b.bindPassword)
+	if bindDN != "" {
+		err = l.Bind(bindDN, bindPassword)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return l, nil
+}
+
+// connect establishes a global connection that is used for all requests except the user Bind to check the password in the Logon call.
+func (b *LDAPIdentifierBackend) connect(parentCtx context.Context) (*ldap.Conn, error) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	if b.conn != nil && !b.conn.IsClosing() {
+		return b.conn, nil
+	}
+	var err error
+	b.conn, err = b.createConnection(parentCtx, b.bindDN, b.bindPassword)
+
+	return b.conn, err
 }
 
 func (b *LDAPIdentifierBackend) searchUsername(l *ldap.Conn, username string, attributes []string) (*ldap.Entry, error) {
