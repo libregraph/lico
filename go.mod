@@ -22,7 +22,7 @@ require (
 	github.com/mendsley/gojwk v0.0.0-20141217222730-4d5ec6e58103
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.15.1
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.9.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.5.0
