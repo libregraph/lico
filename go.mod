@@ -29,7 +29,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.5.0
-	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
+	golang.org/x/time v0.3.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.3.0
