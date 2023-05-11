@@ -25,7 +25,7 @@ require (
 	github.com/rs/cors v1.9.0
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.7.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.5.0
@@ -43,7 +43,7 @@ require (
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
