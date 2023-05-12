@@ -3,7 +3,7 @@ module github.com/libregraph/lico
 go 1.18
 
 require (
-	github.com/beevik/etree v1.1.0
+	github.com/beevik/etree v1.2.0
 	github.com/cevaris/ordered_map v0.0.0-20190319150403-3adeae072e73
 	github.com/crewjam/httperr v0.2.0
 	github.com/crewjam/saml v0.4.13
