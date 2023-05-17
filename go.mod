@@ -24,7 +24,7 @@ require (
 	github.com/prometheus/client_golang v1.15.1
 	github.com/rs/cors v1.9.0
 	github.com/russellhaering/goxmldsig v1.4.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.1
 	github.com/spf13/cobra v1.7.0
 	golang.org/x/crypto v0.9.0
 	golang.org/x/net v0.10.0
