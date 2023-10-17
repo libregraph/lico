@@ -6,7 +6,7 @@ require (
 	github.com/beevik/etree v1.2.0
 	github.com/cevaris/ordered_map v0.0.0-20190319150403-3adeae072e73
 	github.com/crewjam/httperr v0.2.0
-	github.com/crewjam/saml v0.4.13
+	github.com/crewjam/saml v0.4.14
 	github.com/deckarep/golang-set v1.8.0
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/ghodss/yaml v1.0.0
@@ -26,7 +26,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/sirupsen/logrus v1.9.1
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/crypto v0.9.0
+	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.10.0
 	golang.org/x/oauth2 v0.8.0
 	golang.org/x/time v0.3.0
@@ -53,8 +53,8 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 )
