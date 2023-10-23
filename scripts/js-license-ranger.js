@@ -195,7 +195,7 @@ function printLicensesDocument(modules) {
 // Main.
 if (require.main === module) { // eslint-disable-line no-undef
   const modules = {};
-  const files = glob.sync('./build/static/js/*.js');
+  const files = glob.sync('./build/static/assets/*.js');
   console.error('Bundles:', files);
 
   files.forEach((f) => {
