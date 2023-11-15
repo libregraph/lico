@@ -44,7 +44,11 @@ const styles = theme => ({
   message: {
     marginTop: theme.spacing(2),
     marginBottom: theme.spacing(2)
-  }
+  },
+  usernameInputField: {
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1.5),
+  },
 });
 
 function Login(props) {
@@ -113,11 +117,10 @@ function Login(props) {
 
       <form action="" onSubmit={(event) => this.logon(event)}>
         <TextField
-          placeholder={usernamePlaceHolder}
+          label={usernamePlaceHolder}
           error={!!errors.username}
           helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}}></ErrorMessage>}
           fullWidth
-          margin="dense"
           autoFocus
           inputProps={{
             autoCapitalize: 'off',
@@ -126,16 +129,18 @@ function Login(props) {
           value={username}
           onChange={handleChange('username')}
           autoComplete="kopano-account username"
+          variant="outlined"
+          className={classes.usernameInputField}
         />
         <TextField
           type="password"
-          placeholder={t("konnect.login.passwordField.label", "Password")}
+          label={t("konnect.login.passwordField.label", "Password")}
           error={!!errors.password}
           helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
           fullWidth
-          margin="dense"
           onChange={handleChange('password')}
           autoComplete="kopano-account current-password"
+          variant="outlined"
         />
         <DialogActions>
           <div className={classes.wrapper}>
