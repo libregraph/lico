@@ -54,6 +54,7 @@ const styles = theme => ({
 function Login(props) {
   const {
     hello,
+    branding,
     query,
     dispatch,
     history,
@@ -93,8 +94,8 @@ function Login(props) {
   };
 
   const usernamePlaceHolder = useMemo(() => {
-    if (hello?.details?.branding?.usernameHintText ) {
-      switch (hello.details.branding.usernameHintText) {
+    if (branding?.usernameHintText ) {
+      switch (branding.usernameHintText) {
         case "Username":
           break;
         case "Email":
@@ -102,12 +103,12 @@ function Login(props) {
         case "Identity":
           return t("konnect.login.usernameField.placeholder.identity", "Identity");
         default:
-          return hello.details.branding.usernameHintText;
+          return branding.usernameHintText;
       }
     }
 
     return t("konnect.login.usernameField.placeholder.username", "Username");
-  }, [hello, t]);
+  }, [branding, t]);
 
   return (
     <DialogContent>
@@ -164,7 +165,7 @@ function Login(props) {
           </Typography>
         ))}
 
-        {hello?.details?.branding?.signinPageText && <Typography variant="body2">{hello.details.branding.signinPageText}</Typography>}
+        {branding?.signinPageText && <Typography variant="body2">{branding.signinPageText}</Typography>}
       </form>
     </DialogContent>
   );
