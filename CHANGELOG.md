@@ -4,7 +4,12 @@
 
 
 
-## v0.61.0 (2023-10-24)
+## v0.61.1 (2023-11-22)
+
+- Fix branding settings cache usage
+
+
+## v0.61.0 (2023-11-15)
 
 - Bump github.com/rs/cors from 1.9.0 to 1.10.1
 - Bump github.com/sirupsen/logrus from 1.9.1 to 1.9.3
