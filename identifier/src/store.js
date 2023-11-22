@@ -8,7 +8,7 @@ const middlewares = [
   thunkMiddleware
 ];
 
-if (process.env.NODE_ENV === 'development') { // eslint-disable-line no-undef
+if (process.env.NODE_ENV !== 'development') { // eslint-disable-line no-undef
   middlewares.push(createLogger()); // must be last middleware in the chain.
 }
 
