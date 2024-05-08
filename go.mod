@@ -10,13 +10,14 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/go-ldap/ldap/v3 v3.4.6
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-querystring v1.1.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
-	github.com/libregraph/oidc-go v1.0.0
+	github.com/libregraph/oidc-go v1.1.0
 	github.com/longsleep/go-metrics v1.0.0
 	github.com/longsleep/rndm v1.2.0
 	github.com/mendsley/gojwk v0.0.0-20141217222730-4d5ec6e58103
@@ -30,7 +31,6 @@ require (
 	golang.org/x/net v0.24.0
 	golang.org/x/oauth2 v0.8.0
 	golang.org/x/time v0.3.0
-	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.3.0
 	stash.kopano.io/kgol/ksurveyclient-go v0.6.1
@@ -49,7 +49,7 @@ require (
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pquerna/cachecontrol v0.1.0 // indirect
+	github.com/pquerna/cachecontrol v0.2.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
