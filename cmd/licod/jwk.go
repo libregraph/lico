@@ -27,8 +27,8 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/go-jose/go-jose/v3"
 	"github.com/spf13/cobra"
-	"gopkg.in/square/go-jose.v2"
 
 	"github.com/libregraph/lico/bootstrap"
 )
