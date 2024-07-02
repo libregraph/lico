@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -57,6 +58,14 @@ func (i *Identifier) secureHandler(handler http.Handler) http.Handler {
 		// NOTE: this does not protect from DNS rebinding. Protection for that
 		// should be added at the frontend proxy.
 		requiredHost := req.Host
+		if host, port, splitErr := net.SplitHostPort(requiredHost); splitErr == nil {
+			if port == "443" {
+				// Ignore the port 443 as it is the default port and it is
+				// usually not part of any of the urls. It might be in the
+				// request for HTTP/3 requests.
+				requiredHost = host
+			}
+		}
 
 		// This follows https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet
 		for {
