@@ -17,6 +17,10 @@ import DialogContent from '@material-ui/core/DialogContent';
 
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
+import IconButton from '@material-ui/core/IconButton';
+import InputAdornment from '@material-ui/core/InputAdornment'
+import Visibility from '@material-ui/icons/Visibility';
+import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
 const styles = theme => ({
   button: {
@@ -66,6 +70,8 @@ function Login(props) {
   } = props;
 
   const { t } = useTranslation();
+
+  const [showPassword, setShowPassword] = React.useState(false);
 
   useEffect(() => {
     if (hello && hello.state && history.action !== 'PUSH') {
@@ -134,7 +140,7 @@ function Login(props) {
           className={classes.usernameInputField}
         />
         <TextField
-          type="password"
+          type={showPassword ? "text" : "password"}
           label={t("konnect.login.passwordField.label", "Password")}
           error={!!errors.password}
           helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
@@ -142,6 +148,20 @@ function Login(props) {
           onChange={handleChange('password')}
           autoComplete="kopano-account current-password"
           variant="outlined"
+          InputProps={{      // End-adornment icon to show/hide password on visibility button click.
+            endAdornment: <InputAdornment position="end">
+              <IconButton
+                aria-label="toggle password visibility"
+                onClick={() => setShowPassword((show) => !show)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
+                edge="end"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          }}
         />
         <DialogActions>
           <div className={classes.wrapper}>
