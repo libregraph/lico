@@ -1,4 +1,5 @@
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
+import legacy from '@vitejs/plugin-legacy'
 import react from '@vitejs/plugin-react';
 import checker from 'vite-plugin-checker';
 
@@ -28,6 +29,9 @@ export default defineConfig((env) => {
         eslint: {
           lintCommand: 'eslint --max-warnings=0 src',
         },
+      }),
+      legacy({
+        targets: ['defaults', 'ie 6-11'],
       }),
       splitVendorChunkPlugin(),
     ],
