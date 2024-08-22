@@ -1,12 +1,12 @@
-export function newHelloRequest(flow, query) {
-  const r = {};
+export function newHelloRequest(flow: string, query: {scope?: string, client_id?: string, redirect_uri: string, id_token_hint?: string, max_age?: string,claims_scope?: string, prompt?: any }) {
+  const r:{[key: string]: string} = {};
 
   if (query.prompt) {
     // TODO(longsleep): Validate prompt values?
     r.prompt = query.prompt;
   }
 
-  let selectedFlow = flow;
+  let selectedFlow: string | null = flow;
   switch (flow) {
     case 'oauth':
     case 'consent':

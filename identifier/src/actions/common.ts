@@ -10,8 +10,10 @@ import {
 
 import { handleAxiosError } from './utils';
 import * as types from './types';
+import {  Dispatch } from 'redux';
+import { AppDispatch, RootState } from '../store';
 
-export function receiveError(error) {
+export function receiveError(error: any) {
   return {
     type: types.RECEIVE_ERROR,
     error
@@ -24,7 +26,7 @@ export function resetHello() {
   };
 }
 
-export function receiveHello(hello) {
+export function receiveHello(hello: {success?: boolean, username: string, displayName?: string}) {
   const { success, username, displayName } = hello;
 
   return {
@@ -37,7 +39,7 @@ export function receiveHello(hello) {
 }
 
 export function executeHello() {
-  return function(dispatch, getState) {
+  return function(dispatch:Dispatch , getState: () => RootState) {
     dispatch(resetHello());
 
     const { flow, query } = getState().common;
@@ -78,7 +80,7 @@ export function executeHello() {
 }
 
 export function retryHello() {
-  return function(dispatch) {
+  return function(dispatch: AppDispatch) {
     dispatch(receiveError(null));
 
     return dispatch(executeHello());
@@ -91,7 +93,7 @@ export function requestLogoff() {
   };
 }
 
-export function receiveLogoff(state) {
+export function receiveLogoff(state: boolean) {
   return {
     type: types.RECEIVE_LOGOFF,
     state
@@ -99,7 +101,7 @@ export function receiveLogoff(state) {
 }
 
 export function executeLogoff() {
-  return function(dispatch) {
+  return function(dispatch: AppDispatch) {
     dispatch(resetHello());
     dispatch(requestLogoff());
 

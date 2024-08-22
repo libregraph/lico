@@ -20,7 +20,22 @@ const defaultPathPrefix = (() => {
   return pathPrefix;
 })();
 
-const defaultState = {
+type commonStateType =  {
+  hello: {
+    state: any,
+    username: string,
+    displayName: string,
+    details: any
+  } | null,
+  branding: string | null,
+  error: any,
+  flow: string | (string | null)[],
+  query: queryString.ParsedQuery<string>,
+  pathPrefix: string,
+  updateAvailable: boolean
+}  
+
+const defaultState:commonStateType = {
   hello: null,
   branding: null,
   error: null,
@@ -30,7 +45,7 @@ const defaultState = {
   pathPrefix: defaultPathPrefix
 };
 
-function commonReducer(state = defaultState, action) {
+function commonReducer(state = defaultState, action: {type: string, error: any, state: any, username: string, displayName: string, hello: any}) {
   switch (action.type) {
     case RECEIVE_ERROR:
       return Object.assign({}, state, {
