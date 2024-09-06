@@ -32,7 +32,7 @@ require (
 	golang.org/x/oauth2 v0.8.0
 	golang.org/x/time v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 	stash.kopano.io/kgol/ksurveyclient-go v0.6.1
 )
 
