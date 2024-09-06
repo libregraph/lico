@@ -245,7 +245,7 @@ func (u *libreGraphUser) setRequiredScopes(selectedScope string, scopeMap *order
 }
 
 func (u *libreGraphUser) sessionID() string {
-	if accessTokenClaims, ok := u.identityClaims[""].(map[string]interface{}); ok {
+	if accessTokenClaims, ok := u.identityClaims[konnect.InternalExtraAccessTokenClaimsClaim].(map[string]interface{}); ok {
 		if sessionID, withSessionID := accessTokenClaims[oidc.SessionIDClaim].(string); withSessionID {
 			if sessionID != "" {
 				return sessionID
