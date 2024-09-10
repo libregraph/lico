@@ -24,12 +24,12 @@
 
 'use strict';
 
-const fs = require('fs'),
-  glob = require('glob'),
-  path = require('path'),
-  sourcemapExplorer = require('source-map-explorer');
+import fs from 'fs';
+import path from 'path';
+import sourcemapExplorer from '../identifier/node_modules/source-map-explorer/lib/index.js';
+import glob from '../identifier/node_modules/glob/glob.js';
 
-const version = '20220310-1'; // eslint-disable-line
+const version = '20240910-1'; // eslint-disable-line
 
 const licenseFilenames = [
   'LICENSE',
@@ -193,26 +193,26 @@ function printLicensesDocument(modules) {
 }
 
 // Main.
-if (require.main === module) { // eslint-disable-line no-undef
+async function main() {
   const modules = {};
   const files = glob.sync('./build/static/assets/*.js');
   console.error('Bundles:', files);
 
-  files.forEach((f) => {
+  for (const f of files) {
     if (fs.existsSync(`${f}.map`)) {
       console.error('> processing', f);
-      const data = sourcemapExplorer.loadSourceMap(f, `${f}.map`);
-      const sizes = sourcemapExplorer.computeGeneratedFileSizes(data.mapConsumer, data.jsData);
-
-      const files = sourcemapExplorer.adjustSourcePaths(sizes.files, false);
+      const data = await sourcemapExplorer.explore({code: f, map: `${f}.map`});
+	  const files = data.bundles[0].files;
       updateThirdPartyModules(modules, files);
     } else {
       console.warn('> skipped', f, '(no map file)');
     }
-  });
+  };
 
   console.error(`Found: ${Object.keys(modules).length} modules`);
 
   // Print to stdout.
   printLicensesDocument(modules);
 }
+
+await main();
