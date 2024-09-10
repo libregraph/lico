@@ -201,7 +201,7 @@ async function main() {
   for (const f of files) {
     if (fs.existsSync(`${f}.map`)) {
       console.error('> processing', f);
-      const data = await sourcemapExplorer.explore({code: f, map: `${f}.map`});
+      const data = await sourcemapExplorer.explore({code: f, map: `${f}.map`}, {onlyMapped: true, noBorderChecks: true});
 	  const files = data.bundles[0].files;
       updateThirdPartyModules(modules, files);
     } else {
