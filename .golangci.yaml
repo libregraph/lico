@@ -12,8 +12,6 @@ linters-settings:
           - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
           - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
           - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-  golint:
-    min-confidence: 0
   gocyclo:
     min-complexity: 10
   maligned:
@@ -34,6 +32,8 @@ linters-settings:
       - performance
       - style
       - experimental
+  revive:
+    min-confidence: 0
 
 linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
