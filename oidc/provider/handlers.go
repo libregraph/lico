@@ -439,8 +439,9 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 
 		ctx := konnect.NewClaimsContext(req.Context(), claims)
 
-		currentIdentityManager, err := p.getIdentityManagerFromClaims(claims.IdentityProvider, claims.IdentityClaims)
-		if err != nil {
+		currentIdentityManager, claimsErr := p.getIdentityManagerFromClaims(claims.IdentityProvider, claims.IdentityClaims)
+		if claimsErr != nil {
+			err = claimsErr
 			goto done
 		}
 
