@@ -4,6 +4,13 @@
 
 
 
+## v0.64.0 (2024-09-18)
+
+- Implement refresh and revoke for lg identifier backend session
+- Pass real src ip and user agent to lg identifier backend
+- Fix variable shadowing making error checks ineffective
+
+
 ## v0.63.0 (2024-09-10)
 
 - Bump semver from 5.7.1 to 5.7.2 in /identifier
