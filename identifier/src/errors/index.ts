@@ -1,5 +1,7 @@
 /* eslint react/prop-types: 0 */
 
+import { TFunction } from 'i18next';
+import { ComponentType } from 'react';
 import { withTranslation } from 'react-i18next';
 
 export const ERROR_LOGIN_VALIDATE_MISSINGUSERNAME = 'konnect.error.login.validate.missingUsername';
@@ -13,7 +15,7 @@ export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATE = 'konnect.error.http.unexpect
 export class ExtendedError extends Error {
   values = undefined;
 
-  constructor(message, values) {
+  constructor(message: string, values: any) {
     super(message);
     if (Error.captureStackTrace !== undefined) {
       Error.captureStackTrace(this, ExtendedError);
@@ -23,7 +25,7 @@ export class ExtendedError extends Error {
 }
 
 // Component to translate error text with values.
-function ErrorMessageComponent(props) {
+function ErrorMessageComponent(props: { error?:any, t: TFunction, values: any }) {
   const { error, t, values } = props;
 
   if (!error) {
@@ -60,4 +62,4 @@ function ErrorMessageComponent(props) {
   return f(messageDescriptor.defaultMessage, messageDescriptor.values);
 }
 
-export const ErrorMessage = withTranslation()(ErrorMessageComponent);
+export const ErrorMessage = withTranslation()(ErrorMessageComponent as ComponentType<any>);

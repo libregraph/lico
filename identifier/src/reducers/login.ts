@@ -9,12 +9,20 @@ import {
   UPDATE_INPUT
 } from '../actions/types';
 
-function loginReducer(state = {
+
+type loginState = {
+  loading: string,
+  username: string,
+  password: string,
+  errors: {[key: string] : string}
+}
+
+function loginReducer(state:loginState = {
   loading: '',
   username: '',
   password: '',
   errors: {}
-}, action) {
+}, action: {errors: any, type: string, success?: boolean, name: string, value: any}) {
   switch (action.type) {
     case RECEIVE_VALIDATE_LOGON:
       return Object.assign({}, state, {
