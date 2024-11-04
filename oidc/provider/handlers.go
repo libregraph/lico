@@ -510,7 +510,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	switch tr.GrantType {
-	case oidc.GrantTypeAuthorizationCode:
+	case oidc.GrantTypeAuthorizationCode, oidc.GrantTypeRefreshToken:
 		// Create ID token when not previously requested amd openid scope is authorized.
 		if !ar.ResponseTypes[oidc.ResponseTypeIDToken] && authorizedScopes[oidc.ScopeOpenID] {
 			idTokenString, err = p.makeIDToken(ctx, ar, auth, session, accessTokenString, "", signinMethod)
