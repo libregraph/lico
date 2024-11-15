@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import renderIf from 'render-if';
+import validator from 'validator';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -82,6 +83,17 @@ function Login(props) {
 
       history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
       return;
+    }
+
+    if (query && query.login_hint){  // for login hint user name validation
+      let sanitizedHint = query.login_hint;
+    
+      if(!validator.isEmail(query.login_hint)){
+        if(!validator.isEmail(`${query.login_hint}@example.com`)){
+          sanitizedHint = "";
+        }
+      }
+      dispatch(updateInput("username", sanitizedHint))
     }
   }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
 
