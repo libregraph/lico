@@ -81,9 +81,15 @@ function Login(props) {
       }
 
       history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
-      return;
-    }
-  }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
+        return;
+      }
+    if (query && query.login_hint) {
+      if (validator.isEmail(query.login_hint) || validator.isEmail(`${query.login_hint}@example.com`)) {
+        // for login hint user name validation
+        dispatch(updateInput("username", query.login_hint));
+      }  
+      }
+    }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (name) => (event) => {
     dispatch(updateInput(name, event.target.value));

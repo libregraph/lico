@@ -2988,6 +2988,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/validator@npm:^13":
+  version: 13.12.2
+  resolution: "@types/validator@npm:13.12.2"
+  checksum: 564f60cfe112b45e1d747245d1f80db999bbc372b2b6a1c5454441b02c3d6bffbfff4365a10c3cd7874197f14ca5779b435794c7600bdcb541da948405a3b21a
+  languageName: node
+  linkType: hard
+
 "@types/yargs-parser@npm:*":
   version: 21.0.0
   resolution: "@types/yargs-parser@npm:21.0.0"
@@ -6470,6 +6477,7 @@ __metadata:
     "@types/react-dom": "npm:^17.0.23"
     "@types/react-redux": "npm:^7.1.25"
     "@types/redux-logger": "npm:^3.0.12"
+    "@types/validator": "npm:^13"
     "@typescript-eslint/eslint-plugin": "npm:^6.11.0"
     "@typescript-eslint/parser": "npm:^6.9.0"
     "@typescript-eslint/typescript-estree": "npm:^6.11.0"
@@ -6502,6 +6510,7 @@ __metadata:
     render-if: "npm:^0.1.1"
     source-map-explorer: "npm:^2.5.3"
     typescript: "npm:^5.2.2"
+    validator: "npm:^13.12.0"
     vite: "npm:^4.5.2"
     vite-plugin-checker: "npm:^0.6.2"
     vite-plugin-eslint: "npm:^1.8.1"
@@ -10159,6 +10168,13 @@ __metadata:
     convert-source-map: "npm:^1.6.0"
     source-map: "npm:^0.7.3"
   checksum: db5469f133a7cfb7680a28ddfb31aad2cc64f282fa7cf0c8e91f91bfd542bf61597260282be28c9648f0f2114963a24b273ed92af9a5cad6cb629c708ca72f8e
+  languageName: node
+  linkType: hard
+
+"validator@npm:^13.12.0":
+  version: 13.12.0
+  resolution: "validator@npm:13.12.0"
+  checksum: db6eb0725e2b67d60d30073ae8573982713b5903195d031dc3c7db7e82df8b74e8c13baef8e2106d146d979599fd61a06cde1fec5c148e4abd53d52817ff0fd9
   languageName: node
   linkType: hard
 
