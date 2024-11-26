@@ -83,6 +83,12 @@ function Login(props) {
       history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
       return;
     }
+    // Login Hint validation is done so as to update user name automatically based on login hint provided.
+    if (query && query.login_hint) {
+      if (validator.isEmail(query.login_hint) || validator.isEmail(`${query.login_hint}@example.com`)) {
+        dispatch(updateInput("username", query.login_hint));
+      }  
+    }
   }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (name) => (event) => {
