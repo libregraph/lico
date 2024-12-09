@@ -20,7 +20,22 @@ const defaultPathPrefix = (() => {
   return pathPrefix;
 })();
 
-const defaultState = {
+type commonStateType =  {
+  hello: {
+    state: {[key: string] : string | boolean} | null | commonStateType,
+    username: string,
+    displayName: string,
+    details: {[key: string] : string | boolean} | null
+  } | null,
+  branding: string | null,
+  error: Error | {[key: string]: Error} | null,
+  flow: string | (string | null)[],
+  query: queryString.ParsedQuery<string>,
+  pathPrefix: string,
+  updateAvailable: boolean
+}  
+
+const defaultState:commonStateType = {
   hello: null,
   branding: null,
   error: null,
@@ -30,7 +45,8 @@ const defaultState = {
   pathPrefix: defaultPathPrefix
 };
 
-function commonReducer(state = defaultState, action) {
+
+function commonReducer(state = defaultState, action: {type: string, error: Error | {[key: string]: Error} | null | undefined | null, state: commonStateType | undefined, username: string | undefined, displayName: string | undefined, hello: null | undefined | {[key: string]: commonStateType | string | boolean}}) {
   switch (action.type) {
     case RECEIVE_ERROR:
       return Object.assign({}, state, {
@@ -51,7 +67,7 @@ function commonReducer(state = defaultState, action) {
           displayName: action.displayName,
           details: action.hello
         },
-        branding: action.hello.branding ? action.hello.branding : state.branding
+        branding: action.hello?.branding ? action.hello.branding : state.branding
       });
 
     case SERVICE_WORKER_NEW_CONTENT:

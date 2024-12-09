@@ -1,5 +1,7 @@
 /* eslint react/prop-types: 0 */
 
+import { AxiosResponse } from 'axios';
+import { TFunction } from 'i18next';
 import { withTranslation } from 'react-i18next';
 
 export const ERROR_LOGIN_VALIDATE_MISSINGUSERNAME = 'konnect.error.login.validate.missingUsername';
@@ -11,9 +13,9 @@ export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATE = 'konnect.error.http.unexpect
 
 // Error with values.
 export class ExtendedError extends Error {
-  values = undefined;
+  values: { [key: string]: string | null | undefined | Error } | null | undefined | AxiosResponse<never> = undefined;
 
-  constructor(message, values) {
+  constructor(message: string, values?: { [key: string]: string | null | undefined | Error } | null | AxiosResponse<never>) {
     super(message);
     if (Error.captureStackTrace !== undefined) {
       Error.captureStackTrace(this, ExtendedError);
@@ -23,7 +25,7 @@ export class ExtendedError extends Error {
 }
 
 // Component to translate error text with values.
-function ErrorMessageComponent(props) {
+function ErrorMessageComponent(props: { error?: { id: null | undefined | string, message: string | null | undefined, values: { [key: string] : string | boolean | Error } }, t: TFunction, values: {[key:string]: string | boolean} }): JSX.Element | null {
   const { error, t, values } = props;
 
   if (!error) {
@@ -57,7 +59,7 @@ function ErrorMessageComponent(props) {
   }
 
   const f = t;
-  return f(messageDescriptor.defaultMessage, messageDescriptor.values);
+  return f(messageDescriptor.defaultMessage ?? "", messageDescriptor.values);
 }
 
 export const ErrorMessage = withTranslation()(ErrorMessageComponent);
