@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import queryString from 'query-string';
 
-import { newHelloRequest } from '../models/hello';
+import { HelloQuery, newHelloRequest } from '../models/hello';
 import { withClientRequestState } from '../utils';
 import {
   ExtendedError,
@@ -15,12 +15,14 @@ import {
 import * as types from './types';
 import { receiveHello } from './common';
 import { handleAxiosError } from './utils';
+import { AppDispatch, PromiseDispatch, RootState } from '../store';
+import { History } from "history";
 
 // Modes for logon.
 export const ModeLogonUsernameEmptyPasswordCookie = '0';
 export const ModeLogonUsernamePassword = '1';
 
-export function updateInput(name, value) {
+export function updateInput(name: string, value?: string | null) {
   return {
     type: types.UPDATE_INPUT,
     name,
@@ -28,14 +30,14 @@ export function updateInput(name, value) {
   };
 }
 
-export function receiveValidateLogon(errors) {
+export function receiveValidateLogon(errors: Error | {[key: string]: Error}) {
   return {
     type: types.RECEIVE_VALIDATE_LOGON,
     errors
   };
 }
 
-export function requestLogon(username, password) {
+export function requestLogon(username: string, password: string) {
   return {
     type: types.REQUEST_LOGON,
     username,
@@ -43,7 +45,7 @@ export function requestLogon(username, password) {
   };
 }
 
-export function receiveLogon(logon) {
+export function receiveLogon(logon: {success: boolean, errors: {http: Error}}) {
   const { success, errors } = logon;
 
   return {
@@ -59,7 +61,7 @@ export function requestConsent(allow=false) {
   };
 }
 
-export function receiveConsent(logon) {
+export function receiveConsent(logon: {success: boolean, errors: {http: Error}}) {
   const { success, errors } = logon;
 
   return {
@@ -69,8 +71,8 @@ export function receiveConsent(logon) {
   };
 }
 
-export function executeLogon(username, password, mode=ModeLogonUsernamePassword) {
-  return function(dispatch, getState) {
+export function executeLogon(username: string, password: string, mode=ModeLogonUsernamePassword) {
+  return function(dispatch: AppDispatch, getState: () => RootState) {
     dispatch(requestLogon(username, password));
     dispatch(receiveHello({
       username
@@ -96,7 +98,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
 
     const r = withClientRequestState({
       params: params,
-      hello: newHelloRequest(flow, query)
+      hello: newHelloRequest(flow as string, query as HelloQuery)
     });
     return axios.post('./identifier/_/logon', r, {
       headers: {
@@ -118,7 +120,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
           };
         default:
           // error.
-          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response);
+          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response as AxiosResponse<never>);
       }
     }).then(response => {
       if (response.state !== r.state) {
@@ -151,7 +153,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
 }
 
 export function executeConsent(allow=false, scope='') {
-  return function(dispatch, getState) {
+  return function(dispatch: AppDispatch, getState: () => RootState) {
     dispatch(requestConsent(allow));
 
     const { query } = getState().common;
@@ -181,7 +183,7 @@ export function executeConsent(allow=false, scope='') {
           };
         default:
           // error.
-          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response);
+          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response as AxiosResponse<never>);
       }
     }).then(response => {
       if (response.state !== r.state) {
@@ -205,10 +207,10 @@ export function executeConsent(allow=false, scope='') {
   };
 }
 
-export function validateUsernamePassword(username, password, isSignedIn) {
-  return function(dispatch) {
+export function validateUsernamePassword(username: string, password: string, isSignedIn: boolean) {
+  return function(dispatch: AppDispatch) {
     return new Promise((resolve, reject) => {
-      const errors = {};
+      const errors:{[key: string]: Error} = {};
 
       if (!username) {
         errors.username = new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
@@ -227,14 +229,14 @@ export function validateUsernamePassword(username, password, isSignedIn) {
   };
 }
 
-export function executeLogonIfFormValid(username, password, isSignedIn) {
-  return (dispatch) => {
+export function executeLogonIfFormValid(username: string, password: string, isSignedIn: boolean) {
+  return (dispatch: PromiseDispatch) => {
     return dispatch(
       validateUsernamePassword(username, password, isSignedIn)
     ).then(() => {
       const mode = isSignedIn ? ModeLogonUsernameEmptyPasswordCookie : ModeLogonUsernamePassword;
       return dispatch(executeLogon(username, password, mode));
-    }).catch((errors) => {
+    }).catch((errors: Error | {[key: string]:Error}) => {
       return {
         success: false,
         errors: errors
@@ -243,8 +245,9 @@ export function executeLogonIfFormValid(username, password, isSignedIn) {
   };
 }
 
-export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
-  return (dispatch, getState) => {
+
+export function advanceLogonFlow(success: boolean, history: History, done=false, extraQuery={}) {
+  return (dispatch:AppDispatch, getState: () => RootState) => {
     if (!success) {
       return;
     }
@@ -256,16 +259,16 @@ export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
       case 'oauth':
       case 'consent':
       case 'oidc':
-        if (hello.details.flow !== flow) {
+        if (hello?.details?.flow !== flow) {
           // Ignore requested flow if hello flow does not match.
           break;
         }
 
-        if (!done && hello.details.next === 'consent') {
+        if (!done && hello?.details.next === 'consent') {
           history.replace(`/consent${history.location.search}${history.location.hash}`);
           return;
         }
-        if (hello.details.continue_uri) {
+        if (hello?.details.continue_uri) {
           q.prompt = 'none';
           window.location.replace(hello.details.continue_uri + '?' + queryString.stringify(q));
           return;
@@ -276,7 +279,7 @@ export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
       default:
         // Legacy stupid modes.
         if (q.continue && q.continue.indexOf(document.location.origin) === 0) {
-          window.location.replace(q.continue);
+          window.location.replace(q.continue as string);
           return;
         }
     }
