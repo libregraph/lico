@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import renderIf from 'render-if';
+import { isEmail } from 'validator';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -83,9 +84,10 @@ function Login(props) {
       history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
       return;
     }
-    // Login Hint validation is done so as to update user name automatically based on login hint provided.
+
+    // If login_hint is an email, set it into the username field automatically.
     if (query && query.login_hint) {
-      if (validator.isEmail(query.login_hint) || validator.isEmail(`${query.login_hint}@example.com`)) {
+      if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
         dispatch(updateInput("username", query.login_hint));
       }  
     }
