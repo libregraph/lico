@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -73,6 +73,7 @@ function Login(props) {
   const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = React.useState(false);
+  const passwordInputRef = useRef();
 
   useEffect(() => {
     if (hello && hello.state && history.action !== 'PUSH') {
@@ -89,7 +90,10 @@ function Login(props) {
     if (query && query.login_hint) {
       if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
         dispatch(updateInput("username", query.login_hint));
-      }  
+        setTimeout(() => {
+          passwordInputRef.current.focus();
+        }, 0);
+      }
     }
   }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -148,6 +152,7 @@ function Login(props) {
           className={classes.usernameInputField}
         />
         <TextField
+          inputRef={passwordInputRef}
           type={showPassword ? "text" : "password"}
           label={t("konnect.login.passwordField.label", "Password")}
           error={!!errors.password}
