@@ -4,7 +4,13 @@
 
 
 
-## v0.65.0 (2024-11-26)
+## v0.65.1 (2024-12-09)
+
+- Set focus to password field when login_hint is given
+- Fix missing validator import when login_hint is given
+
+
+## v0.65.0 (2024-12-03)
 
 - Add login hint support
 - Add legacy support via plugin
