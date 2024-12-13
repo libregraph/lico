@@ -1,18 +1,25 @@
 import React, { lazy } from 'react';
-import PropTypes from 'prop-types';
 
 import { Route, Switch } from 'react-router-dom';
 
 import PrivateRoute from './components/PrivateRoute';
+import { ObjectType } from './types';
+
+type RootType = {
+  hello: ObjectType;
+}
+
+
+type ComponentType = Promise<{ default: React.ComponentType<object> }>
 
 const AsyncLogin = lazy(() =>
-  import(/* webpackChunkName: "containers-login" */ './containers/Login'));
+  import(/* webpackChunkName: "containers-login" */ './containers/Login') as ComponentType);
 const AsyncWelcome = lazy(() =>
-  import(/* webpackChunkName: "containers-welcome" */ './containers/Welcome'));
+  import(/* webpackChunkName: "containers-welcome" */ './containers/Welcome') as ComponentType);
 const AsyncGoodbye = lazy(() =>
-  import(/* webpackChunkName: "containers-goodbye" */ './containers/Goodbye'));
+  import(/* webpackChunkName: "containers-goodbye" */ './containers/Goodbye') as ComponentType);
 
-const Routes = ({ hello }) => (
+const Routes = ({ hello }: RootType) => (
   <Switch>
     <PrivateRoute
       path="/welcome"
@@ -31,9 +38,5 @@ const Routes = ({ hello }) => (
     />
   </Switch>
 );
-
-Routes.propTypes = {
-  hello: PropTypes.object
-};
 
 export default Routes;
