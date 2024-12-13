@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useMemo } from 'react';
 import { connect } from 'react-redux';
 
 import { useTranslation } from 'react-i18next';
@@ -7,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import renderIf from 'render-if';
 import { isEmail } from 'validator';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import green from '@material-ui/core/colors/green';
@@ -17,13 +16,17 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
-import { ErrorMessage } from '../../errors';
+import { ErrorMessage, ErrorType } from '../../errors';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment'
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import { PromiseDispatch, RootState } from '../../store';
+import { ObjectType } from '../../types';
+import { History } from "history";
+import { ParsedQuery } from 'query-string';
 
-const styles = theme => ({
+const styles = (theme: Theme) => createStyles({
   button: {
     margin: theme.spacing(1),
     minWidth: 100
@@ -56,63 +59,73 @@ const styles = theme => ({
   },
 });
 
-function Login(props) {
-  const {
-    hello,
-    branding,
-    query,
-    dispatch,
-    history,
-    loading,
-    errors,
-    classes,
-    username,
-    password,
-  } = props;
+interface LoginProps extends WithStyles<typeof styles> {
+  branding?: { bannerLogo: string, locales: string[], signinPageText?: string, usernameHintText?: string } | null,
+  hello?: ObjectType | null,
+  dispatch: PromiseDispatch,
+  history?: History,
+  loading: string,
+  username: string,
+  password: string,
+  errors: ErrorType,
+  query: ParsedQuery<string>,
+}
+
+const Login: React.FC<LoginProps> = ({ hello,
+  branding,
+  query,
+  dispatch,
+  history,
+  loading,
+  errors,
+  classes,
+  username,
+  password, }) => {
+
 
   const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = React.useState(false);
-  const passwordInputRef = useRef();
+  const passwordInputRef = React.useRef<HTMLInputElement>();
 
   useEffect(() => {
-    if (hello && hello.state && history.action !== 'PUSH') {
+    if (hello && hello.state && history?.action !== 'PUSH') {
       if (!query.prompt || query.prompt.indexOf('select_account') === -1) {
         dispatch(advanceLogonFlow(true, history));
         return;
       }
 
-      history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
+      history?.replace(`/chooseaccount${history?.location.search}${history?.location.hash}`);
       return;
     }
 
     // If login_hint is an email, set it into the username field automatically.
     if (query && query.login_hint) {
-      if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
-        dispatch(updateInput("username", query.login_hint));
+      if (isEmail(query.login_hint as string) || isEmail(`${query.login_hint}@example.com`)) {
+        dispatch(updateInput("username", query.login_hint as string));
         setTimeout(() => {
-          passwordInputRef.current.focus();
+          passwordInputRef.current?.focus();
         }, 0);
       }
     }
-  }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ /* no dependencies */]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleChange = (name) => (event) => {
+  const handleChange = (name: string) => (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     dispatch(updateInput(name, event.target.value));
   };
 
-  const handleNextClick = (event) => {
+  const handleNextClick = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     event.preventDefault();
 
     dispatch(executeLogonIfFormValid(username, password, false)).then((response) => {
       if (response.success) {
-        dispatch(advanceLogonFlow(response.success, history));
+        dispatch(advanceLogonFlow(response.success as boolean, history));
       }
     });
   };
 
   const usernamePlaceHolder = useMemo(() => {
-    if (branding?.usernameHintText ) {
+    if (branding?.usernameHintText) {
       switch (branding.usernameHintText) {
         case "Username":
           break;
@@ -134,11 +147,11 @@ function Login(props) {
         {t("konnect.login.headline", "Sign in")}
       </Typography>
 
-      <form action="" onSubmit={(event) => this.logon(event)}>
+      <form action="">
         <TextField
           label={usernamePlaceHolder}
-          error={!!errors.username}
-          helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}}></ErrorMessage>}
+          error={!!errors?.username}
+          helperText={<ErrorMessage error={errors?.username as ErrorType} values={{ what: usernamePlaceHolder }}></ErrorMessage>}
           fullWidth
           autoFocus
           inputProps={{
@@ -155,8 +168,8 @@ function Login(props) {
           inputRef={passwordInputRef}
           type={showPassword ? "text" : "password"}
           label={t("konnect.login.passwordField.label", "Password")}
-          error={!!errors.password}
-          helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
+          error={!!errors?.password}
+          helperText={<ErrorMessage error={errors?.password as ErrorType}></ErrorMessage>}
           fullWidth
           onChange={handleChange('password')}
           autoComplete="kopano-account current-password"
@@ -192,9 +205,9 @@ function Login(props) {
           </div>
         </DialogActions>
 
-        {renderIf(errors.http)(() => (
+        {renderIf(errors?.http)(() => (
           <Typography variant="subtitle2" color="error" className={classes.message}>
-            <ErrorMessage error={errors.http}></ErrorMessage>
+            <ErrorMessage error={errors?.http as ErrorType}></ErrorMessage>
           </Typography>
         ))}
 
@@ -204,23 +217,9 @@ function Login(props) {
   );
 }
 
-Login.propTypes = {
-  classes: PropTypes.object.isRequired,
 
-  loading: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired,
-  password: PropTypes.string.isRequired,
-  errors: PropTypes.object.isRequired,
-  branding: PropTypes.object,
-  hello: PropTypes.object,
-  query: PropTypes.object.isRequired,
-
-  dispatch: PropTypes.func.isRequired,
-  history: PropTypes.object.isRequired
-};
-
-const mapStateToProps = (state) => {
-  const { loading, username, password, errors} = state.login;
+const mapStateToProps = (state: RootState) => {
+  const { loading, username, password, errors } = state.login;
   const { branding, hello, query } = state.common;
 
   return {
@@ -229,7 +228,7 @@ const mapStateToProps = (state) => {
     password,
     errors,
     branding,
-    hello,
+    hello: hello as ObjectType,
     query
   };
 };

@@ -5,6 +5,7 @@ import {
   SERVICE_WORKER_NEW_CONTENT
 } from '../actions/types';
 import queryString from 'query-string';
+import { ErrorType } from '../errors';
 
 const query = queryString.parse(document.location.search);
 const flow = query.flow || '';
@@ -20,7 +21,17 @@ const defaultPathPrefix = (() => {
   return pathPrefix;
 })();
 
-const defaultState = {
+type commonStateType =  {
+  hello: { [key: string]: string | boolean | undefined | null | {[key: string]: string | boolean | string[] | undefined | null  } } |  null,
+  branding: { bannerLogo: string, locales: string[] } | null,
+  error: ErrorType,
+  flow: string | (string | null)[],
+  query: queryString.ParsedQuery<string>,
+  pathPrefix: string,
+  updateAvailable: boolean
+}
+
+const defaultState:commonStateType = {
   hello: null,
   branding: null,
   error: null,
@@ -30,7 +41,8 @@ const defaultState = {
   pathPrefix: defaultPathPrefix
 };
 
-function commonReducer(state = defaultState, action) {
+
+function commonReducer(state = defaultState, action: {type: string, error?: ErrorType | null, state: commonStateType | undefined, username: string | undefined, displayName: string | undefined, hello: null | undefined | {[key: string]: commonStateType | string | boolean}}) {
   switch (action.type) {
     case RECEIVE_ERROR:
       return Object.assign({}, state, {
@@ -51,7 +63,7 @@ function commonReducer(state = defaultState, action) {
           displayName: action.displayName,
           details: action.hello
         },
-        branding: action.hello.branding ? action.hello.branding : state.branding
+        branding: action.hello?.branding ? action.hello.branding : state.branding
       });
 
     case SERVICE_WORKER_NEW_CONTENT:

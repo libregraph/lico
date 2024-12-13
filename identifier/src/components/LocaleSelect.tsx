@@ -1,19 +1,26 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
-import PropTypes from 'prop-types';
 
 import { useTranslation } from 'react-i18next';
 
 import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
+import Select, { SelectProps } from '@material-ui/core/Select';
 
 import allLocales from '../locales';
+import I18nextBrowserLanguageDetector from 'i18next-browser-languagedetector';
 
-function LocaleSelect({ locales: localesProp, ...other } = {}) {
+
+interface LocaleSelectProps extends SelectProps {
+  locales?: string[],
+
+}
+
+
+const LocaleSelect: React.FC<LocaleSelectProps> = ({ locales: localesProp, ...other } = {}) => {
   const { i18n, ready } = useTranslation();
 
   const handleChange = useCallback((event) => {
     i18n.changeLanguage(event.target.value);
-  }, [ i18n ])
+  }, [i18n])
 
   const locales = useMemo(() => {
     if (!localesProp) {
@@ -34,11 +41,14 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
         // Have language -> is supported all good.
         return;
       }
-      const wanted = i18n.modules.languageDetector.detectors.navigator.lookup();
-      i18n.modules.languageDetector.services.languageUtils.options.supportedLngs = locales.map(locale => locale.locale);
-      i18n.modules.languageDetector.services.languageUtils.options.fallbackLng = null;
 
-      let best = i18n.modules.languageDetector.services.languageUtils.getBestMatchFromCodes(wanted);
+      const detector = i18n.modules.languageDetector as I18nextBrowserLanguageDetector;
+
+      const wanted = detector.detectors.navigator.lookup();
+      detector.services.languageUtils.options.supportedLngs = locales.map(locale => locale.locale);
+      detector.services.languageUtils.options.fallbackLng = null;
+
+      let best = detector.services.languageUtils.getBestMatchFromCodes(wanted);
       if (!best) {
         best = locales[0].locale;
       }
@@ -68,9 +78,5 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
     })}
   </Select>;
 }
-
-LocaleSelect.propTypes = {
-  locales: PropTypes.arrayOf(PropTypes.string),
-};
 
 export default LocaleSelect;

@@ -3,17 +3,17 @@ import React from 'react';
 import {
   Fade,
   CircularProgress,
- } from '@material-ui/core';
- import { makeStyles } from '@material-ui/core/styles';
+} from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 
- const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(() => ({
   root: {
     position: 'fixed',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
   },
- }));
+}));
 
 const Spinner = () => {
   const classes = useStyles();
@@ -26,7 +26,7 @@ const Spinner = () => {
       }}
       unmountOnExit
     >
-      <CircularProgress size={70} thickness={1}/>
+      <CircularProgress size={70} thickness={1} />
     </Fade>
   </div>;
 }

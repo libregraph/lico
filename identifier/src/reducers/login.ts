@@ -8,13 +8,22 @@ import {
   RECEIVE_CONSENT,
   UPDATE_INPUT
 } from '../actions/types';
+import { ErrorType } from '../errors';
 
-function loginReducer(state = {
+
+type loginState = {
+  loading: string,
+  username: string,
+  password: string,
+  errors: ErrorType
+}
+
+function loginReducer(state:loginState = {
   loading: '',
   username: '',
   password: '',
   errors: {}
-}, action) {
+}, action: {errors?: Error | { [key: string]: string | Error | boolean | null }, type: string, success?: boolean, name?: string, value?: string | null}) {
   switch (action.type) {
     case RECEIVE_VALIDATE_LOGON:
       return Object.assign({}, state, {
@@ -47,10 +56,17 @@ function loginReducer(state = {
       });
 
     case UPDATE_INPUT:
-      delete state.errors[action.name];
-      return Object.assign({}, state, {
+      if(action.name){
+        if(state.errors){
+          delete state.errors[action.name];
+        }
+        return Object.assign({}, state, {
         [action.name]: action.value
-      });
+        });
+      }
+      else{
+        return state;
+      }
 
     default:
       return state;
