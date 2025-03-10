@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 
-import { newHelloRequest } from '../models/hello';
+import { HelloQuery, newHelloRequest } from '../models/hello';
 import { withClientRequestState } from '../utils';
 import {
   ExtendedError,
@@ -10,8 +10,11 @@ import {
 
 import { handleAxiosError } from './utils';
 import * as types from './types';
+import {  Dispatch } from 'redux';
+import { AppDispatch, PromiseDispatch, RootState } from '../store';
+import { ResponseType } from '../types';
 
-export function receiveError(error) {
+export function receiveError(error?: ExtendedError | AxiosError<never> | null) {
   return {
     type: types.RECEIVE_ERROR,
     error
@@ -24,7 +27,7 @@ export function resetHello() {
   };
 }
 
-export function receiveHello(hello) {
+export function receiveHello(hello: {success?: boolean, username?: string, displayName?: string}) {
   const { success, username, displayName } = hello;
 
   return {
@@ -37,12 +40,12 @@ export function receiveHello(hello) {
 }
 
 export function executeHello() {
-  return function(dispatch, getState) {
+  return function(dispatch:Dispatch , getState: () => RootState) {
     dispatch(resetHello());
 
     const { flow, query } = getState().common;
 
-    const r = withClientRequestState(newHelloRequest(flow, query));
+    const r = withClientRequestState(newHelloRequest(flow as string, query as HelloQuery));
     return axios.post('./identifier/_/hello', r, {
       headers: {
         'Kopano-Konnect-XSRF': '1'
@@ -60,11 +63,11 @@ export function executeHello() {
           };
         default:
           // error.
-          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response);
+          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response as AxiosResponse<never>);
       }
     }).then(response => {
       if (response.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response);
+        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response as ResponseType);
       }
 
       dispatch(receiveHello(response));
@@ -78,7 +81,7 @@ export function executeHello() {
 }
 
 export function retryHello() {
-  return function(dispatch) {
+  return function(dispatch: PromiseDispatch) {
     dispatch(receiveError(null));
 
     return dispatch(executeHello());
@@ -91,7 +94,7 @@ export function requestLogoff() {
   };
 }
 
-export function receiveLogoff(state) {
+export function receiveLogoff(state: boolean) {
   return {
     type: types.RECEIVE_LOGOFF,
     state
@@ -99,7 +102,7 @@ export function receiveLogoff(state) {
 }
 
 export function executeLogoff() {
-  return function(dispatch) {
+  return function(dispatch: AppDispatch) {
     dispatch(resetHello());
     dispatch(requestLogoff());
 
@@ -115,11 +118,11 @@ export function executeLogoff() {
           return response.data;
         default:
           // error.
-          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response);
+          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response as AxiosResponse<never>);
       }
     }).then(response => {
       if (response.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response);
+        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response as ResponseType);
       }
 
       dispatch(receiveLogoff(response.success === true));
