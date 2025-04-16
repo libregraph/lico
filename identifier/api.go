@@ -50,7 +50,7 @@ func (i Identifier) writeHelloResponse(rw http.ResponseWriter, req *http.Request
 			BannerLogo:        i.defaultBannerLogo,
 			UsernameHintText:  i.Config.DefaultUsernameHintText,
 			SignInPageText:    i.Config.DefaultSignInPageText,
-			SignInPageLogoUri: i.Config.DefaultSignInPageLogoUri,
+			SignInPageLogoURI: i.Config.DefaultSignInPageLogoURI,
 			Locales:           i.Config.UILocales,
 		},
 	}

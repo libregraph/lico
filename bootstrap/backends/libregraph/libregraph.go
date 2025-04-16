@@ -128,7 +128,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 
 		DefaultBannerLogo:        config.IdentifierDefaultBannerLogo,
 		DefaultSignInPageText:    config.IdentifierDefaultSignInPageText,
-		DefaultSignInPageLogoUri: config.IdentifierDefaultLogoTargetURI,
+		DefaultSignInPageLogoURI: config.IdentifierDefaultLogoTargetURI,
 		DefaultUsernameHintText:  config.IdentifierDefaultUsernameHintText,
 		UILocales:                config.IdentifierUILocales,
 

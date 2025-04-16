@@ -48,7 +48,7 @@ type Config struct {
 
 	DefaultBannerLogo        []byte
 	DefaultSignInPageText    *string
-	DefaultSignInPageLogoUri *string
+	DefaultSignInPageLogoURI *string
 	DefaultUsernameHintText  *string
 	UILocales                []string
 
