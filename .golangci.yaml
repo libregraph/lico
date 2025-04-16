@@ -40,9 +40,9 @@ linters:
   disable-all: true
   enable:
     - bodyclose
+    - copyloopvar
     - dupl
     - errcheck
-    - exportloopref
     - funlen
     - gochecknoinits
     - goconst
