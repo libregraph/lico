@@ -10,7 +10,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-jose/go-jose/v3 v3.0.3
+	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/go-ldap/ldap/v3 v3.4.6
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.1
