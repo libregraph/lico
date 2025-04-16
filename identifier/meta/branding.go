@@ -19,8 +19,9 @@ package meta
 
 // Branding is a container to hold identifier branding meta data.
 type Branding struct {
-	BannerLogo       *string  `json:"bannerLogo,omitempty"`
-	SignInPageText   *string  `json:"signinPageText,omitempty"`
-	UsernameHintText *string  `json:"usernameHintText,omitempty"`
-	Locales          []string `json:"locales,omitempty"`
+	BannerLogo        *string  `json:"bannerLogo,omitempty"`
+	SignInPageText    *string  `json:"signinPageText,omitempty"`
+	UsernameHintText  *string  `json:"usernameHintText,omitempty"`
+	SignInPageLogoUri *string  `json:"signinPageLogoUri,omitempty"`
+	Locales           []string `json:"locales,omitempty"`
 }
