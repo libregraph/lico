@@ -4,7 +4,6 @@ run:
 
 linters-settings:
   govet:
-    check-shadowing: true
     settings:
       printf:
         funcs:
@@ -34,6 +33,7 @@ linters-settings:
       - experimental
   revive:
     min-confidence: 0
+  shadow:
 
 linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint

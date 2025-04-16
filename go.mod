@@ -1,6 +1,6 @@
 module github.com/libregraph/lico
 
-go 1.18
+go 1.22
 
 require (
 	github.com/beevik/etree v1.2.0
