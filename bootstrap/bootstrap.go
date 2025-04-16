@@ -260,6 +260,9 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 	if settings.IdentifierDefaultSignInPageText != "" {
 		bs.config.IdentifierDefaultSignInPageText = &settings.IdentifierDefaultSignInPageText
 	}
+	if settings.IdentifierDefaultLogoTargetURI != "" {
+		bs.config.IdentifierDefaultLogoTargetURI = &settings.IdentifierDefaultLogoTargetURI
+	}
 	if settings.IdentifierDefaultUsernameHintText != "" {
 		bs.config.IdentifierDefaultUsernameHintText = &settings.IdentifierDefaultUsernameHintText
 	}

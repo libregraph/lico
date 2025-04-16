@@ -51,6 +51,7 @@ type Config struct {
 	IdentifierScopesConf              string
 	IdentifierDefaultBannerLogo       []byte
 	IdentifierDefaultSignInPageText   *string
+	IdentifierDefaultLogoTargetURI    *string
 	IdentifierDefaultUsernameHintText *string
 	IdentifierUILocales               []string
 
