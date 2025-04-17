@@ -71,7 +71,17 @@ const ResponsiveScreen = (props) => {
         }}
       >
         <div className={classes.content}>
-          {logo}
+          {branding?.signinPageLogoURI ? (
+            <a
+              href={branding.signinPageLogoURI}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {logo}
+            </a>
+          ) : (
+            logo
+          )}
           {content}
         </div>
         {!loading && <DialogActions className={classes.actions} disableSpacing><LocaleSelect disableUnderline locales={branding?.locales}/></DialogActions>}
