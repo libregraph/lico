@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.6
 
 require (
-	github.com/beevik/etree v1.2.0
+	github.com/beevik/etree v1.5.0
 	github.com/cevaris/ordered_map v0.0.0-20190319150403-3adeae072e73
 	github.com/crewjam/httperr v0.2.0
 	github.com/crewjam/saml v0.4.14
@@ -26,7 +26,7 @@ require (
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.15.1
 	github.com/rs/cors v1.11.1
-	github.com/russellhaering/goxmldsig v1.4.0
+	github.com/russellhaering/goxmldsig v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.37.0
@@ -48,7 +48,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
