@@ -22,21 +22,17 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
-	"net/url"
 	"os"
 	"runtime"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
-	"stash.kopano.io/kgol/ksurveyclient-go"
-	"stash.kopano.io/kgol/ksurveyclient-go/autosurvey"
 
 	"github.com/libregraph/lico/bootstrap"
 	"github.com/libregraph/lico/config"
 	"github.com/libregraph/lico/encryption"
 	"github.com/libregraph/lico/server"
-	"github.com/libregraph/lico/version"
 
 	guestBackendSupport "github.com/libregraph/lico/bootstrap/backends/guest"
 	ldapBackendSupport "github.com/libregraph/lico/bootstrap/backends/ldap"
@@ -180,29 +176,6 @@ func serve(cmd *cobra.Command, args []string) error {
 				logger.WithError(err).Errorln("unable to start pprof listener")
 			}
 		}()
-	}
-
-	// Survey support.
-	var guid []byte
-	issURL, err := url.Parse(bootstrapConfig.Iss)
-	if err != nil {
-		logger.WithError(err).Errorln("unable to start survey-client")
-	}
-	if issURL.Hostname() != "localhost" {
-		guid = []byte(issURL.String())
-	}
-	err = autosurvey.Start(ctx,
-		"licod",
-		version.Version,
-		guid,
-		ksurveyclient.MustNewConstMap("userplugin", map[string]interface{}{
-			"desc":  "Identity manager",
-			"type":  "string",
-			"value": bootstrapConfig.IdentityManager,
-		}),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to start auto survey: %v", err)
 	}
 
 	logger.Infoln("serve started")
