@@ -35,7 +35,6 @@ require (
 	golang.org/x/time v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
-	stash.kopano.io/kgol/ksurveyclient-go v0.6.1
 )
 
 require (
@@ -62,5 +61,3 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
-
-replace stash.kopano.io/kgol/ksurveyclient-go => github.com/kopano-dev/ksurveyclient-go v0.6.1
