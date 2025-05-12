@@ -7741,7 +7741,7 @@ __metadata:
     terser: "npm:^5.30.4"
     typescript: "npm:^5.2.2"
     validator: "npm:^13.12.0"
-    vite: "npm:^4.5.13"
+    vite: "npm:^4.5.14"
     vite-plugin-checker: "npm:^0.6.2"
     vite-plugin-eslint: "npm:^1.8.1"
     vitest: "npm:^0.34.6"
@@ -11714,9 +11714,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^4.5.13":
-  version: 4.5.13
-  resolution: "vite@npm:4.5.13"
+"vite@npm:^4.5.14":
+  version: 4.5.14
+  resolution: "vite@npm:4.5.14"
   dependencies:
     esbuild: "npm:^0.18.10"
     fsevents: "npm:~2.3.2"
@@ -11750,7 +11750,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: eddfc619d69272ed3abfd0f59de3d52656d3aafbfe474db2bcccbc0520e6f52678469c7c7977ea952b5e3d99492c5b93d5b15ddfa3159cce70fa37a7c92c290a
+  checksum: 316a02f0d310511241fae15e6085c9f7285e87b7a75b7b04216925e72ec17107ae6f666181c79c711f6008fdaa8a0b4510280c68ce0bfab436ebea2470783d0a
   languageName: node
   linkType: hard
 
