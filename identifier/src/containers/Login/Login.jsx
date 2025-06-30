@@ -134,7 +134,7 @@ function Login(props) {
         {t("konnect.login.headline", "Sign in")}
       </Typography>
 
-      <form action="" onSubmit={(event) => this.logon(event)}>
+      <form action="" onSubmit={handleNextClick}>
         <TextField
           label={usernamePlaceHolder}
           error={!!errors.username}
