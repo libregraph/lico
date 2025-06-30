@@ -1,0 +1,1137 @@
+openapi: '3.0.0'
+
+info:
+  version: '1.0.0'
+  title: LibreGraph Connect API
+  description: |
+    LibreGraph Connect provides OpenID Connect Provider (OP) functionality with integrated web login and consent forms.
+    
+    This API implements:
+    - OpenID Connect Core 1.0
+    - OpenID Connect Discovery 1.0  
+    - OpenID Connect Session Management 1.0
+    - OAuth 2.0 Authorization Framework
+    - Dynamic Client Registration
+    - SAML2 integration
+    
+    Base URLs:
+    - OIDC endpoints: `/konnect/v1/`
+    - Authentication UI: `/signin/v1/identifier/`
+    - Identifier app: `/identifier/`
+    
+  contact:
+    name: LibreGraph Developers
+    url: https://github.com/libregraph/lico
+  license:
+    name: Apache License Version 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: 'https://{hostname}{basePath}'
+    variables:
+      hostname:
+        default: localhost:8443
+        description: LibreGraph Connect server hostname and port
+      basePath:
+        default: ''
+        description: 'Configurable URI base path (e.g., /api/v1)'
+
+tags:
+  - name: discovery
+    description: OpenID Connect Discovery endpoints
+  - name: oidc
+    description: OpenID Connect core endpoints
+  - name: identifier
+    description: Authentication and consent endpoints
+  - name: oauth2
+    description: OAuth2 flow endpoints
+  - name: saml2
+    description: SAML2 integration endpoints
+  - name: static
+    description: Static assets and UI endpoints
+
+paths:
+  # OpenID Connect Discovery
+  /.well-known/openid-configuration:
+    get:
+      tags:
+        - discovery
+      summary: OpenID Connect Discovery Document
+      description: Returns the OpenID Connect provider metadata
+      operationId: getDiscovery
+      responses:
+        '200':
+          description: Provider metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderMetadata'
+
+  # OIDC Core Endpoints
+  /konnect/v1/jwks.json:
+    get:
+      tags:
+        - oidc
+      summary: JSON Web Key Set
+      description: Returns the provider's public keys for JWT verification
+      operationId: getJWKS
+      responses:
+        '200':
+          description: JSON Web Key Set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JSONWebKeySet'
+            application/jwk-set+json:
+              schema:
+                $ref: '#/components/schemas/JSONWebKeySet'
+
+  /signin/v1/identifier/_/authorize:
+    get:
+      tags:
+        - oidc
+      summary: Authorization Endpoint
+      description: OpenID Connect authorization endpoint for authorization code, implicit, and hybrid flows
+      operationId: authorize
+      parameters:
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [code, id_token, token, 'code id_token', 'code token', 'code id_token token', 'id_token token']
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+        - name: nonce
+          in: query
+          schema:
+            type: string
+        - name: prompt
+          in: query
+          schema:
+            type: string
+            enum: [none, login, consent, select_account]
+        - name: max_age
+          in: query
+          schema:
+            type: integer
+        - name: id_token_hint
+          in: query
+          schema:
+            type: string
+        - name: request
+          in: query
+          schema:
+            type: string
+        - name: code_challenge
+          in: query
+          schema:
+            type: string
+        - name: code_challenge_method
+          in: query
+          schema:
+            type: string
+            enum: [S256]
+      responses:
+        '302':
+          description: Redirect to client with authorization code or error
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCError'
+    post:
+      tags:
+        - oidc
+      summary: Authorization Endpoint (POST)
+      description: Authorization endpoint with form POST
+      operationId: authorizePost
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                response_type:
+                  type: string
+                client_id:
+                  type: string
+                redirect_uri:
+                  type: string
+                scope:
+                  type: string
+                state:
+                  type: string
+                nonce:
+                  type: string
+      responses:
+        '302':
+          description: Redirect to client with authorization code or error
+        '400':
+          description: Bad request
+
+  /konnect/v1/token:
+    post:
+      tags:
+        - oidc
+      summary: Token Endpoint
+      description: Token endpoint for authorization code and refresh token grants
+      operationId: token
+      security:
+        - clientBasicAuth: []
+        - clientFormAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - allOf:
+                    - $ref: '#/components/schemas/AuthorizationCodeGrant'
+                    - type: object
+                      properties:
+                        client_id:
+                          type: string
+                        client_secret:
+                          type: string
+                - $ref: '#/components/schemas/RefreshTokenGrant'
+      responses:
+        '200':
+          description: Token response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCError'
+
+  /konnect/v1/userinfo:
+    get:
+      tags:
+        - oidc
+      summary: UserInfo Endpoint
+      description: Returns user information for the authenticated user
+      operationId: getUserInfo
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Unauthorized
+    head:
+      tags:
+        - oidc
+      summary: UserInfo Endpoint (HEAD)
+      description: Returns user information headers without body
+      operationId: getUserInfoHead
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information headers
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '401':
+          description: Unauthorized
+    post:
+      tags:
+        - oidc
+      summary: UserInfo Endpoint (POST)
+      description: Returns user information via POST request
+      operationId: getUserInfoPost
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+
+  /signin/v1/identifier/_/endsession:
+    get:
+      tags:
+        - oidc
+      summary: End Session Endpoint
+      description: Terminates user session and performs single logout
+      operationId: endSession
+      parameters:
+        - name: id_token_hint
+          in: query
+          schema:
+            type: string
+        - name: post_logout_redirect_uri
+          in: query
+          schema:
+            type: string
+            format: uri
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect after logout
+        '200':
+          description: Logout page
+    post:
+      tags:
+        - oidc
+      summary: End Session Endpoint (POST)
+      description: End session via POST
+      operationId: endSessionPost
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id_token_hint:
+                  type: string
+                post_logout_redirect_uri:
+                  type: string
+      responses:
+        '302':
+          description: Redirect after logout
+
+  /konnect/v1/session/check-session.html:
+    get:
+      tags:
+        - oidc
+      summary: Session Check Iframe
+      description: Returns HTML iframe for OIDC Session Management
+      operationId: checkSessionIframe
+      responses:
+        '200':
+          description: Session check iframe HTML
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /konnect/v1/register:
+    post:
+      tags:
+        - oidc
+      summary: Dynamic Client Registration
+      description: Dynamically register new OAuth2/OIDC clients
+      operationId: registerClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientRegistrationRequest'
+      responses:
+        '201':
+          description: Client registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientRegistrationResponse'
+        '400':
+          description: Bad request
+
+  # Identifier Authentication Endpoints
+  /identifier/_/hello:
+    post:
+      tags:
+        - identifier
+      summary: Authentication Status Check
+      description: Checks current authentication status and returns user information if logged in
+      operationId: hello
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/XSRFHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HelloRequest'
+      responses:
+        '200':
+          description: Hello response with user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+        '204':
+          description: Not authenticated
+          headers:
+            Kopano-Konnect-State:
+              schema:
+                type: string
+        '400':
+          description: Bad request
+
+  /identifier/_/logon:
+    post:
+      tags:
+        - identifier
+      summary: User Authentication
+      description: Authenticates user with username and password
+      operationId: logon
+      parameters:
+        - $ref: '#/components/parameters/XSRFHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogonRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogonResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: lico-identifier-session=encrypted-data; Path=/; Secure; HttpOnly; SameSite=Strict
+        '204':
+          description: Authentication failed
+          headers:
+            Kopano-Konnect-State:
+              schema:
+                type: string
+        '400':
+          description: Bad request
+
+  /identifier/_/logoff:
+    post:
+      tags:
+        - identifier
+      summary: User Logout
+      description: Logs out current user and clears session
+      operationId: logoff
+      parameters:
+        - $ref: '#/components/parameters/XSRFHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateRequest'
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateResponse'
+        '400':
+          description: Bad request
+
+  /identifier/_/consent:
+    post:
+      tags:
+        - identifier
+      summary: Consent Processing
+      description: Processes user consent decisions for OAuth2/OIDC flows
+      operationId: consent
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/XSRFHeader'
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRequest'
+      responses:
+        '200':
+          description: Consent processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                description: Encrypted consent cookie
+        '204':
+          description: Consent rejected
+        '400':
+          description: Bad request
+
+  # OAuth2 Flow Endpoints  
+  /identifier/oauth2/start:
+    get:
+      tags:
+        - oauth2
+      summary: OAuth2 Flow Initiation
+      description: Initiates OAuth2 authorization flow with external providers
+      operationId: oauth2Start
+      responses:
+        '302':
+          description: Redirect to external OAuth2 provider
+
+  /identifier/oauth2/cb:
+    get:
+      tags:
+        - oauth2
+      summary: OAuth2 Callback
+      description: Handles OAuth2 callback from external providers
+      operationId: oauth2Callback
+      responses:
+        '302':
+          description: Redirect after processing callback
+
+  # SAML2 Endpoints
+  /identifier/saml2/metadata:
+    get:
+      tags:
+        - saml2
+      summary: SAML2 Metadata
+      description: Returns SAML2 service provider metadata
+      operationId: saml2Metadata
+      responses:
+        '200':
+          description: SAML2 metadata
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /identifier/saml2/acs:
+    post:
+      tags:
+        - saml2
+      summary: SAML2 Assertion Consumer Service
+      description: Processes SAML2 assertions from identity providers
+      operationId: saml2ACS
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                SAMLResponse:
+                  type: string
+      responses:
+        '302':
+          description: Redirect after processing assertion
+
+  /identifier/_/saml2/slo:
+    get:
+      tags:
+        - saml2
+      summary: SAML2 Single Logout
+      description: Handles SAML2 single logout requests
+      operationId: saml2SLO
+      responses:
+        '302':
+          description: Redirect after logout
+
+  # Trampolin
+  /identifier/trampolin:
+    get:
+      tags:
+        - identifier
+      summary: Secure Redirect
+      description: Secure redirect mechanism for external URLs
+      operationId: trampolin
+      responses:
+        '302':
+          description: Secure redirect
+        '200':
+          description: Trampolin page with JavaScript redirect
+
+  # Static and UI Endpoints
+  /identifier:
+    get:
+      tags:
+        - static
+      summary: Main Identifier Application
+      description: Serves the React-based identifier application
+      operationId: identifierApp
+      responses:
+        '200':
+          description: Identifier application HTML
+
+  /static/{path}:
+    get:
+      tags:
+        - static
+      summary: Static Assets
+      description: Serves static files (CSS, JS, images)
+      operationId: staticAssets
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Static file content
+        '404':
+          description: File not found
+
+components:
+  parameters:
+    XSRFHeader:
+      name: Kopano-Konnect-XSRF
+      in: header
+      required: true
+      schema:
+        type: integer
+        enum: [1]
+      description: CSRF protection header
+    OriginHeader:
+      name: Origin
+      in: header
+      schema:
+        type: string
+        format: uri
+      description: Request origin (required with XSRF header)
+    RefererHeader:
+      name: Referer
+      in: header
+      schema:
+        type: string
+        format: uri
+      description: Request referer (alternative to Origin)
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Secure-KKT
+      description: |
+        Encrypted session cookie. Cookie name may vary based on configuration.
+        Default pattern: __Secure-* for secure contexts, regular name otherwise.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token
+    clientBasicAuth:
+      type: http
+      scheme: basic
+      description: Client credentials in Authorization header
+    clientFormAuth:
+      type: apiKey
+      in: query
+      name: client_id
+      description: Client credentials in request body
+
+  schemas:
+    # OIDC Discovery
+    ProviderMetadata:
+      type: object
+      required:
+        - issuer
+        - authorization_endpoint
+        - token_endpoint
+        - userinfo_endpoint
+        - jwks_uri
+      properties:
+        issuer:
+          type: string
+          format: uri
+        authorization_endpoint:
+          type: string
+          format: uri
+        token_endpoint:
+          type: string
+          format: uri
+        userinfo_endpoint:
+          type: string
+          format: uri
+        jwks_uri:
+          type: string
+          format: uri
+        end_session_endpoint:
+          type: string
+          format: uri
+        check_session_iframe:
+          type: string
+          format: uri
+        registration_endpoint:
+          type: string
+          format: uri
+        scopes_supported:
+          type: array
+          items:
+            type: string
+        response_types_supported:
+          type: array
+          items:
+            type: string
+        grant_types_supported:
+          type: array
+          items:
+            type: string
+            enum: [authorization_code, implicit, refresh_token]
+        subject_types_supported:
+          type: array
+          items:
+            type: string
+        id_token_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+        token_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+        userinfo_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+        request_object_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+        token_endpoint_auth_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+        claims_parameter_supported:
+          type: boolean
+        claims_supported:
+          type: array
+          items:
+            type: string
+        request_parameter_supported:
+          type: boolean
+        request_uri_parameter_supported:
+          type: boolean
+
+    JSONWebKeySet:
+      type: object
+      required:
+        - keys
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/JSONWebKey'
+
+    JSONWebKey:
+      type: object
+      properties:
+        kty:
+          type: string
+        kid:
+          type: string
+        use:
+          type: string
+        alg:
+          type: string
+        n:
+          type: string
+        e:
+          type: string
+
+    # Token Endpoints
+    AuthorizationCodeGrant:
+      type: object
+      required:
+        - grant_type
+        - code
+        - redirect_uri
+      properties:
+        grant_type:
+          type: string
+          enum: [authorization_code]
+        code:
+          type: string
+        redirect_uri:
+          type: string
+          format: uri
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        code_verifier:
+          type: string
+
+    RefreshTokenGrant:
+      type: object
+      required:
+        - grant_type
+        - refresh_token
+      properties:
+        grant_type:
+          type: string
+          enum: [refresh_token]
+        refresh_token:
+          type: string
+        scope:
+          type: string
+
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+        refresh_token:
+          type: string
+        id_token:
+          type: string
+        scope:
+          type: string
+
+    UserInfo:
+      type: object
+      properties:
+        sub:
+          type: string
+        name:
+          type: string
+        given_name:
+          type: string
+        family_name:
+          type: string
+        preferred_username:
+          type: string
+        email:
+          type: string
+          format: email
+        email_verified:
+          type: boolean
+        picture:
+          type: string
+          format: uri
+
+    # Client Registration
+    ClientRegistrationRequest:
+      type: object
+      required:
+        - redirect_uris
+      properties:
+        redirect_uris:
+          type: array
+          items:
+            type: string
+            format: uri
+        response_types:
+          type: array
+          items:
+            type: string
+        grant_types:
+          type: array
+          items:
+            type: string
+        application_type:
+          type: string
+          enum: [web, native]
+        client_name:
+          type: string
+        client_uri:
+          type: string
+          format: uri
+        contacts:
+          type: array
+          items:
+            type: string
+            format: email
+        jwks:
+          type: object
+        post_logout_redirect_uris:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    ClientRegistrationResponse:
+      allOf:
+        - $ref: '#/components/schemas/ClientRegistrationRequest'
+        - type: object
+          required:
+            - client_id
+          properties:
+            client_id:
+              type: string
+            client_secret:
+              type: string
+            client_id_issued_at:
+              type: integer
+            client_secret_expires_at:
+              type: integer
+
+    # Identifier Schemas
+    HelloRequest:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+        flow:
+          type: string
+        scope:
+          type: string
+        prompt:
+          type: string
+        client_id:
+          type: string
+        redirect_uri:
+          type: string
+          format: uri
+        id_token_hint:
+          type: string
+        max_age:
+          type: string
+
+    HelloResponse:
+      type: object
+      required:
+        - state
+        - flow
+        - success
+      properties:
+        state:
+          type: string
+        flow:
+          type: string
+        success:
+          type: boolean
+        username:
+          type: string
+        displayName:
+          type: string
+        next:
+          type: string
+        continue_uri:
+          type: string
+          format: uri
+          description: URI to continue the authentication flow
+        scopes:
+          $ref: '#/components/schemas/ScopesMap'
+        client:
+          $ref: '#/components/schemas/ClientDetails'
+        meta:
+          $ref: '#/components/schemas/Meta'
+        branding:
+          $ref: '#/components/schemas/Branding'
+
+    LogonRequest:
+      type: object
+      required:
+        - state
+        - params
+      properties:
+        state:
+          type: string
+        params:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            type: string
+          description: |
+            Logon parameters array with format: [username, password, mode]
+            
+            - username (required): User identifier
+            - password: User password (can be empty for mode "0")
+            - mode: Authentication mode (required when array has 3 elements)
+          example: ["john.doe", "secret123", "1"]
+        hello:
+          $ref: '#/components/schemas/HelloRequest'
+
+    LogonResponse:
+      type: object
+      required:
+        - success
+        - state
+      properties:
+        success:
+          type: boolean
+        state:
+          type: string
+        hello:
+          $ref: '#/components/schemas/HelloResponse'
+
+    ConsentRequest:
+      type: object
+      required:
+        - state
+        - allow
+        - scope
+        - client_id
+        - redirect_uri
+      properties:
+        state:
+          type: string
+        allow:
+          type: boolean
+        scope:
+          type: string
+        client_id:
+          type: string
+        redirect_uri:
+          type: string
+          format: uri
+        ref:
+          type: string
+          description: Reference to the authorization request state
+        flow_nonce:
+          type: string
+          description: Flow-specific nonce value
+
+    StateRequest:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+
+    StateResponse:
+      type: object
+      required:
+        - success
+        - state
+      properties:
+        success:
+          type: boolean
+        state:
+          type: string
+
+    # Supporting Schemas
+    ScopesMap:
+      type: object
+      additionalProperties:
+        type: boolean
+      example:
+        openid: true
+        profile: true
+        email: true
+
+    ClientDetails:
+      type: object
+      required:
+        - id
+        - display_name
+        - redirect_uri
+        - trusted
+      properties:
+        id:
+          type: string
+        display_name:
+          type: string
+        redirect_uri:
+          type: string
+          format: uri
+        trusted:
+          type: boolean
+
+    Meta:
+      type: object
+      properties:
+        scopes:
+          $ref: '#/components/schemas/Scopes'
+
+    Scopes:
+      type: object
+      properties:
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+        definitions:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ScopeDefinition'
+
+    ScopeDefinition:
+      type: object
+      properties:
+        priority:
+          type: number
+        description:
+          type: string
+
+    Branding:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUri:
+          type: string
+          format: uri
+
+    # Logon Modes
+    LogonMode:
+      type: string
+      enum: ["0", "1"]
+      description: |
+        Authentication mode for logon requests:
+        - "0": Username with empty password (cookie authentication) - Used for account selection when user already has valid session
+        - "1": Username and password authentication - Standard login flow with credential validation
+      example: "1"
+
+    # Error Schemas
+    OIDCError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum: [invalid_request, unauthorized_client, access_denied, unsupported_response_type, invalid_scope, server_error, temporarily_unavailable]
+        error_description:
+          type: string
+        error_uri:
+          type: string
+          format: uri
+        state:
+          type: string
