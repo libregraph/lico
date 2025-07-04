@@ -1,4 +1,4 @@
-import { combineReducers } from 'redux';
+import { combineReducers } from '@reduxjs/toolkit';
 
 import commonReducer from './common';
 import loginReducer from './login';
@@ -8,4 +8,5 @@ const rootReducer = combineReducers({
   login: loginReducer
 });
 
+export type RootState = ReturnType<typeof rootReducer>;
 export default rootReducer;
