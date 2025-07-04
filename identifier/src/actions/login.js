@@ -12,61 +12,49 @@ import {
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE
 } from '../errors';
 
-import * as types from './types';
 import { receiveHello } from './common';
 import { handleAxiosError } from './utils';
+import { serializeError, createSerializableError } from '../utils/serializeError';
+import { 
+  updateInput as updateInputAction,
+  receiveValidateLogon as receiveValidateLogonAction,
+  requestLogon as requestLogonAction,
+  receiveLogon as receiveLogonAction,
+  requestConsentAllow as requestConsentAllowAction,
+  requestConsentCancel as requestConsentCancelAction,
+  receiveConsent as receiveConsentAction
+} from '../reducers/login';
 
 // Modes for logon.
 export const ModeLogonUsernameEmptyPasswordCookie = '0';
 export const ModeLogonUsernamePassword = '1';
 
 export function updateInput(name, value) {
-  return {
-    type: types.UPDATE_INPUT,
-    name,
-    value
-  };
+  return updateInputAction({ name, value });
 }
 
 export function receiveValidateLogon(errors) {
-  return {
-    type: types.RECEIVE_VALIDATE_LOGON,
-    errors
-  };
+  return receiveValidateLogonAction({ errors });
 }
 
 export function requestLogon(username, password) {
-  return {
-    type: types.REQUEST_LOGON,
-    username,
-    password
-  };
+  return requestLogonAction({ username, password });
 }
 
 export function receiveLogon(logon) {
   const { success, errors } = logon;
 
-  return {
-    type: types.RECEIVE_LOGON,
-    success,
-    errors
-  };
+  return receiveLogonAction({ success, errors });
 }
 
 export function requestConsent(allow=false) {
-  return {
-    type: allow ? types.REQUEST_CONSENT_ALLOW : types.REQUEST_CONSENT_CANCEL
-  };
+  return allow ? requestConsentAllowAction() : requestConsentCancelAction();
 }
 
 export function receiveConsent(logon) {
   const { success, errors } = logon;
 
-  return {
-    type: types.RECEIVE_CONSENT,
-    success,
-    errors
-  };
+  return receiveConsentAction({ success, errors });
 }
 
 export function executeLogon(username, password, mode=ModeLogonUsernamePassword) {
@@ -76,7 +64,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
       username
     })); // Reset any hello state on logon.
 
-    const { flow, query } = getState().common;
+    const { flow, query, pathPrefix } = getState().common;
 
     // Prepare params based on mode.
     const params = [];
@@ -98,7 +86,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
       params: params,
       hello: newHelloRequest(flow, query)
     });
-    return axios.post('./identifier/_/logon', r, {
+    return axios.post(`${pathPrefix}/identifier/_/logon`, r, {
       headers: {
         'Kopano-Konnect-XSRF': '1'
       }
@@ -113,7 +101,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
             success: false,
             state: response.headers['kopano-konnect-state'],
             errors: {
-              http: new Error(ERROR_LOGIN_FAILED)
+              http: createSerializableError(ERROR_LOGIN_FAILED)
             }
           };
         default:
@@ -154,7 +142,7 @@ export function executeConsent(allow=false, scope='') {
   return function(dispatch, getState) {
     dispatch(requestConsent(allow));
 
-    const { query } = getState().common;
+    const { query, pathPrefix } = getState().common;
 
     const r = withClientRequestState({
       allow,
@@ -164,7 +152,7 @@ export function executeConsent(allow=false, scope='') {
       ref: query.state || '',
       flow_nonce: query.nonce || '' // eslint-disable-line camelcase
     });
-    return axios.post('./identifier/_/consent', r, {
+    return axios.post(`${pathPrefix}/identifier/_/consent`, r, {
       headers: {
         'Kopano-Konnect-XSRF': '1'
       }
