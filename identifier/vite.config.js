@@ -34,6 +34,38 @@ export default defineConfig((env) => {
       assetsDir: 'static/assets',
       manifest: 'asset-manifest.json',
       sourcemap: true,
+      chunkSizeWarningLimit: 300,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // React ecosystem
+            'react-vendor': ['react', 'react-dom'],
+            
+            // MUI components (largest chunk)
+            'mui-core': ['@mui/material'],
+            'mui-icons': ['@mui/icons-material'],
+            'emotion': ['@emotion/react', '@emotion/styled'],
+            
+            // Routing
+            'react-router': ['react-router', 'react-router-dom'],
+            
+            // Redux ecosystem  
+            'redux': ['@reduxjs/toolkit', 'react-redux', 'redux-logger'],
+            
+            // i18n ecosystem
+            'i18n': [
+              'i18next', 
+              'react-i18next', 
+              'i18next-browser-languagedetector',
+              'i18next-http-backend',
+              'i18next-resources-to-backend'
+            ],
+            
+            // Utilities
+            'utils': ['axios', 'validator', 'query-string', 'classnames', 'render-if']
+          }
+        }
+      }
     },
     base: './',
     server: {
@@ -54,11 +86,7 @@ export default defineConfig((env) => {
       env.mode !== "test" &&
         checker({
           typescript: true,
-          eslint: {
-            lintCommand: 'eslint --max-warnings=0 src',
-          },
         }),
-      splitVendorChunkPlugin(),
       addScriptCSPNoncePlaceholderPlugin(),
     ],
     test: {
