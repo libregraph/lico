@@ -1,43 +1,51 @@
 import React from 'react';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import { withStyles } from '@material-ui/core/styles';
-import PropTypes from 'prop-types';
-import Checkbox from '@material-ui/core/Checkbox';
+import {
+  List,
+  ListItem,
+  ListItemText,
+  Checkbox,
+} from '@mui/material';
 
 import { useTranslation } from 'react-i18next';
 
-const styles = () => ({
-  row: {
-    paddingTop: 0,
-    paddingBottom: 0
-  }
-});
+interface Scope {
+  [key: string]: boolean;
+}
 
-const ScopesList = ({scopes, meta, classes, ...rest}) => {
+interface Meta {
+  mapping: Record<string, string>;
+  definitions: Record<string, any>;
+}
+
+interface ScopesListProps {
+  scopes: Scope;
+  meta: Meta;
+  [key: string]: any;
+}
+
+const ScopesList: React.FC<ScopesListProps> = ({scopes, meta, ...rest}) => {
   const { mapping, definitions } = meta;
 
   const { t } = useTranslation();
 
-  const rows = [];
-  const known = {};
+  const rows: React.ReactNode[] = [];
+  const known: Record<string, boolean> = {};
 
   // TODO(longsleep): Sort scopes according to priority.
-  for (let scope in scopes) {
+  for (const scope in scopes) {
     if (!scopes[scope]) {
       continue;
     }
     let id = mapping[scope];
     if (id) {
-      if (known[id]) {
+      if (known[id as string]) {
         continue;
       }
-      known[id] = true;
+      known[id as string] = true;
     } else {
       id = scope;
     }
-    let definition = definitions[id];
+    const definition = definitions[id as string];
     let label;
     if (definition) {
       switch (definition.id) {
@@ -62,7 +70,7 @@ const ScopesList = ({scopes, meta, classes, ...rest}) => {
         disableGutters
         dense
         key={id}
-        className={classes.row}
+        sx={{ paddingTop: 0, paddingBottom: 0 }}
       ><Checkbox
           checked
           disableRipple
@@ -80,11 +88,5 @@ const ScopesList = ({scopes, meta, classes, ...rest}) => {
   );
 };
 
-ScopesList.propTypes = {
-  classes: PropTypes.object.isRequired,
 
-  scopes: PropTypes.object.isRequired,
-  meta: PropTypes.object.isRequired
-};
-
-export default withStyles(styles)(ScopesList);
+export default ScopesList;

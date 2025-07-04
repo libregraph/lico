@@ -1,88 +1,69 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LogonResponse } from '../../types/actions';
+import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 
 import { useTranslation } from 'react-i18next';
 
 import renderIf from 'render-if';
 import { isEmail } from 'validator';
 
-import { withStyles } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import green from '@material-ui/core/colors/green';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
+import {
+  Button,
+  CircularProgress,
+  TextField,
+  Typography,
+  DialogActions,
+  DialogContent,
+  IconButton,
+  InputAdornment,
+} from '@mui/material';
+import { green } from '@mui/material/colors';
 
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
-import IconButton from '@material-ui/core/IconButton';
-import InputAdornment from '@material-ui/core/InputAdornment'
-import Visibility from '@material-ui/icons/Visibility';
-import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { createHistoryWrapper } from '../../utils/history';
 
-const styles = theme => ({
-  button: {
-    margin: theme.spacing(1),
-    minWidth: 100
-  },
-  buttonProgress: {
-    color: green[500],
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -12,
-    marginLeft: -12
-  },
-  subHeader: {
-    marginBottom: theme.spacing(3)
-  },
-  wrapper: {
-    position: 'relative',
-    display: 'inline-block'
-  },
-  slideContainer: {
-    overflowX: 'hidden',
-  },
-  message: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2)
-  },
-  usernameInputField: {
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1.5),
-  },
-});
+interface LoginProps {}
 
-function Login(props) {
+function Login(props: LoginProps) {
   const {
     hello,
     branding,
     query,
-    dispatch,
-    history,
     loading,
     errors,
-    classes,
     username,
-    password,
-  } = props;
+    password
+  } = useAppSelector((state) => ({
+    hello: state.common.hello,
+    branding: state.common.branding,
+    query: state.common.query,
+    loading: state.login.loading,
+    errors: state.login.errors,
+    username: state.login.username,
+    password: state.login.password
+  }));
+  
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = React.useState(false);
-  const passwordInputRef = useRef();
+  const passwordInputRef = useRef<HTMLInputElement>();
 
   useEffect(() => {
-    if (hello && hello.state && history.action !== 'PUSH') {
-      if (!query.prompt || query.prompt.indexOf('select_account') === -1) {
-        dispatch(advanceLogonFlow(true, history));
+    if (hello && hello.state) {
+      if (!query?.prompt || query.prompt.indexOf('select_account') === -1) {
+        const historyWrapper = createHistoryWrapper(navigate, location);
+        dispatch(advanceLogonFlow(true, historyWrapper));
         return;
       }
 
-      history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
+      navigate(`/chooseaccount${location.search}${location.hash}`, { replace: true });
       return;
     }
 
@@ -91,22 +72,23 @@ function Login(props) {
       if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
         dispatch(updateInput("username", query.login_hint));
         setTimeout(() => {
-          passwordInputRef.current.focus();
+          passwordInputRef.current?.focus();
         }, 0);
       }
     }
   }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleChange = (name) => (event) => {
+  const handleChange = (name: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(updateInput(name, event.target.value));
   };
 
-  const handleNextClick = (event) => {
+  const handleNextClick = (event: React.MouseEvent) => {
     event.preventDefault();
 
-    dispatch(executeLogonIfFormValid(username, password, false)).then((response) => {
+    dispatch(executeLogonIfFormValid(username, password, false)).then((response: LogonResponse) => {
       if (response.success) {
-        dispatch(advanceLogonFlow(response.success, history));
+        const historyWrapper = createHistoryWrapper(navigate, location);
+        dispatch(advanceLogonFlow(response.success, historyWrapper));
       }
     });
   };
@@ -134,7 +116,7 @@ function Login(props) {
         {t("konnect.login.headline", "Sign in")}
       </Typography>
 
-      <form action="" onSubmit={handleNextClick}>
+      <div>
         <TextField
           label={usernamePlaceHolder}
           error={!!errors.username}
@@ -149,7 +131,7 @@ function Login(props) {
           onChange={handleChange('username')}
           autoComplete="kopano-account username"
           variant="outlined"
-          className={classes.usernameInputField}
+          sx={{ marginTop: 1, marginBottom: 1.5 }}
         />
         <TextField
           inputRef={passwordInputRef}
@@ -177,61 +159,31 @@ function Login(props) {
           }}
         />
         <DialogActions>
-          <div className={classes.wrapper}>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
             <Button
               type="submit"
               color="primary"
               variant="contained"
-              className={classes.button}
+              sx={{ margin: 1, minWidth: 100 }}
               disabled={!!loading}
               onClick={handleNextClick}
             >
               {t("konnect.login.nextButton.label", "Next")}
             </Button>
-            {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
+            {loading && <CircularProgress size={24} sx={{ color: green[500], position: 'absolute', top: '50%', left: '50%', marginTop: '-12px', marginLeft: '-12px' }} />}
           </div>
         </DialogActions>
 
-        {renderIf(errors.http)(() => (
-          <Typography variant="subtitle2" color="error" className={classes.message}>
-            <ErrorMessage error={errors.http}></ErrorMessage>
+        {renderIf(!!errors.http)(() => (
+          <Typography variant="subtitle2" color="error" sx={{ marginTop: 2, marginBottom: 2 }}>
+            <ErrorMessage error={errors.http!}></ErrorMessage>
           </Typography>
         ))}
 
         {branding?.signinPageText && <Typography variant="body2">{branding.signinPageText}</Typography>}
-      </form>
+      </div>
     </DialogContent>
   );
 }
 
-Login.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  loading: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired,
-  password: PropTypes.string.isRequired,
-  errors: PropTypes.object.isRequired,
-  branding: PropTypes.object,
-  hello: PropTypes.object,
-  query: PropTypes.object.isRequired,
-
-  dispatch: PropTypes.func.isRequired,
-  history: PropTypes.object.isRequired
-};
-
-const mapStateToProps = (state) => {
-  const { loading, username, password, errors} = state.login;
-  const { branding, hello, query } = state.common;
-
-  return {
-    loading,
-    username,
-    password,
-    errors,
-    branding,
-    hello,
-    query
-  };
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(Login));
+export default Login;

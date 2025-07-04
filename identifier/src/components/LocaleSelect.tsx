@@ -1,17 +1,20 @@
 import React, { useCallback, useMemo, useEffect } from 'react';
-import PropTypes from 'prop-types';
 
 import { useTranslation } from 'react-i18next';
 
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
+import { MenuItem, Select } from '@mui/material';
 
 import allLocales from '../locales';
 
-function LocaleSelect({ locales: localesProp, ...other } = {}) {
+interface LocaleSelectProps {
+  locales?: string[];
+  [key: string]: any;
+}
+
+function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event) => {
+  const handleChange = useCallback((event: any) => {
     i18n.changeLanguage(event.target.value);
   }, [ i18n ])
 
@@ -34,14 +37,8 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
         // Have language -> is supported all good.
         return;
       }
-      const wanted = i18n.modules.languageDetector.detectors.navigator.lookup();
-      i18n.modules.languageDetector.services.languageUtils.options.supportedLngs = locales.map(locale => locale.locale);
-      i18n.modules.languageDetector.services.languageUtils.options.fallbackLng = null;
-
-      let best = i18n.modules.languageDetector.services.languageUtils.getBestMatchFromCodes(wanted);
-      if (!best) {
-        best = locales[0].locale;
-      }
+      // Simplified language detection - just use the first locale if current not supported
+      const best = locales[0]?.locale;
 
       // Auto change language to best one found if the current selected one is not enabled.
       if (i18n.language !== best) {
@@ -57,6 +54,26 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
   return <Select
     value={i18n.language}
     onChange={handleChange}
+    variant="standard"
+    disableUnderline
+    sx={{ 
+      '& .MuiSelect-select': {
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: '24px !important',
+        fontSize: '0.875rem',
+      },
+      '& .MuiSelect-icon': {
+        right: 0,
+      },
+      '&:before': {
+        display: 'none',
+      },
+      '&:after': {
+        display: 'none',
+      }
+    }}
     {...other}
   >
     {locales.map(language => {
@@ -69,8 +86,5 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
   </Select>;
 }
 
-LocaleSelect.propTypes = {
-  locales: PropTypes.arrayOf(PropTypes.string),
-};
 
 export default LocaleSelect;
