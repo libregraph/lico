@@ -9,41 +9,31 @@ import {
 } from '../errors';
 
 import { handleAxiosError } from './utils';
-import * as types from './types';
+import { receiveError as receiveErrorAction, resetHello as resetHelloAction, receiveHello as receiveHelloAction } from '../reducers/common';
+import { receiveLogoff as receiveLogoffAction } from '../reducers/login';
 
-export function receiveError(error) {
-  return {
-    type: types.RECEIVE_ERROR,
-    error
-  };
-}
-
-export function resetHello() {
-  return {
-    type: types.RESET_HELLO
-  };
-}
+export const receiveError = receiveErrorAction;
+export const resetHello = resetHelloAction;
 
 export function receiveHello(hello) {
   const { success, username, displayName } = hello;
 
-  return {
-    type: types.RECEIVE_HELLO,
+  return receiveHelloAction({
     state: success === true,
     username,
     displayName,
     hello
-  };
+  });
 }
 
 export function executeHello() {
   return function(dispatch, getState) {
     dispatch(resetHello());
 
-    const { flow, query } = getState().common;
+    const { flow, query, pathPrefix } = getState().common;
 
     const r = withClientRequestState(newHelloRequest(flow, query));
-    return axios.post('./identifier/_/hello', r, {
+    return axios.post(`${pathPrefix}/identifier/_/hello`, r, {
       headers: {
         'Kopano-Konnect-XSRF': '1'
       }
@@ -72,7 +62,7 @@ export function executeHello() {
     }).catch(error => {
       error = handleAxiosError(error);
 
-      dispatch(receiveError(error));
+      dispatch(receiveError({ error }));
     });
   };
 }
@@ -85,26 +75,22 @@ export function retryHello() {
   };
 }
 
+// This doesn't need a separate action in RTK as it's handled by the async thunk
 export function requestLogoff() {
-  return {
-    type: types.REQUEST_LOGOFF
-  };
+  // No-op for backward compatibility, actual state is managed in executeLogoff
+  return { type: 'REQUEST_LOGOFF' };
 }
 
-export function receiveLogoff(state) {
-  return {
-    type: types.RECEIVE_LOGOFF,
-    state
-  };
-}
+export const receiveLogoff = receiveLogoffAction;
 
 export function executeLogoff() {
-  return function(dispatch) {
+  return function(dispatch, getState) {
     dispatch(resetHello());
     dispatch(requestLogoff());
 
+    const { pathPrefix } = getState().common;
     const r = withClientRequestState({});
-    return axios.post('./identifier/_/logoff', r, {
+    return axios.post(`${pathPrefix}/identifier/_/logoff`, r, {
       headers: {
         'Kopano-Konnect-XSRF': '1'
       }
@@ -122,12 +108,12 @@ export function executeLogoff() {
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response);
       }
 
-      dispatch(receiveLogoff(response.success === true));
+      dispatch(receiveLogoff());
       return Promise.resolve(response);
     }).catch(error => {
       error = handleAxiosError(error);
 
-      dispatch(receiveError(error));
+      dispatch(receiveError({ error }));
     });
   };
 }
