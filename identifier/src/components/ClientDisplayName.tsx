@@ -7,7 +7,7 @@ interface Client {
 
 interface ClientDisplayNameProps {
   client: Client;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const ClientDisplayName: React.FC<ClientDisplayNameProps> = ({ client, ...rest }) => (

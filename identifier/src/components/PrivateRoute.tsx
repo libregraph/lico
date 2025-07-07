@@ -1,19 +1,18 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import RedirectWithQuery from './RedirectWithQuery';
 
-const PrivateRoute = ({ children, hello }: { children: React.ReactNode, hello: any }) => {
+interface PrivateRouteProps {
+  children: React.ReactNode;
+  hello: Record<string, unknown> | null;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, hello }) => {
   return hello ? (
     <>{children}</>
   ) : (
     <RedirectWithQuery target='/identifier' />
   );
-};
-
-PrivateRoute.propTypes = {
-  children: PropTypes.node.isRequired,
-  hello: PropTypes.object
 };
 
 export default PrivateRoute;

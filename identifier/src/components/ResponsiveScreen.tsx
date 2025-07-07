@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactNode } from 'react';
 import classNames from 'classnames';
 
 import {
@@ -7,6 +6,8 @@ import {
   DialogActions,
   DialogContent,
   Box,
+  DialogProps,
+  PaperProps,
 } from '@mui/material';
 
 import ResponsiveDialog from './ResponsiveDialog';
@@ -14,7 +15,25 @@ import Logo from '../images/app-icon.svg';
 import Loading from './Loading';
 import LocaleSelect from './LocaleSelect';
 
-const ResponsiveScreen = (props: any) => {
+interface BrandingProps {
+  bannerLogo?: string;
+  signinPageLogoURI?: string;
+  locales?: string[];
+}
+
+interface ResponsiveScreenProps {
+  withoutLogo?: boolean;
+  withoutPadding?: boolean;
+  loading?: boolean;
+  branding?: BrandingProps;
+  children: ReactNode;
+  className?: string;
+  PaperProps?: PaperProps;
+  DialogProps?: DialogProps;
+  [key: string]: unknown;
+}
+
+const ResponsiveScreen: React.FC<ResponsiveScreenProps> = (props) => {
   const {
     withoutLogo = false,
     withoutPadding = false,
@@ -93,18 +112,6 @@ const ResponsiveScreen = (props: any) => {
       </ResponsiveDialog>
     </Grid>
   );
-};
-
-
-ResponsiveScreen.propTypes = {
-  withoutLogo: PropTypes.bool,
-  withoutPadding: PropTypes.bool,
-  loading: PropTypes.bool,
-  branding: PropTypes.object,
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-  PaperProps: PropTypes.object,
-  DialogProps: PropTypes.object
 };
 
 export default ResponsiveScreen;

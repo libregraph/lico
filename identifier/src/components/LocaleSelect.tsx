@@ -2,21 +2,20 @@ import React, { useCallback, useMemo, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { MenuItem, Select } from '@mui/material';
+import { MenuItem, Select, SelectChangeEvent, SelectProps } from '@mui/material';
 
 import allLocales from '../locales';
 
-interface LocaleSelectProps {
+interface LocaleSelectProps extends Omit<SelectProps, 'value' | 'onChange'> {
   locales?: string[];
-  [key: string]: any;
 }
 
 function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event: any) => {
+  const handleChange = useCallback((event: SelectChangeEvent) => {
     i18n.changeLanguage(event.target.value);
-  }, [ i18n ])
+  }, [ i18n ]);
 
   const locales = useMemo(() => {
     if (!localesProp) {

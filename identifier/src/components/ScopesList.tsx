@@ -12,15 +12,20 @@ interface Scope {
   [key: string]: boolean;
 }
 
+interface Definition {
+  id: string;
+  description?: string;
+}
+
 interface Meta {
   mapping: Record<string, string>;
-  definitions: Record<string, any>;
+  definitions: Record<string, Definition>;
 }
 
 interface ScopesListProps {
   scopes: Scope;
   meta: Meta;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const ScopesList: React.FC<ScopesListProps> = ({scopes, meta, ...rest}) => {
@@ -38,14 +43,14 @@ const ScopesList: React.FC<ScopesListProps> = ({scopes, meta, ...rest}) => {
     }
     let id = mapping[scope];
     if (id) {
-      if (known[id as string]) {
+      if (known[id]) {
         continue;
       }
-      known[id as string] = true;
+      known[id] = true;
     } else {
       id = scope;
     }
-    const definition = definitions[id as string];
+    const definition = definitions[id];
     let label;
     if (definition) {
       switch (definition.id) {

@@ -1,17 +1,15 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { useMediaQuery, useTheme } from '@mui/material';
-import { Dialog } from '@mui/material';
+import React, { ReactNode } from 'react';
+import { useMediaQuery, useTheme, DialogProps, Dialog } from '@mui/material';
 
-const ResponsiveDialog = (props: any) => {
+interface ResponsiveDialogProps extends DialogProps {
+  children?: ReactNode;
+}
+
+const ResponsiveDialog: React.FC<ResponsiveDialogProps> = (props) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   
   return <Dialog fullScreen={fullScreen} {...props}/>;
-};
-
-ResponsiveDialog.propTypes = {
-  children: PropTypes.node
 };
 
 export default ResponsiveDialog;
