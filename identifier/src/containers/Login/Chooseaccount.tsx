@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { withTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -66,12 +66,16 @@ const Chooseaccount: React.FC<ChooseaccountProps> = ({ t }) => {
     [navigate, location]
   );
 
-  let errorMessage = null;
-  if (errors.http) {
-    errorMessage = <Typography color="error" sx={errorMessageStyles}>
-      <ErrorMessage error={errors.http}></ErrorMessage>
-    </Typography>;
-  }
+  const errorMessage = useMemo(() => {
+    if (errors.http) {
+      return (
+        <Typography color="error" sx={errorMessageStyles}>
+          <ErrorMessage error={errors.http}></ErrorMessage>
+        </Typography>
+      );
+    }
+    return null;
+  }, [errors.http]);
 
   const username = hello?.username || '';
 

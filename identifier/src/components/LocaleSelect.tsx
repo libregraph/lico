@@ -13,7 +13,7 @@ interface LocaleSelectProps {
 function LocaleSelect({ locales: localesProp }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event: any) => {
+  const handleChange = useCallback((event: SelectChangeEvent<string>) => {
     i18n.changeLanguage(event.target.value);
   }, [ i18n ]);
 
