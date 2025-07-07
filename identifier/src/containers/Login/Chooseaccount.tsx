@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { withTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -22,6 +22,9 @@ interface ChooseaccountProps {
   t: TranslationFunction;
 }
 
+const listStyles = { marginLeft: -5, marginRight: -5 };
+const listItemStyles = { paddingLeft: 5, paddingRight: 5 };
+const errorMessageStyles = { marginTop: 2 };
 
 const Chooseaccount: React.FC<ChooseaccountProps> = ({ t }) => {
   const { loading, errors, hello } = useAppSelector((state) => ({
@@ -39,27 +42,33 @@ const Chooseaccount: React.FC<ChooseaccountProps> = ({ t }) => {
     }
   }, [hello, navigate, location]);
 
-  const logon = (event: React.FormEvent | React.MouseEvent) => {
-    event.preventDefault();
+  const logon = useCallback(
+    (event: React.FormEvent | React.MouseEvent) => {
+      event.preventDefault();
 
-    if (hello) {
-      dispatch(executeLogonIfFormValid(hello.username || '', '', true)).then((response: LogonResponse) => {
-        if (response.success) {
-          const historyWrapper = createHistoryWrapper(navigate, location);
-          dispatch(advanceLogonFlow(response.success, historyWrapper));
-        }
-      });
-    }
-  };
+      if (hello) {
+        dispatch(executeLogonIfFormValid(hello.username || '', '', true)).then((response: LogonResponse) => {
+          if (response.success) {
+            const historyWrapper = createHistoryWrapper(navigate, location);
+            dispatch(advanceLogonFlow(response.success, historyWrapper));
+          }
+        });
+      }
+    },
+    [dispatch, hello, navigate, location]
+  );
 
-  const logoff = (event: React.MouseEvent) => {
-    event.preventDefault();
-    navigate(`/identifier${location.search}${location.hash}`);
-  };
+  const logoff = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      navigate(`/identifier${location.search}${location.hash}`);
+    },
+    [navigate, location]
+  );
 
   let errorMessage = null;
   if (errors.http) {
-    errorMessage = <Typography color="error" sx={{ marginTop: 2 }}>
+    errorMessage = <Typography color="error" sx={errorMessageStyles}>
       <ErrorMessage error={errors.http}></ErrorMessage>
     </Typography>;
   }
@@ -76,11 +85,11 @@ const Chooseaccount: React.FC<ChooseaccountProps> = ({ t }) => {
       </Typography>
 
       <form action="" onSubmit={logon}>
-        <List disablePadding sx={{ marginLeft: -5, marginRight: -5 }}>
+        <List disablePadding sx={listStyles}>
           <ListItem
             button
             disableGutters
-            sx={{ paddingLeft: 5, paddingRight: 5 }}
+            sx={listItemStyles}
             disabled={!!loading}
             onClick={logon}
           ><ListItemAvatar><Avatar>{username.charAt(0) || '?'}</Avatar></ListItemAvatar>
@@ -89,7 +98,7 @@ const Chooseaccount: React.FC<ChooseaccountProps> = ({ t }) => {
           <ListItem
             button
             disableGutters
-            sx={{ paddingLeft: 5, paddingRight: 5 }}
+            sx={listItemStyles}
             disabled={!!loading}
             onClick={logoff}
           >
