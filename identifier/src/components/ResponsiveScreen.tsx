@@ -33,6 +33,24 @@ interface ResponsiveScreenProps {
   [key: string]: unknown;
 }
 
+const gridStyles = { display: 'flex', flex: 1 };
+const dialogStyles = { '& .MuiDialog-paperWidthSm': { maxWidth: 440 } };
+const boxStyles = {
+  paddingTop: 3,
+  paddingBottom: 1.5,
+  minHeight: 350,
+  paddingLeft: 2,
+  paddingRight: 2,
+  position: 'relative',
+};
+const dialogActionsStyles = {
+  marginTop: -5,
+  minHeight: 45,
+  justifyContent: 'flex-start',
+  paddingLeft: 3,
+  paddingRight: 3,
+};
+
 const ResponsiveScreen: React.FC<ResponsiveScreenProps> = (props) => {
   const {
     withoutLogo = false,
@@ -59,7 +77,7 @@ const ResponsiveScreen: React.FC<ResponsiveScreenProps> = (props) => {
       alignItems="center" 
       spacing={0}
       className={classNames(className)}
-      sx={{ display: 'flex', flex: 1 }}
+      sx={gridStyles}
       {...other}
     >
       <ResponsiveDialog 
@@ -70,17 +88,10 @@ const ResponsiveScreen: React.FC<ResponsiveScreenProps> = (props) => {
         hideBackdrop
         {...DialogProps}
         PaperProps={{elevation: 4, ...PaperProps}}
-        sx={{ '& .MuiDialog-paperWidthSm': { maxWidth: 440 } }}
+        sx={dialogStyles}
       >
         <Box
-          sx={{
-            paddingTop: 3,
-            paddingBottom: 1.5,
-            minHeight: 350,
-            paddingLeft: 2,
-            paddingRight: 2,
-            position: 'relative'
-          }}
+          sx={boxStyles}
         >
           {branding?.signinPageLogoURI ? (
             <a
@@ -97,13 +108,7 @@ const ResponsiveScreen: React.FC<ResponsiveScreenProps> = (props) => {
         </Box>
         {!loading && (
           <DialogActions 
-            sx={{ 
-              marginTop: -5, 
-              minHeight: 45, 
-              justifyContent: 'flex-start', 
-              paddingLeft: 3, 
-              paddingRight: 3 
-            }} 
+            sx={dialogActionsStyles} 
             disableSpacing
           >
             <LocaleSelect locales={branding?.locales}/>

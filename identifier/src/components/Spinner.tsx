@@ -4,29 +4,31 @@ import {
   Fade,
   CircularProgress,
   Box,
- } from '@mui/material';
+} from '@mui/material';
+
+const boxStyles = {
+  position: 'fixed',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+};
+
+const fadeStyles = {
+  transitionDelay: '800ms',
+};
 
 const Spinner = () => {
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      }}
-    >
+    <Box sx={boxStyles}>
       <Fade
         in
-        style={{
-          transitionDelay: '800ms',
-        }}
+        style={fadeStyles}
         unmountOnExit
       >
         <CircularProgress size={70} thickness={1}/>
       </Fade>
     </Box>
   );
-}
+};
 
 export default Spinner;
