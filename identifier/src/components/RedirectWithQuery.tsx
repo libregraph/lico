@@ -1,8 +1,11 @@
-import { useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const RedirectWithQuery = ({target}: {target: string}) => {
+interface RedirectWithQueryProps {
+  target: string;
+}
+
+const RedirectWithQuery: React.FC<RedirectWithQueryProps> = ({ target }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -12,10 +15,6 @@ const RedirectWithQuery = ({target}: {target: string}) => {
   }, [target, location.search, location.hash, navigate]);
 
   return null;
-};
-
-RedirectWithQuery.propTypes = {
-  target: PropTypes.string.isRequired
 };
 
 export default RedirectWithQuery;

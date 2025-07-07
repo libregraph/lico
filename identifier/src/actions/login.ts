@@ -38,6 +38,12 @@ interface LogonResponse {
   errors?: LoginError;
 }
 
+interface ThunkResponse<T = unknown> {
+  success: boolean;
+  errors?: LoginError;
+  data?: T;
+}
+
 export function updateInput(name: string, value: string) {
   return updateInputAction({ name, value });
 }
@@ -232,7 +238,7 @@ export function executeLogonIfFormValid(username: string, password: string, isSi
     ) as any).then(() => {
       const mode = isSignedIn ? ModeLogonUsernameEmptyPasswordCookie : ModeLogonUsernamePassword;
       return dispatch(executeLogon(username, password, mode) as any);
-    }).catch((errors: any) => {
+    }).catch((errors: unknown) => {
       return {
         success: false,
         errors: errors
@@ -283,7 +289,7 @@ export function advanceLogonFlow(success: boolean, history: HistoryLike, done: b
 
       default:
         // Legacy stupid modes.
-        if (q.continue && q.continue.indexOf(document.location.origin) === 0) {
+        if (q.continue && typeof q.continue === 'string' && q.continue.indexOf(document.location.origin) === 0) {
           window.location.replace(q.continue);
           return;
         }

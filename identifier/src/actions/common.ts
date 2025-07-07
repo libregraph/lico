@@ -32,7 +32,7 @@ export function receiveHello(hello: HelloResponse) {
     state: success === true,
     username,
     displayName,
-    hello
+    hello: hello as unknown as Record<string, unknown>
   });
 }
 

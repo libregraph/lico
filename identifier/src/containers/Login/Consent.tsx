@@ -1,7 +1,6 @@
 import React from 'react';
 import { withTranslation, Trans } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import renderIf from 'render-if';
 
 import { TranslationFunction } from '../../types/common';
 import { ConsentResponse } from '../../types/actions';
@@ -45,7 +44,10 @@ const Consent: React.FC<ConsentProps> = ({ t }) => {
     loading: state.login.loading,
     hello: state.common.hello,
     errors: state.login.errors,
-    client: state.common.query?.client_id ? { id: state.common.query.client_id, redirect_uri: state.common.query.redirect_uri } : null
+    client: state.common.query?.client_id ? { 
+      id: state.common.query.client_id as string, 
+      redirect_uri: state.common.query.redirect_uri as string 
+    } : null
   }));
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -83,8 +85,8 @@ const Consent: React.FC<ConsentProps> = ({ t }) => {
     return null;
   }
 
-  const scopes = hello.details.scopes || {};
-  const meta = hello.details.meta || {};
+  const scopes = (hello.details.scopes as Record<string, boolean>) || {};
+  const meta = (hello.details.meta as { scopes?: { mapping: Record<string, string>, definitions: Record<string, { id: string, description?: string }> } }) || {};
 
   return (
       <DialogContent>
@@ -105,7 +107,7 @@ const Consent: React.FC<ConsentProps> = ({ t }) => {
             </Tooltip> wants to
           </Trans>
         </Typography>
-        <ScopesList dense disablePadding sx={{ marginBottom: 2 }} scopes={scopes} meta={meta.scopes}></ScopesList>
+        <ScopesList dense disablePadding sx={{ marginBottom: 2 }} scopes={scopes} meta={meta.scopes || { mapping: {}, definitions: {} }}></ScopesList>
 
         <Typography variant="subtitle1" gutterBottom>
           <Trans i18nKey="konnect.consent.question">
@@ -146,11 +148,11 @@ const Consent: React.FC<ConsentProps> = ({ t }) => {
             </div>
           </DialogActions>
 
-          {renderIf(!!errors.http)(() => (
+          {!!errors.http && (
             <Typography variant="subtitle2" color="error" sx={{ marginTop: 2, marginBottom: 2 }}>
               <ErrorMessage error={errors.http!}></ErrorMessage>
             </Typography>
-          ))}
+          )}
         </div>
       </DialogContent>
     );

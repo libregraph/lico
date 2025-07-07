@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { withTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import renderIf from 'render-if';
 import {
   Button,
   Typography,
@@ -30,7 +29,7 @@ const Goodbyescreen: React.FC<GoodbyescreenProps> = ({ t }) => {
     dispatch(executeHello());
   }, [dispatch]);
 
-  const logoff = (event: React.MouseEvent) => {
+  const logoff = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
 
     dispatch(executeLogoff()).then((response: ActionResponse) => {
@@ -39,12 +38,12 @@ const Goodbyescreen: React.FC<GoodbyescreenProps> = ({ t }) => {
         navigate('/goodbye');
       }
     });
-  };
+  }, [dispatch, navigate]);
 
   const loading = hello === null;
   return (
     <ResponsiveScreen loading={loading} branding={branding || undefined}>
-      {renderIf(hello !== null && !hello.state)(() => (
+      {hello !== null && !hello.state ? (
         <div>
           <Typography variant="h5" component="h3">
             {t("konnect.goodbye.headline", "Goodbye")}
@@ -56,8 +55,8 @@ const Goodbyescreen: React.FC<GoodbyescreenProps> = ({ t }) => {
             {t("konnect.goodbye.message.close", "You can close this window now.")}
           </Typography>
         </div>
-      ))}
-      {renderIf(hello !== null && hello.state === true)(() => (
+      ) : null}
+      {hello !== null && hello.state === true ? (
         <div>
           <Typography variant="h5" component="h3">
             {t("konnect.goodbye.confirm.headline", "Hello {{displayName}}", { displayName: hello?.displayName })}
@@ -83,7 +82,7 @@ const Goodbyescreen: React.FC<GoodbyescreenProps> = ({ t }) => {
             </div>
           </DialogActions>
         </div>
-      ))}
+      ) : null}
     </ResponsiveScreen>
   );
 };

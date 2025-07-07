@@ -11,6 +11,8 @@ export interface BrandingInfo {
   bannerLogo?: string;
   signinPageLogoURI?: string;
   locales?: string[];
+  signinPageText?: string;
+  usernameHintText?: string;
   [key: string]: unknown;
 }
 

@@ -5,7 +5,6 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 
 import { useTranslation } from 'react-i18next';
 
-import renderIf from 'render-if';
 import { isEmail } from 'validator';
 
 import {
@@ -57,7 +56,7 @@ function Login(props: LoginProps) {
 
   useEffect(() => {
     if (hello && hello.state) {
-      if (!query?.prompt || query.prompt.indexOf('select_account') === -1) {
+      if (!query?.prompt || (typeof query.prompt === 'string' && query.prompt.indexOf('select_account') === -1)) {
         const historyWrapper = createHistoryWrapper(navigate, location);
         dispatch(advanceLogonFlow(true, historyWrapper));
         return;
@@ -69,7 +68,7 @@ function Login(props: LoginProps) {
 
     // If login_hint is an email, set it into the username field automatically.
     if (query && query.login_hint) {
-      if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
+      if (typeof query.login_hint === 'string' && (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`))) {
         dispatch(updateInput("username", query.login_hint));
         setTimeout(() => {
           passwordInputRef.current?.focus();
@@ -94,10 +93,10 @@ function Login(props: LoginProps) {
   };
 
   const usernamePlaceHolder = useMemo(() => {
-    if (branding?.usernameHintText ) {
+    if (branding?.usernameHintText && typeof branding.usernameHintText === 'string') {
       switch (branding.usernameHintText) {
         case "Username":
-          break;
+          return t("konnect.login.usernameField.placeholder.username", "Username");
         case "Email":
           return t("konnect.login.usernameField.placeholder.email", "Email");
         case "Identity":
@@ -120,7 +119,7 @@ function Login(props: LoginProps) {
         <TextField
           label={usernamePlaceHolder}
           error={!!errors.username}
-          helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}}></ErrorMessage>}
+          helperText={errors.username ? <ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}} /> : undefined}
           fullWidth
           autoFocus
           inputProps={{
@@ -138,7 +137,7 @@ function Login(props: LoginProps) {
           type={showPassword ? "text" : "password"}
           label={t("konnect.login.passwordField.label", "Password")}
           error={!!errors.password}
-          helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
+          helperText={errors.password ? <ErrorMessage error={errors.password} /> : undefined}
           fullWidth
           onChange={handleChange('password')}
           autoComplete="kopano-account current-password"
@@ -174,13 +173,13 @@ function Login(props: LoginProps) {
           </div>
         </DialogActions>
 
-        {renderIf(!!errors.http)(() => (
+        {!!errors.http && (
           <Typography variant="subtitle2" color="error" sx={{ marginTop: 2, marginBottom: 2 }}>
             <ErrorMessage error={errors.http!}></ErrorMessage>
           </Typography>
-        ))}
+        )}
 
-        {branding?.signinPageText && <Typography variant="body2">{branding.signinPageText}</Typography>}
+        {branding?.signinPageText && typeof branding.signinPageText === 'string' && <Typography variant="body2">{branding.signinPageText as string}</Typography>}
       </div>
     </DialogContent>
   );

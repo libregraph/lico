@@ -1,36 +1,27 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import queryString from 'query-string';
+import { HelloDetails, BrandingInfo } from '../types/common';
 
-interface HelloDetails {
-  state: boolean;
-  username?: string;
-  displayName?: string;
-  details: any;
-}
-
-interface BrandingInfo {
-  [key: string]: any;
-}
 
 interface CommonState {
   hello: HelloDetails | null;
   branding: BrandingInfo | null;
-  error: any;
+  error: unknown;
   flow: string;
-  query: any;
+  query: Record<string, unknown>;
   updateAvailable: boolean;
   pathPrefix: string;
 }
 
 interface ReceiveErrorAction {
-  error: any;
+  error: unknown;
 }
 
 interface ReceiveHelloAction {
   state: boolean;
   username?: string;
   displayName?: string;
-  hello: any;
+  hello: Record<string, unknown>;
 }
 
 const query = queryString.parse(document.location.search);
@@ -77,7 +68,7 @@ const commonSlice = createSlice({
         displayName: action.payload.displayName,
         details: action.payload.hello
       };
-      state.branding = action.payload.hello.branding ? action.payload.hello.branding : state.branding;
+      state.branding = action.payload.hello.branding ? action.payload.hello.branding as BrandingInfo : state.branding;
     },
     
     serviceWorkerNewContent: (state) => {
