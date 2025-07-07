@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Dispatch } from 'redux';
 
 import { newHelloRequest } from '../models/hello';
 import { withClientRequestState } from '../utils';
@@ -11,11 +12,19 @@ import {
 import { handleAxiosError } from './utils';
 import { receiveError as receiveErrorAction, resetHello as resetHelloAction, receiveHello as receiveHelloAction } from '../reducers/common';
 import { receiveLogoff as receiveLogoffAction } from '../reducers/login';
+import { RootState } from '../store';
 
 export const receiveError = receiveErrorAction;
 export const resetHello = resetHelloAction;
 
-export function receiveHello(hello) {
+interface HelloResponse {
+  success: boolean;
+  username?: string;
+  displayName?: string;
+  state?: string;
+}
+
+export function receiveHello(hello: HelloResponse) {
   const { success, username, displayName } = hello;
 
   return receiveHelloAction({
@@ -27,7 +36,7 @@ export function receiveHello(hello) {
 }
 
 export function executeHello() {
-  return function(dispatch, getState) {
+  return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(resetHello());
 
     const { flow, query, pathPrefix } = getState().common;
@@ -68,7 +77,7 @@ export function executeHello() {
 }
 
 export function retryHello() {
-  return function(dispatch) {
+  return function(dispatch: Dispatch) {
     dispatch(receiveError(null));
 
     return dispatch(executeHello());
@@ -84,7 +93,7 @@ export function requestLogoff() {
 export const receiveLogoff = receiveLogoffAction;
 
 export function executeLogoff() {
-  return function(dispatch, getState) {
+  return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(resetHello());
     dispatch(requestLogoff());
 

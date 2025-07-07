@@ -5,8 +5,13 @@ import {
 } from '../errors';
 import { serializeError } from '../utils/serializeError';
 
-export function handleAxiosError(error) {
-  if (error.request) {
+interface AxiosError {
+  request?: unknown;
+  response?: unknown;
+}
+
+export function handleAxiosError(error: AxiosError | Error): unknown {
+  if ('request' in error && error.request) {
     // Axios errors.
     if (error.response) {
       error = new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, error.response);

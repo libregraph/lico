@@ -1,5 +1,6 @@
 import axios from 'axios';
 import queryString from 'query-string';
+import { Dispatch } from 'redux';
 
 import { newHelloRequest } from '../models/hello';
 import { withClientRequestState } from '../utils';
@@ -14,7 +15,7 @@ import {
 
 import { receiveHello } from './common';
 import { handleAxiosError } from './utils';
-import { serializeError, createSerializableError } from '../utils/serializeError';
+import { createSerializableError } from '../utils/serializeError';
 import { 
   updateInput as updateInputAction,
   receiveValidateLogon as receiveValidateLogonAction,
@@ -24,41 +25,51 @@ import {
   requestConsentCancel as requestConsentCancelAction,
   receiveConsent as receiveConsentAction
 } from '../reducers/login';
+import { RootState } from '../store';
 
 // Modes for logon.
 export const ModeLogonUsernameEmptyPasswordCookie = '0';
 export const ModeLogonUsernamePassword = '1';
 
-export function updateInput(name, value) {
+interface LoginErrors {
+  [key: string]: Error | unknown;
+}
+
+interface LogonResponse {
+  success: boolean;
+  errors?: LoginErrors;
+}
+
+export function updateInput(name: string, value: string) {
   return updateInputAction({ name, value });
 }
 
-export function receiveValidateLogon(errors) {
+export function receiveValidateLogon(errors: LoginErrors) {
   return receiveValidateLogonAction({ errors });
 }
 
-export function requestLogon(username, password) {
+export function requestLogon(username: string, password: string) {
   return requestLogonAction({ username, password });
 }
 
-export function receiveLogon(logon) {
+export function receiveLogon(logon: LogonResponse) {
   const { success, errors } = logon;
 
   return receiveLogonAction({ success, errors });
 }
 
-export function requestConsent(allow=false) {
+export function requestConsent(allow: boolean = false) {
   return allow ? requestConsentAllowAction() : requestConsentCancelAction();
 }
 
-export function receiveConsent(logon) {
+export function receiveConsent(logon: LogonResponse) {
   const { success, errors } = logon;
 
   return receiveConsentAction({ success, errors });
 }
 
-export function executeLogon(username, password, mode=ModeLogonUsernamePassword) {
-  return function(dispatch, getState) {
+export function executeLogon(username: string, password: string, mode: string = ModeLogonUsernamePassword) {
+  return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(requestLogon(username, password));
     dispatch(receiveHello({
       username
@@ -138,8 +149,8 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
   };
 }
 
-export function executeConsent(allow=false, scope='') {
-  return function(dispatch, getState) {
+export function executeConsent(allow: boolean = false, scope: string = '') {
+  return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(requestConsent(allow));
 
     const { query, pathPrefix } = getState().common;
@@ -193,8 +204,8 @@ export function executeConsent(allow=false, scope='') {
   };
 }
 
-export function validateUsernamePassword(username, password, isSignedIn) {
-  return function(dispatch) {
+export function validateUsernamePassword(username: string, password: string, isSignedIn: boolean) {
+  return function(dispatch: Dispatch) {
     return new Promise((resolve, reject) => {
       const errors = {};
 
@@ -215,8 +226,8 @@ export function validateUsernamePassword(username, password, isSignedIn) {
   };
 }
 
-export function executeLogonIfFormValid(username, password, isSignedIn) {
-  return (dispatch) => {
+export function executeLogonIfFormValid(username: string, password: string, isSignedIn: boolean) {
+  return (dispatch: Dispatch) => {
     return dispatch(
       validateUsernamePassword(username, password, isSignedIn)
     ).then(() => {
@@ -231,8 +242,18 @@ export function executeLogonIfFormValid(username, password, isSignedIn) {
   };
 }
 
-export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
-  return (dispatch, getState) => {
+interface HistoryLike {
+  push: (path: string) => void;
+  replace: (path: string) => void;
+  location: {
+    search: string;
+    hash: string;
+  };
+  action: string;
+}
+
+export function advanceLogonFlow(success: boolean, history: HistoryLike, done: boolean = false, extraQuery: Record<string, unknown> = {}) {
+  return (dispatch: Dispatch, getState: () => RootState) => {
     if (!success) {
       return;
     }
