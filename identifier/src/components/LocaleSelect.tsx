@@ -6,14 +6,14 @@ import { MenuItem, Select, SelectChangeEvent, SelectProps } from '@mui/material'
 
 import allLocales from '../locales';
 
-interface LocaleSelectProps extends Omit<SelectProps, 'value' | 'onChange'> {
+interface LocaleSelectProps {
   locales?: string[];
 }
 
-function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}) {
+function LocaleSelect({ locales: localesProp }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event: SelectChangeEvent) => {
+  const handleChange = useCallback((event: any) => {
     i18n.changeLanguage(event.target.value);
   }, [ i18n ]);
 
@@ -73,7 +73,6 @@ function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}
         display: 'none',
       }
     }}
-    {...other}
   >
     {locales.map(language => {
       return <MenuItem

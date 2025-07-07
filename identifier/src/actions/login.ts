@@ -1,6 +1,7 @@
 import axios from 'axios';
 import queryString from 'query-string';
-import { Dispatch } from 'redux';
+import { Dispatch, AnyAction } from 'redux';
+import { ThunkAction } from 'redux-thunk';
 
 import { newHelloRequest } from '../models/hello';
 import { withClientRequestState } from '../utils';
@@ -26,25 +27,22 @@ import {
   receiveConsent as receiveConsentAction
 } from '../reducers/login';
 import { RootState } from '../store';
+import { LoginError } from '../types/common';
 
 // Modes for logon.
 export const ModeLogonUsernameEmptyPasswordCookie = '0';
 export const ModeLogonUsernamePassword = '1';
 
-interface LoginErrors {
-  [key: string]: Error | unknown;
-}
-
 interface LogonResponse {
   success: boolean;
-  errors?: LoginErrors;
+  errors?: LoginError;
 }
 
 export function updateInput(name: string, value: string) {
   return updateInputAction({ name, value });
 }
 
-export function receiveValidateLogon(errors: LoginErrors) {
+export function receiveValidateLogon(errors: LoginError) {
   return receiveValidateLogonAction({ errors });
 }
 
@@ -68,10 +66,11 @@ export function receiveConsent(logon: LogonResponse) {
   return receiveConsentAction({ success, errors });
 }
 
-export function executeLogon(username: string, password: string, mode: string = ModeLogonUsernamePassword) {
+export function executeLogon(username: string, password: string, mode: string = ModeLogonUsernamePassword): ThunkAction<Promise<any>, RootState, unknown, any> {
   return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(requestLogon(username, password));
     dispatch(receiveHello({
+      success: false,
       username
     })); // Reset any hello state on logon.
 
@@ -149,7 +148,7 @@ export function executeLogon(username: string, password: string, mode: string = 
   };
 }
 
-export function executeConsent(allow: boolean = false, scope: string = '') {
+export function executeConsent(allow: boolean = false, scope: string = ''): ThunkAction<Promise<any>, RootState, unknown, any> {
   return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(requestConsent(allow));
 
@@ -204,10 +203,10 @@ export function executeConsent(allow: boolean = false, scope: string = '') {
   };
 }
 
-export function validateUsernamePassword(username: string, password: string, isSignedIn: boolean) {
+export function validateUsernamePassword(username: string, password: string, isSignedIn: boolean): ThunkAction<Promise<any>, RootState, unknown, any> {
   return function(dispatch: Dispatch) {
     return new Promise((resolve, reject) => {
-      const errors = {};
+      const errors: LoginError = {};
 
       if (!username) {
         errors.username = new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
@@ -227,13 +226,13 @@ export function validateUsernamePassword(username: string, password: string, isS
 }
 
 export function executeLogonIfFormValid(username: string, password: string, isSignedIn: boolean) {
-  return (dispatch: Dispatch) => {
-    return dispatch(
-      validateUsernamePassword(username, password, isSignedIn)
-    ).then(() => {
+  return (dispatch: Dispatch<AnyAction>) => {
+    return (dispatch(
+      validateUsernamePassword(username, password, isSignedIn) as any
+    ) as any).then(() => {
       const mode = isSignedIn ? ModeLogonUsernameEmptyPasswordCookie : ModeLogonUsernamePassword;
-      return dispatch(executeLogon(username, password, mode));
-    }).catch((errors) => {
+      return dispatch(executeLogon(username, password, mode) as any);
+    }).catch((errors: any) => {
       return {
         success: false,
         errors: errors
@@ -265,16 +264,16 @@ export function advanceLogonFlow(success: boolean, history: HistoryLike, done: b
       case 'oauth':
       case 'consent':
       case 'oidc':
-        if (hello.details.flow !== flow) {
+        if (hello && hello.details.flow !== flow) {
           // Ignore requested flow if hello flow does not match.
           break;
         }
 
-        if (!done && hello.details.next === 'consent') {
+        if (!done && hello && hello.details.next === 'consent') {
           history.replace(`/consent${history.location.search}${history.location.hash}`);
           return;
         }
-        if (hello.details.continue_uri) {
+        if (hello && hello.details.continue_uri) {
           q.prompt = 'none';
           window.location.replace(hello.details.continue_uri + '?' + queryString.stringify(q));
           return;

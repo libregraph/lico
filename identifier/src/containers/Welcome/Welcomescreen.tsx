@@ -37,7 +37,7 @@ const Welcomescreen: React.FC<WelcomescreenProps> = ({ t }) => {
 
   const loading = hello === null;
   return (
-    <ResponsiveScreen loading={loading} branding={branding}>
+    <ResponsiveScreen loading={loading} branding={branding || undefined}>
       <Typography variant="h5" component="h3">
         {t("konnect.welcome.headline", "Welcome {{displayName}}", {displayName: hello?.displayName})}
       </Typography>

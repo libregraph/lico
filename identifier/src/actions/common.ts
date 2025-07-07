@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { Dispatch } from 'redux';
+import { Dispatch, AnyAction } from 'redux';
+import { ThunkAction } from 'redux-thunk';
 
 import { newHelloRequest } from '../models/hello';
 import { withClientRequestState } from '../utils';
@@ -35,7 +36,7 @@ export function receiveHello(hello: HelloResponse) {
   });
 }
 
-export function executeHello() {
+export function executeHello(): ThunkAction<Promise<any>, RootState, unknown, any> {
   return function(dispatch: Dispatch, getState: () => RootState) {
     dispatch(resetHello());
 
@@ -77,10 +78,10 @@ export function executeHello() {
 }
 
 export function retryHello() {
-  return function(dispatch: Dispatch) {
-    dispatch(receiveError(null));
+  return function(dispatch: Dispatch<AnyAction>) {
+    dispatch(receiveError({ error: null }));
 
-    return dispatch(executeHello());
+    return dispatch(executeHello() as any);
   };
 }
 

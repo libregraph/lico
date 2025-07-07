@@ -10,15 +10,17 @@ interface AxiosError {
   response?: unknown;
 }
 
-export function handleAxiosError(error: AxiosError | Error): unknown {
+export function handleAxiosError(error: AxiosError | Error): any {
+  let processedError: Error = error as Error;
+  
   if ('request' in error && error.request) {
     // Axios errors.
     if (error.response) {
-      error = new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, error.response);
+      processedError = new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, error.response);
     } else {
-      error = new ExtendedError(ERROR_HTTP_NETWORK_ERROR);
+      processedError = new ExtendedError(ERROR_HTTP_NETWORK_ERROR);
     }
   }
 
-  return serializeError(error);
+  return serializeError(processedError);
 }

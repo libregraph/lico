@@ -43,7 +43,7 @@ const Goodbyescreen: React.FC<GoodbyescreenProps> = ({ t }) => {
 
   const loading = hello === null;
   return (
-    <ResponsiveScreen loading={loading} branding={branding}>
+    <ResponsiveScreen loading={loading} branding={branding || undefined}>
       {renderIf(hello !== null && !hello.state)(() => (
         <div>
           <Typography variant="h5" component="h3">

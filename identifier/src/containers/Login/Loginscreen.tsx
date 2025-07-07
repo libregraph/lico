@@ -23,7 +23,7 @@ const Loginscreen: React.FC = () => {
 
   const loading = hello === null;
   return (
-    <ResponsiveScreen loading={loading} branding={branding} withoutPadding>
+    <ResponsiveScreen loading={loading} branding={branding || undefined} withoutPadding>
       <Routes>
         <Route path="/identifier" element={<Login />} />
         <Route path="/chooseaccount" element={<Chooseaccount />} />
