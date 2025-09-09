@@ -29,7 +29,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.37.0
 	golang.org/x/net v0.39.0
-	golang.org/x/oauth2 v0.27.0
+	golang.org/x/oauth2 v0.31.0
 	golang.org/x/time v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
