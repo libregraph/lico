@@ -1,8 +1,6 @@
 module github.com/libregraph/lico
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.24.0
 
 require (
 	github.com/beevik/etree v1.5.1
@@ -32,7 +30,7 @@ require (
 	golang.org/x/crypto v0.37.0
 	golang.org/x/net v0.39.0
 	golang.org/x/oauth2 v0.27.0
-	golang.org/x/time v0.3.0
+	golang.org/x/time v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
 )
