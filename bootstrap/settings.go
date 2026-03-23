@@ -35,6 +35,7 @@ type Settings struct {
 	TrustedProxy                      []string
 	AllowScope                        []string
 	AllowClientGuests                 bool
+	AllowClientSignedLogins           bool
 	AllowDynamicClientRegistration    bool
 	EncryptionSecretFile              string
 	Listen                            string
