@@ -98,6 +98,7 @@ func commandServe() *cobra.Command {
 	serveCmd.Flags().StringArrayVar(&cfg.TrustedProxy, "trusted-proxy", nil, "Trusted proxy IP or IP network (can be used multiple times)")
 	serveCmd.Flags().StringArrayVar(&cfg.AllowScope, "allow-scope", nil, "Allow OAuth 2 scope (can be used multiple times, if not set default scopes are allowed)")
 	serveCmd.Flags().BoolVar(&cfg.AllowClientGuests, "allow-client-guests", false, "Allow sign in of client controlled guest users")
+	serveCmd.Flags().BoolVar(&cfg.AllowClientSignedLogins, "allow-client-signed-logins", false, "Allow sign in of client controlled signed login users")
 	serveCmd.Flags().BoolVar(&cfg.AllowDynamicClientRegistration, "allow-dynamic-client-registration", false, "Allow dynamic OAuth2 client registration")
 	serveCmd.Flags().Uint64Var(&cfg.AccessTokenDurationSeconds, "access-token-expiration", 60*10, "Expiration time of access tokens in seconds since generated")                                             // 10 Minutes.
 	serveCmd.Flags().Uint64Var(&cfg.IDTokenDurationSeconds, "id-token-expiration", 60*60, "Expiration time of id tokens in seconds since generated")                                                         // 1 Hour.

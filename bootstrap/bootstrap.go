@@ -206,6 +206,11 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 		logger.Infoln("client controlled guests are enabled")
 	}
 
+	bs.config.Config.AllowClientSignedLogins = settings.AllowClientSignedLogins
+	if bs.config.Config.AllowClientSignedLogins {
+		logger.Infoln("client controlled signed logins are enabled")
+	}
+
 	bs.config.Config.AllowDynamicClientRegistration = settings.AllowDynamicClientRegistration
 	if bs.config.Config.AllowDynamicClientRegistration {
 		logger.Infoln("dynamic client registration is enabled")
