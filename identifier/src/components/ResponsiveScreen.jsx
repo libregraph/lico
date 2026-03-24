@@ -55,8 +55,9 @@ const ResponsiveScreen = (props) => {
   } = props;
 
   const bannerLogoSrc = branding?.bannerLogo ? branding.bannerLogo : Logo;
+  const bannerLogoHeight = branding?.bannerLogoHeight || 24;
   const logo = withoutLogo ? null :
-    <DialogContent><img src={bannerLogoSrc} className={classes.logo} alt=""/></DialogContent>;
+    <DialogContent><img src={bannerLogoSrc} className={classes.logo} style={{ height: bannerLogoHeight }} alt=""/></DialogContent>;
 
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 

@@ -85,7 +85,8 @@ type Identifier struct {
 
 	meta *meta.Meta
 
-	defaultBannerLogo *string
+	defaultBannerLogo       *string
+	defaultBannerLogoHeight *uint
 
 	onSetLogonCallbacks   []func(ctx context.Context, rw http.ResponseWriter, user identity.User) error
 	onUnsetLogonCallbacks []func(ctx context.Context, rw http.ResponseWriter) error
@@ -157,6 +158,7 @@ func NewIdentifier(c *Config) (*Identifier, error) {
 		}
 		i.defaultBannerLogo = &defaultBannerLogo
 	}
+	i.defaultBannerLogoHeight = c.DefaultBannerLogoHeight
 
 	i.meta.Scopes.Extend(c.Backend.ScopesMeta())
 

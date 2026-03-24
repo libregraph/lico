@@ -89,6 +89,7 @@ func commandServe() *cobra.Command {
 	serveCmd.Flags().StringVar(&cfg.IdentifierRegistrationConf, "identifier-registration-conf", "", "Path to a identifier-registration.yaml configuration file")
 	serveCmd.Flags().StringVar(&cfg.IdentifierScopesConf, "identifier-scopes-conf", "", "Path to a scopes.yaml configuration file")
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultBannerLogo, "identifier-default-banner-logo", "", "Path to a default banner logo that appears on sign-in page.")
+	serveCmd.Flags().UintVar(&cfg.IdentifierDefaultBannerLogoHeight, "identifier-default-banner-logo-height", 0, "Height in pixels of the banner logo on the sign-in page (default 24).")
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultSignInPageText, "identifier-default-sign-in-page-text", "", "Default text that appears at the bottom of the sign-in box.")
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultLogoTargetURI, "identifier-default-logo-target-url", "", "Default URL for the logo of the login page.")
 	serveCmd.Flags().StringVar(&cfg.IdentifierDefaultUsernameHintText, "identifier-default-username-hint-text", "", "Default string that shows as the hint in the username textbox on the sign-in screen.")

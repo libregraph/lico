@@ -50,6 +50,7 @@ type Config struct {
 	IdentifierAuthoritiesConf         string
 	IdentifierScopesConf              string
 	IdentifierDefaultBannerLogo       []byte
+	IdentifierDefaultBannerLogoHeight *uint
 	IdentifierDefaultSignInPageText   *string
 	IdentifierDefaultLogoTargetURI    *string
 	IdentifierDefaultUsernameHintText *string

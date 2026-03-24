@@ -127,6 +127,7 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		SignedOutEndpointURI:     fullSignedOutEndpointURL,
 
 		DefaultBannerLogo:        config.IdentifierDefaultBannerLogo,
+		DefaultBannerLogoHeight:  config.IdentifierDefaultBannerLogoHeight,
 		DefaultSignInPageText:    config.IdentifierDefaultSignInPageText,
 		DefaultSignInPageLogoURI: config.IdentifierDefaultLogoTargetURI,
 		DefaultUsernameHintText:  config.IdentifierDefaultUsernameHintText,

@@ -257,6 +257,10 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 		}
 		bs.config.IdentifierDefaultBannerLogo = b
 	}
+	if settings.IdentifierDefaultBannerLogoHeight != 0 {
+		h := settings.IdentifierDefaultBannerLogoHeight
+		bs.config.IdentifierDefaultBannerLogoHeight = &h
+	}
 	if settings.IdentifierDefaultSignInPageText != "" {
 		bs.config.IdentifierDefaultSignInPageText = &settings.IdentifierDefaultSignInPageText
 	}
