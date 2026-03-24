@@ -94,8 +94,9 @@ func NewRegistry(ctx context.Context, trustedURI *url.URL, registrationConfFilep
 			"trusted":            client.Trusted,
 			"insecure":           client.Insecure,
 			"application_type":   client.ApplicationType,
-			"redirect_uris":      client.RedirectURIs,
-			"origins":            client.Origins,
+			"redirect_uris":                    client.RedirectURIs,
+			"origins":                          client.Origins,
+			"external_authorize_redirect_uris": client.ExternalAuthorizeRedirectURIs,
 		}
 
 		if validateErr != nil {
