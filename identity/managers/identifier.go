@@ -122,6 +122,18 @@ func (im *IdentifierIdentityManager) RegisterManagers(mgrs *managers.Managers) e
 	return im.identifier.RegisterManagers(mgrs)
 }
 
+// getSignInFormURI returns the sign-in form URI for the given client and
+// scopes. If the client has a configured external authorize redirect URI, it
+// is returned. Otherwise the default sign-in form URI is used.
+func (im *IdentifierIdentityManager) getSignInFormURI(clientID string, scopes map[string]bool) string {
+	if registration, ok := im.clients.Get(context.Background(), clientID); ok && registration != nil {
+		if uri := registration.GetExternalAuthorizeRedirectURI(scopes); uri != "" {
+			return uri
+		}
+	}
+	return im.signInFormURI
+}
+
 // Authenticate implements the identity.Manager interface.
 func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.ResponseWriter, req *http.Request, ar *payload.AuthenticationRequest, next identity.Manager) (identity.AuthRecord, error) {
 	var user *identifierUser
@@ -254,7 +266,7 @@ func (im *IdentifierIdentityManager) Authenticate(ctx context.Context, rw http.R
 				query.Set("claims_scope", strings.Join(claimsScopes, " "))
 			}
 		}
-		u, _ := url.Parse(im.signInFormURI)
+		u, _ := url.Parse(im.getSignInFormURI(ar.ClientID, ar.Scopes))
 		u.RawQuery = query.Encode()
 		utils.WriteRedirect(rw, http.StatusFound, u, nil, false)
 
