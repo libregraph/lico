@@ -43,7 +43,7 @@ type Settings struct {
 	IdentifierRegistrationConf        string
 	IdentifierScopesConf              string
 	IdentifierDefaultBannerLogo       string
-	IdentifierDefaultBannerLogoHeight uint
+	IdentifierDefaultBannerLogoHeight string
 	IdentifierDefaultSignInPageText   string
 	IdentifierDefaultLogoTargetURI    string
 	IdentifierDefaultUsernameHintText string

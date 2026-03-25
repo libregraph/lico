@@ -86,7 +86,7 @@ type Identifier struct {
 	meta *meta.Meta
 
 	defaultBannerLogo       *string
-	defaultBannerLogoHeight *uint
+	defaultBannerLogoHeight *string
 
 	onSetLogonCallbacks   []func(ctx context.Context, rw http.ResponseWriter, user identity.User) error
 	onUnsetLogonCallbacks []func(ctx context.Context, rw http.ResponseWriter) error

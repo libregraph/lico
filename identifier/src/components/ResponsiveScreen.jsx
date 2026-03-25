@@ -28,8 +28,14 @@ const styles = theme => ({
   dialog: {
     maxWidth: 440,
   },
-  logo: {
+  logoSmall: {
+    height: 12,
+  },
+  logoNormal: {
     height: 24,
+  },
+  logoBig: {
+    height: 48,
   },
   actions: {
     marginTop: -40,
@@ -55,9 +61,10 @@ const ResponsiveScreen = (props) => {
   } = props;
 
   const bannerLogoSrc = branding?.bannerLogo ? branding.bannerLogo : Logo;
-  const bannerLogoHeight = branding?.bannerLogoHeight || 24;
+  const logoSizeClassMap = { small: classes.logoSmall, normal: classes.logoNormal, big: classes.logoBig };
+  const logoClassName = logoSizeClassMap[branding?.bannerLogoHeight] || classes.logoNormal;
   const logo = withoutLogo ? null :
-    <DialogContent><img src={bannerLogoSrc} className={classes.logo} style={{ height: bannerLogoHeight }} alt=""/></DialogContent>;
+    <DialogContent><img src={bannerLogoSrc} className={logoClassName} alt=""/></DialogContent>;
 
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 
