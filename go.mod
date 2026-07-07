@@ -30,7 +30,7 @@ require (
 	golang.org/x/crypto v0.51.0
 	golang.org/x/net v0.55.0
 	golang.org/x/oauth2 v0.35.0
-	golang.org/x/time v0.13.0
+	golang.org/x/time v0.15.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
 )
