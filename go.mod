@@ -15,7 +15,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/schema v1.4.1
 	github.com/libregraph/oidc-go v1.1.0
 	github.com/longsleep/go-metrics v1.0.0
