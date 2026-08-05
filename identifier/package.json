@@ -68,7 +68,7 @@
     "vite": "^4.5.13",
     "vite-plugin-checker": "^0.6.2",
     "vite-plugin-eslint": "^1.8.1",
-    "vitest": "^0.34.6"
+    "vitest": "^3.2.6"
   },
   "jest": {
     "collectCoverageFrom": [
