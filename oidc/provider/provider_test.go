@@ -26,6 +26,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -45,13 +46,31 @@ var logger = &logrus.Logger{
 }
 
 var rsaPrivateKeyBytes = []byte(`-----BEGIN RSA PRIVATE KEY-----
-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
+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
 -----END RSA PRIVATE KEY-----`)
 
 var rsaPrivateKey crypto.Signer
@@ -83,6 +102,10 @@ func NewTestProvider(ctx context.Context, t *testing.T) (*httptest.Server, *Prov
 		AuthorizationPath: "/konnect/v1/authorize",
 		TokenPath:         "/konnect/v1/token",
 		UserInfoPath:      "/konnect/v1/userinfo",
+
+		AccessTokenDuration:  10 * time.Minute,
+		IDTokenDuration:      time.Hour,
+		RefreshTokenDuration: 24 * time.Hour,
 	}
 
 	p, err := NewProvider(cfg)
