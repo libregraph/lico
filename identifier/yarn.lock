@@ -5446,7 +5446,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"content-type@npm:1.0.4, content-type@npm:^1.0.4":
+"content-type@npm:1.0.5":
+  version: 1.0.5
+  resolution: "content-type@npm:1.0.5"
+  checksum: 585847d98dc7fb8035c02ae2cb76c7a9bd7b25f84c447e5ed55c45c2175e83617c8813871b4ee22f368126af6b2b167df655829007b21aa10302873ea9c62662
+  languageName: node
+  linkType: hard
+
+"content-type@npm:^1.0.4":
   version: 1.0.4
   resolution: "content-type@npm:1.0.4"
   checksum: 5ea85c5293475c0cdf2f84e2c71f0519ced565840fb8cbda35997cb67cc45b879d5b9dbd37760c4041ca7415a3687f8a5f2f87b556b2aaefa49c0f3436a346d4
@@ -7224,13 +7231,13 @@ __metadata:
   linkType: hard
 
 "gettext-converter@npm:^1.2.2":
-  version: 1.2.3
-  resolution: "gettext-converter@npm:1.2.3"
+  version: 1.3.3
+  resolution: "gettext-converter@npm:1.3.3"
   dependencies:
     arrify: "npm:^2.0.1"
-    content-type: "npm:1.0.4"
+    content-type: "npm:1.0.5"
     encoding: "npm:0.1.13"
-  checksum: efd23050404045e60c58a158f742406988322cff4c60cef5e90c1a61f4c67eae5fbc35b59756ae066385cd688f5faedf868792c311e28cfde7d3c6d64aa34e00
+  checksum: 8bc32a4b24ba1fd980a50b4dae5c9c69a376fd3815ea857703a3e9b433d4aec6e4aa5f56e5f3257053058ee663fc5025815dcb20dcf75890df8fc781e565f04c
   languageName: node
   linkType: hard
 
