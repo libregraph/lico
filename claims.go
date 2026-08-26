@@ -117,6 +117,11 @@ type RefreshTokenClaims struct {
 
 	IdentityClaims   jwt.MapClaims `json:"lg.i"`
 	IdentityProvider string        `json:"lg.p,omitempty"`
+
+	// Session of the underlaying identity backend, if it provided one. This is
+	// the same value as found in access tokens and is nil for backends without
+	// sessions.
+	*oidc.SessionClaims
 }
 
 // Validate implements the jwt.ClaimsValidator interface.

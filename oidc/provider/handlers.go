@@ -241,7 +241,7 @@ func (p *Provider) AuthorizeResponse(rw http.ResponseWriter, req *http.Request, 
 
 	// Create access token when requested.
 	if _, ok := ar.ResponseTypes[oidc.ResponseTypeToken]; ok {
-		accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, auth, nil, nil)
+		accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, auth, nil, nil, "")
 		if err != nil {
 			goto done
 		}
@@ -332,6 +332,8 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	var accessTokenString string
 	var idTokenString string
 	var refreshTokenString string
+	var newAccessTokenID string
+	var newRefreshTokenID string
 	var refreshTokenClaims *konnect.RefreshTokenClaims
 	var approvedScopes map[string]bool
 	var authorizedScopes map[string]bool
@@ -438,7 +440,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 
 		// TODO(longsleep): Compare standard claims issuer.
 
-		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, nil, claims.IdentityClaims)
+		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, claims.SessionClaims, claims.IdentityClaims)
 		if userID == "" {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidToken, "missing data in kc.identity claim")
 			goto done
@@ -482,8 +484,21 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 			authorizedScopes = approvedScopes
 		}
 
+		// Pre-generate the IDs of the tokens this exchange issues, so the
+		// backend can be told about them with the lookup below. A refresh token
+		// is only issued when offline access is authorized.
+		newAccessTokenID = rndm.GenerateRandomString(24)
+		if authorizedScopes[oidc.ScopeOfflineAccess] {
+			newRefreshTokenID = rndm.GenerateRandomString(24)
+		}
+
 		// Load user record from identitymanager, without any scopes or claims.
-		auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, nil, nil, authorizedScopes)
+		auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, nil, nil, authorizedScopes, &identity.LookupContext{
+			Audience:          tr.ClientID,
+			RefreshTokenID:    claims.ID,
+			NewAccessTokenID:  newAccessTokenID,
+			NewRefreshTokenID: newRefreshTokenID,
+		})
 		if !found {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, "user not found")
 			goto done
@@ -510,7 +525,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Create access token.
-	accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, auth, signinMethod, refreshTokenClaims)
+	accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, auth, signinMethod, refreshTokenClaims, newAccessTokenID)
 	if err != nil {
 		goto done
 	}
@@ -527,7 +542,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 
 		// Create refresh token when granted.
 		if authorizedScopes[oidc.ScopeOfflineAccess] {
-			refreshTokenString, err = p.makeRefreshToken(ctx, ar.ClientID, auth, nil)
+			refreshTokenString, err = p.makeRefreshToken(ctx, ar.ClientID, auth, nil, newRefreshTokenID)
 			if err != nil {
 				goto done
 			}
@@ -624,7 +639,9 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 
 	authorizedScopes = claims.AuthorizedScopes()
 
-	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, authorizedScopes, requestedClaimsMap, authorizedScopes)
+	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, authorizedScopes, requestedClaimsMap, authorizedScopes, &identity.LookupContext{
+		Audience: claims.Audience[0],
+	})
 	if err != nil {
 		p.logger.WithFields(utils.ErrorAsFields(err)).Errorln("identity manager fetch failed")
 		found = false
