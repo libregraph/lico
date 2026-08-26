@@ -19,6 +19,7 @@ package libregraph
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,10 +31,115 @@ import (
 	identityClients "github.com/libregraph/lico/identity/clients"
 )
 
-// newTestBackendWithRegistry returns a backend which talks to a test server
-// answering every request with the provided status and body. It wires an empty
-// client registry, which Logon needs because it looks up the audience
-// registration.
+// newTestBackend returns a backend which talks to a test server answering every
+// request with the provided status and body.
+func newTestBackend(t *testing.T, status int, body string) (*LibreGraphIdentifierBackend, *httptest.Server) {
+	t.Helper()
+
+	httpServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Content-Type", "application/json")
+		rw.WriteHeader(status)
+		if body != "" {
+			rw.Write([]byte(body))
+		}
+	}))
+
+	logger := logrus.New()
+	logger.SetLevel(logrus.PanicLevel)
+
+	b, err := NewLibreGraphIdentifierBackend(&config.Config{
+		Logger: logger,
+	}, nil, httpServer.URL, nil, nil)
+	if err != nil {
+		httpServer.Close()
+		t.Fatal(err)
+	}
+
+	return b, httpServer
+}
+
+func TestGetUserUnauthorized(t *testing.T) {
+	b, httpServer := newTestBackend(t, http.StatusUnauthorized, "")
+	defer httpServer.Close()
+
+	user, err := b.GetUser(context.Background(), "unittestuser", nil, nil, nil)
+	if user != nil {
+		t.Errorf("user was returned, got %v", user)
+	}
+	if !errors.Is(err, ErrUnauthorized) {
+		t.Errorf("error was incorrect, got %v, want %v", err, ErrUnauthorized)
+	}
+}
+
+func TestGetUserNotFound(t *testing.T) {
+	b, httpServer := newTestBackend(t, http.StatusNotFound, "")
+	defer httpServer.Close()
+
+	user, err := b.GetUser(context.Background(), "unittestuser", nil, nil, nil)
+	if err != nil {
+		t.Fatalf("unknown user was an error, got %v", err)
+	}
+	if user != nil {
+		t.Errorf("user was returned, got %v", user)
+	}
+}
+
+func TestGetUserUnexpectedStatus(t *testing.T) {
+	b, httpServer := newTestBackend(t, http.StatusInternalServerError, "")
+	defer httpServer.Close()
+
+	user, err := b.GetUser(context.Background(), "unittestuser", nil, nil, nil)
+	if user != nil {
+		t.Errorf("user was returned, got %v", user)
+	}
+	if err == nil {
+		t.Fatal("unexpected status was no error")
+	}
+	if errors.Is(err, ErrUnauthorized) {
+		t.Errorf("unexpected status was reported as unauthorized, got %v", err)
+	}
+}
+
+func TestGetUserOK(t *testing.T) {
+	b, httpServer := newTestBackend(t, http.StatusOK, `{
+		"id": "unittestuser",
+		"accountEnabled": true,
+		"userPrincipalName": "user@unittest.local",
+		"displayName": "Unit Test"
+	}`)
+	defer httpServer.Close()
+
+	user, err := b.GetUser(context.Background(), "unittestuser", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if user == nil {
+		t.Fatal("no user was returned")
+	}
+	if user.Subject() != "unittestuser" {
+		t.Errorf("subject was incorrect, got %s, want unittestuser", user.Subject())
+	}
+}
+
+func TestGetUserDisabledAccount(t *testing.T) {
+	b, httpServer := newTestBackend(t, http.StatusOK, `{
+		"id": "unittestuser",
+		"accountEnabled": false,
+		"userPrincipalName": "user@unittest.local"
+	}`)
+	defer httpServer.Close()
+
+	user, err := b.GetUser(context.Background(), "unittestuser", nil, nil, nil)
+	if err != nil {
+		t.Fatalf("disabled account was an error, got %v", err)
+	}
+	if user != nil {
+		t.Errorf("user was returned for disabled account, got %v", user)
+	}
+}
+
+// newTestBackendWithRegistry is like newTestBackend but wires an empty client
+// registry, which Logon needs because it looks up the audience registration.
 func newTestBackendWithRegistry(t *testing.T, status int, body string) (*LibreGraphIdentifierBackend, *httptest.Server) {
 	t.Helper()
 

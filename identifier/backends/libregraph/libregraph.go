@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -66,6 +67,12 @@ var libreGraphSpportedScopes = []string{
 	konnect.ScopeUniqueUserID,
 	konnect.ScopeRawSubject,
 }
+
+// ErrUnauthorized is returned when the backend answered a request as
+// unauthorized. For user lookups this usually means that the session which was
+// sent along is no longer valid, for example because it was revoked. It is
+// deliberately not the same as an unknown user, which is no error at all.
+var ErrUnauthorized = errors.New("libregraph identifier backend request unauthorized")
 
 type LibreGraphIdentifierBackend struct {
 	config *config.Config
@@ -536,6 +543,11 @@ func (b *LibreGraphIdentifierBackend) GetUser(ctx context.Context, entryID strin
 		// breaks
 	case http.StatusNotFound:
 		return nil, nil
+	case http.StatusUnauthorized:
+		// The session which was sent with this lookup got rejected, for example
+		// because it was revoked. Keep this apart from an unknown user, so the
+		// two cases can be told apart.
+		return nil, ErrUnauthorized
 	default:
 		return nil, fmt.Errorf("libregraph identifier backend get user request unexpected response status: %d", response.StatusCode)
 	}
