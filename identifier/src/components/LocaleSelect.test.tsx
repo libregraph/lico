@@ -10,13 +10,10 @@ import { setTestLanguages } from '../test-utils';
 import LocaleSelect from './LocaleSelect';
 
 /*
- * These tests build their own i18next instance rather than using the shared one
- * for two reasons. LocaleSelect mutates the instance's options while resolving a
- * locale, so a shared instance would leak between tests. And the best match
- * lookup is decided by i18next's LanguageUtils, which captures supportedLngs at
- * construction: with the shared instance's `supportedLngs: false` every browser
- * code matches verbatim and the lookup degenerates. Mirroring src/i18n.ts, which
- * passes the shipped locale list, is what reproduces production behaviour.
+ * These tests build their own i18next instance rather than using the shared one,
+ * so that supportedLngs and fallbackLng match what src/i18n.ts configures in
+ * production. The locale the component settles on has to be right against that
+ * configuration, not against a permissive test one.
  */
 function newProductionLikeI18n(lng: string): I18nInstance {
   const instance = i18next.createInstance();
@@ -116,6 +113,19 @@ describe('LocaleSelect', () => {
     renderSelect(instance, deAndFr);
 
     await waitFor(() => expect(instance.language).toBe('de'));
+    expect(screen.getByRole('button')).toHaveTextContent('Deutsch');
+  });
+
+  it('does not adopt a locale the branding disabled, even one the app ships', async () => {
+    // Italian is among the shipped locales but not among the enabled ones. It
+    // must not win, however much the browser prefers it.
+    setTestLanguages(['it-IT', 'it']);
+    const instance = newProductionLikeI18n('en-GB');
+
+    renderSelect(instance, deAndFr);
+
+    await waitFor(() => expect(instance.language).toBe('de'));
+    expect(instance.language).not.toBe('it');
     expect(screen.getByRole('button')).toHaveTextContent('Deutsch');
   });
 
