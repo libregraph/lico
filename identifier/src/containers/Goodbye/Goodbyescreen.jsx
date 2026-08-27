@@ -86,8 +86,13 @@ class Goodbyescreen extends React.PureComponent {
     this.props.dispatch(executeLogoff()).then((response) => {
       const { history } = this.props;
 
+      // Signing off clears the session before the request goes out, so the
+      // screen has nothing to show until it is read again. That has to happen
+      // whether or not the server agreed, otherwise a refusal leaves the user
+      // on a progress indicator with no way forward.
+      this.props.dispatch(executeHello());
+
       if (response.success) {
-        this.props.dispatch(executeHello());
         history.push('/goodbye');
       }
     });
