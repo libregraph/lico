@@ -1,4 +1,4 @@
-import React, { ComponentType } from 'react';
+import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSelector } from 'react-redux';
@@ -33,10 +33,7 @@ const post = vi.mocked(
   ) => Promise<HttpReply>
 );
 
-// @types/react-redux resolves a second, older copy of @types/react through
-// @types/hoist-non-react-statics, so TypeScript rejects the connected component
-// as a JSX element. The cast also states the props the router injects.
-const Subject = Welcomescreen as unknown as ComponentType<{ history: MemoryHistory }>;
+const Subject = Welcomescreen;
 
 const helloResponse: HelloResponse = {
   state: 'nonce-from-the-server',

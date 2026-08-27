@@ -3,7 +3,6 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import type { Mock } from 'vitest';
-import type { MemoryHistory } from 'history';
 
 import Login from './Login';
 import { REQUEST_LOGON } from '../../actions/types';
@@ -45,12 +44,7 @@ const fieldOf = (label: string): HTMLInputElement => {
   return input;
 };
 
-/*
- * The container is still JavaScript, so the type react-redux's connect() infers
- * for it has no JSX signature TypeScript accepts. Restate the props the router
- * injects in production instead.
- */
-const Subject = Login as unknown as React.ComponentType<{ history: MemoryHistory }>;
+const Subject = Login;
 
 const renderLogin = (branding?: Branding, loading = '') => {
   // Login is rendered by a Route in the application, so it reads history from

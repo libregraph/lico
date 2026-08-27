@@ -3,7 +3,6 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import type { Mock } from 'vitest';
-import type { MemoryHistory } from 'history';
 
 import Consent from './Consent';
 import {
@@ -71,12 +70,7 @@ const query = {
   scope: 'openid profile email'
 };
 
-/*
- * The container is still JavaScript, so the type react-redux's connect() infers
- * for it has no JSX signature TypeScript accepts. Restate the props the router
- * injects in production instead.
- */
-const Subject = Consent as unknown as React.ComponentType<{ history: MemoryHistory }>;
+const Subject = Consent;
 
 const renderConsent = (details: HelloResponse = helloResponse()) => {
   // Consent is rendered by a Route in the application, so it reads history from
