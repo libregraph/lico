@@ -26,9 +26,15 @@ class Welcomescreen extends React.PureComponent {
   render() {
     const { classes, branding, hello, t } = this.props;
 
-    const loading = hello === null;
+    // The children are built before ResponsiveScreen decides whether to show the
+    // loading state, so return early rather than dereference a session which
+    // signing out has already cleared.
+    if (hello === null) {
+      return <ResponsiveScreen loading branding={branding}/>;
+    }
+
     return (
-      <ResponsiveScreen loading={loading} branding={branding}>
+      <ResponsiveScreen branding={branding}>
         <Typography variant="h5" component="h3">
           {t("konnect.welcome.headline", "Welcome {{displayName}}", {displayName: hello.displayName})}
         </Typography>

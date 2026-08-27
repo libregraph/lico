@@ -1,9 +1,7 @@
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { MemoryHistory } from 'history';
 
 import Welcomescreen from './Welcomescreen';
 import { HelloResponse, newTestHistory, renderWithProviders } from '../../test-utils';
@@ -51,20 +49,8 @@ const session = {
   details: helloResponse
 };
 
-/*
- * Welcomescreen builds its children eagerly, so it throws if it re-renders
- * after hello was cleared, which signing out does. In production the connected
- * App stops rendering it in the same commit because PrivateRoute needs a hello.
- * This mirrors only that unmount, so the sign out flow is observable here.
- */
-function GatedWelcome({ history }: { history: MemoryHistory }) {
-  const hello = useSelector((state: { common: { hello: unknown } }) => state.common.hello);
-
-  return hello ? <Subject history={history} /> : null;
-}
-
 function renderWelcome(history = newTestHistory('/welcome', 'POP')) {
-  return renderWithProviders(<GatedWelcome history={history} />, {
+  return renderWithProviders(<Subject history={history} />, {
     history,
     preloaded: { common: { hello: session } }
   });
@@ -89,6 +75,17 @@ describe('Welcomescreen', () => {
     expect(screen.getByText('user1@example.com')).toBeInTheDocument();
     expect(screen.getByText('You are signed in - awesome!')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+  });
+
+  it('shows the loading state instead of failing when the session is gone', () => {
+    // Signing out clears the session before the request completes, so this
+    // screen re-renders without one and must not read from it.
+    renderWithProviders(<Subject history={newTestHistory('/welcome', 'POP')} />, {
+      preloaded: { common: { hello: null } }
+    });
+
+    expect(screen.queryByText('You are signed in - awesome!')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
   });
 
   it('does not talk to the server on mount', () => {
