@@ -1,24 +1,53 @@
 openapi: '3.0.0'
 
 info:
-  version: '1.0.0'
+  version: '1.1.0'
   title: LibreGraph Connect API
   description: |
-    LibreGraph Connect provides OpenID Connect Provider (OP) functionality with integrated web login and consent forms.
-    
+    LibreGraph Connect (lico) provides OpenID Connect Provider (OP) functionality with an
+    integrated web login and consent UI (the "identifier").
+
     This API implements:
     - OpenID Connect Core 1.0
-    - OpenID Connect Discovery 1.0  
+    - OpenID Connect Discovery 1.0
     - OpenID Connect Session Management 1.0
     - OAuth 2.0 Authorization Framework
-    - Dynamic Client Registration
-    - SAML2 integration
-    
-    Base URLs:
-    - OIDC endpoints: `/konnect/v1/`
-    - Authentication UI: `/signin/v1/identifier/`
-    - Identifier app: `/identifier/`
-    
+    - Dynamic Client Registration (only when explicitly enabled, see below)
+    - SAML2 and OAuth2 integration with external identity providers
+
+    ## Path prefixes
+
+    Paths below are written with the default prefix. Two independent prefixes exist, both
+    runtime configuration:
+
+    | Prefix | Default | Used by |
+    | --- | --- | --- |
+    | Konnect API | `/konnect/v1` | `token`, `userinfo`, `jwks.json`, `session/`, `register` |
+    | Signin / identifier | `/signin/v1` | the identifier web app, its JSON API, `authorize`, `endsession` |
+
+    `authorize` and `endsession` live under the **signin** prefix, while `token`, `userinfo`
+    and `jwks.json` live under the **konnect** prefix.
+
+    The discovery document (`/.well-known/openid-configuration`) is generated from the same
+    configuration that wires the routes, so it is the authoritative source for endpoint
+    locations.
+
+    The identifier web app is served at `{signin}/identifier` and issues its JSON API calls as
+    URLs relative to that page, which is why the API sits at `{signin}/identifier/_/...`. The
+    served `index.html` carries a `data-path-prefix` attribute on `#root` holding the signin
+    prefix, so the app can construct absolute URLs when needed.
+
+    ## Error conventions
+
+    - The **OIDC/OAuth2 protocol endpoints** (`token`) return the JSON `OIDCError` shape.
+    - `authorize` reports errors by **302 redirect** to the client's `redirect_uri` with
+      `error`/`error_description`/`state` in the query or fragment. It does not return JSON.
+    - The **identifier JSON endpoints** (`{signin}/identifier/_/*`) never return a JSON error
+      body. Failures are `text/plain` from Go's `http.Error`, shaped
+      `"<status> <reason>[ - <detail>]"`, e.g. `400 Bad Request - failed to decode request JSON`.
+      See the `PlainTextError` response component.
+    - Several handlers render an **HTML error page** for internal failures.
+
   contact:
     name: LibreGraph Developers
     url: https://github.com/libregraph/lico
@@ -27,14 +56,11 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0
 
 servers:
-  - url: 'https://{hostname}{basePath}'
+  - url: 'https://{hostname}'
     variables:
       hostname:
         default: localhost:8443
-        description: LibreGraph Connect server hostname and port
-      basePath:
-        default: ''
-        description: 'Configurable URI base path (e.g., /api/v1)'
+        description: LibreGraph Connect issuer hostname and port
 
 tags:
   - name: discovery
@@ -42,22 +68,26 @@ tags:
   - name: oidc
     description: OpenID Connect core endpoints
   - name: identifier
-    description: Authentication and consent endpoints
+    description: Identifier JSON API — authentication and consent, consumed by the web app
   - name: oauth2
-    description: OAuth2 flow endpoints
+    description: OAuth2 flow endpoints for external identity providers
   - name: saml2
     description: SAML2 integration endpoints
   - name: static
-    description: Static assets and UI endpoints
+    description: Static assets and web app entry points
+  - name: ops
+    description: Operational endpoints
 
 paths:
-  # OpenID Connect Discovery
+  # ---------------------------------------------------------------- discovery
   /.well-known/openid-configuration:
     get:
-      tags:
-        - discovery
+      tags: [discovery]
       summary: OpenID Connect Discovery Document
-      description: Returns the OpenID Connect provider metadata
+      description: |
+        Returns the OpenID Connect provider metadata. This is the authoritative source for
+        every other endpoint location. The document is built once at startup and served
+        verbatim thereafter.
       operationId: getDiscovery
       responses:
         '200':
@@ -67,39 +97,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProviderMetadata'
 
-  # OIDC Core Endpoints
+  # ------------------------------------------------------------- oidc core
   /konnect/v1/jwks.json:
     get:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: JSON Web Key Set
-      description: Returns the provider's public keys for JWT verification
+      description: |
+        Returns the provider's public keys for JWT verification. Private key material is
+        stripped. Every key is emitted with `use: "sig"`.
       operationId: getJWKS
       responses:
         '200':
-          description: JSON Web Key Set
+          description: |
+            JSON Web Key Set. Served as `application/jwk-set+json` — **not**
+            `application/json`.
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JSONWebKeySet'
             application/jwk-set+json:
               schema:
                 $ref: '#/components/schemas/JSONWebKeySet'
 
   /signin/v1/identifier/_/authorize:
     get:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: Authorization Endpoint
-      description: OpenID Connect authorization endpoint for authorization code, implicit, and hybrid flows
+      description: |
+        OpenID Connect authorization endpoint for authorization code, implicit and hybrid
+        flows. This endpoint lives under the **signin** prefix, not the konnect prefix.
+
+        Unauthenticated requests are redirected to the identifier web app to sign in; the app
+        later resumes the flow via `HelloResponse.continue_uri`.
+
+        **Errors are not returned as JSON.** A request that validates far enough to know the
+        client and `redirect_uri` is answered with a 302 to that `redirect_uri` carrying
+        `error`, `error_description` and `state`, in the query string or the fragment
+        depending on the response type. Requests that fail before that point render an HTML
+        error page.
       operationId: authorize
       parameters:
         - name: response_type
           in: query
           required: true
+          description: |
+            Space-delimited response type. The request validator accepts all seven values
+            below.
+
+            **Known inconsistency:** the discovery document's `response_types_supported`
+            advertises only `id_token`, `id_token token`, `code id_token` and
+            `code id_token token`. Bare `code`, bare `token` and `code token` are accepted by
+            this endpoint but are not advertised.
+
+            Response types containing `id_token` additionally require `nonce`.
           schema:
             type: string
-            enum: [code, id_token, token, 'code id_token', 'code token', 'code id_token token', 'id_token token']
+            enum:
+              - code
+              - id_token
+              - token
+              - 'code id_token'
+              - 'code token'
+              - 'code id_token token'
+              - 'id_token token'
         - name: client_id
           in: query
           required: true
@@ -114,6 +171,7 @@ paths:
         - name: scope
           in: query
           required: true
+          description: Space-delimited scope list. Must include `openid`.
           schema:
             type: string
         - name: state
@@ -122,10 +180,22 @@ paths:
             type: string
         - name: nonce
           in: query
+          description: Required when `response_type` contains `id_token`.
           schema:
             type: string
+        - name: response_mode
+          in: query
+          description: |
+            Only `query` and `fragment` are recognised. Unrecognised values are ignored
+            rather than rejected. `form_post` is not implemented.
+          schema:
+            type: string
+            enum: [query, fragment]
         - name: prompt
           in: query
+          description: |
+            Space-delimited. `none` must be requested on its own; the other values may be
+            combined.
           schema:
             type: string
             enum: [none, login, consent, select_account]
@@ -137,7 +207,23 @@ paths:
           in: query
           schema:
             type: string
+        - name: claims
+          in: query
+          description: OpenID Connect claims request parameter. `claims_parameter_supported` is true.
+          schema:
+            type: string
         - name: request
+          in: query
+          description: |
+            Request object as a JWT. `request_parameter_supported` is true;
+            `request_uri_parameter_supported` is false.
+
+            When the server runs with `--allow-client-signed-logins` and the request carries
+            the `LibreGraph.SignedLoginOK` scope, this parameter selects the signed-login
+            flow instead of the ordinary interactive flow.
+          schema:
+            type: string
+        - name: registration
           in: query
           schema:
             type: string
@@ -147,29 +233,37 @@ paths:
             type: string
         - name: code_challenge_method
           in: query
+          description: Only `S256` is accepted. `plain` is explicitly rejected.
           schema:
             type: string
             enum: [S256]
       responses:
         '302':
-          description: Redirect to client with authorization code or error
-        '400':
-          description: Bad request
-          content:
-            application/json:
+          description: |
+            Redirect to the client with the authorization response, redirect to the client
+            with an error, or redirect to the identifier web app to authenticate.
+          headers:
+            Location:
               schema:
-                $ref: '#/components/schemas/OIDCError'
+                type: string
+                format: uri
+        '400':
+          description: HTML error page for requests that fail before the client is resolved.
+          content:
+            text/plain:
+              schema:
+                type: string
     post:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: Authorization Endpoint (POST)
-      description: Authorization endpoint with form POST
+      description: Same semantics as GET, with parameters supplied as a form body.
       operationId: authorizePost
       requestBody:
         content:
           application/x-www-form-urlencoded:
             schema:
               type: object
+              description: Same parameter set as the GET operation.
               properties:
                 response_type:
                   type: string
@@ -185,34 +279,34 @@ paths:
                   type: string
       responses:
         '302':
-          description: Redirect to client with authorization code or error
+          description: As for GET.
         '400':
-          description: Bad request
+          description: As for GET.
 
   /konnect/v1/token:
     post:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: Token Endpoint
-      description: Token endpoint for authorization code and refresh token grants
+      description: |
+        Token endpoint for the authorization code and refresh token grants.
+
+        Client authentication is `client_secret_basic` or `none`, matching
+        `token_endpoint_auth_methods_supported`.
+
+        The provider dispatches this endpoint by exact path match without router-level method
+        restriction, so a GET reaches the handler and is rejected by it with a JSON error
+        rather than a 405.
       operationId: token
       security:
         - clientBasicAuth: []
-        - clientFormAuth: []
+        - {}
       requestBody:
         required: true
         content:
           application/x-www-form-urlencoded:
             schema:
               oneOf:
-                - allOf:
-                    - $ref: '#/components/schemas/AuthorizationCodeGrant'
-                    - type: object
-                      properties:
-                        client_id:
-                          type: string
-                        client_secret:
-                          type: string
+                - $ref: '#/components/schemas/AuthorizationCodeGrant'
                 - $ref: '#/components/schemas/RefreshTokenGrant'
       responses:
         '200':
@@ -222,53 +316,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenResponse'
         '400':
-          description: Bad request
+          description: |
+            All OAuth2 errors on this endpoint are returned with status 400, including
+            `invalid_grant`, `invalid_request`, `unsupported_grant_type`, `invalid_token`,
+            `insufficient_scope` and `access_denied`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OIDCError'
+        '500':
+          description: HTML error page for non-OAuth2 internal failures.
 
   /konnect/v1/userinfo:
     get:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: UserInfo Endpoint
-      description: Returns user information for the authenticated user
+      description: |
+        Returns claims for the subject of the presented access token. The claim set depends
+        on the scopes granted to that token — see `UserInfo`.
+
+        Only bearer token authentication is accepted here; the identifier session cookie is
+        not consulted.
       operationId: getUserInfo
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: User information
+          description: |
+            User information. Normally JSON. If the client registration sets
+            `userinfo_signed_response_alg`, the body is instead a signed JWS served as
+            `application/jwt`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfo'
+            application/jwt:
+              schema:
+                type: string
+                description: Signed JWS containing the same claims.
         '401':
-          description: Unauthorized
+          description: Missing or invalid bearer token. Empty body.
+          headers:
+            WWW-Authenticate:
+              schema:
+                type: string
+        '404':
+          description: HTML error page — subject no longer resolvable.
+        '500':
+          description: HTML error page.
     head:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: UserInfo Endpoint (HEAD)
-      description: Returns user information headers without body
       operationId: getUserInfoHead
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: User information headers
-          headers:
-            Content-Type:
-              schema:
-                type: string
-                example: application/json
+          description: User information headers, no body.
         '401':
-          description: Unauthorized
+          description: Missing or invalid bearer token.
     post:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: UserInfo Endpoint (POST)
-      description: Returns user information via POST request
       operationId: getUserInfoPost
       security:
         - bearerAuth: []
@@ -279,13 +388,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfo'
+            application/jwt:
+              schema:
+                type: string
+        '401':
+          description: Missing or invalid bearer token.
 
   /signin/v1/identifier/_/endsession:
     get:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: End Session Endpoint
-      description: Terminates user session and performs single logout
+      description: |
+        Terminates the session and performs single logout. Like `authorize`, this endpoint
+        lives under the **signin** prefix.
+
+        Requests without an established session redirect to the identifier's goodbye page
+        (`{signin}/goodbye`), including when `post_logout_redirect_uri` is supplied. When no
+        redirect target can be computed the response is a 200 JSON body carrying only the
+        echoed `state`.
       operationId: endSession
       parameters:
         - name: id_token_hint
@@ -294,6 +414,7 @@ paths:
             type: string
         - name: post_logout_redirect_uri
           in: query
+          description: Must match a `post_logout_redirect_uris` entry of the client registration.
           schema:
             type: string
             format: uri
@@ -303,14 +424,26 @@ paths:
             type: string
       responses:
         '302':
-          description: Redirect after logout
+          description: |
+            Redirect to the goodbye page, to the identifier for confirmation, or to
+            `post_logout_redirect_uri`.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
         '200':
-          description: Logout page
+          description: JSON body echoing `state`, when no redirect target is computed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
     post:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: End Session Endpoint (POST)
-      description: End session via POST
       operationId: endSessionPost
       requestBody:
         content:
@@ -322,16 +455,23 @@ paths:
                   type: string
                 post_logout_redirect_uri:
                   type: string
+                state:
+                  type: string
       responses:
         '302':
-          description: Redirect after logout
+          description: As for GET.
+        '200':
+          description: As for GET.
 
   /konnect/v1/session/check-session.html:
     get:
-      tags:
-        - oidc
+      tags: [oidc]
       summary: Session Check Iframe
-      description: Returns HTML iframe for OIDC Session Management
+      description: |
+        Serves the OpenID Connect Session Management 1.0 OP iframe. This is a browser
+        artifact, not an API: a static HTML document with embedded JavaScript that computes
+        `session_state` from the browser-state cookie. Served with a per-request CSP nonce
+        and `X-XSS-Protection`.
       operationId: checkSessionIframe
       responses:
         '200':
@@ -343,10 +483,19 @@ paths:
 
   /konnect/v1/register:
     post:
-      tags:
-        - oidc
-      summary: Dynamic Client Registration
-      description: Dynamically register new OAuth2/OIDC clients
+      tags: [oidc]
+      summary: Dynamic Client Registration (disabled by default)
+      description: |
+        **This endpoint is not routed unless the server is started with
+        `--allow-dynamic-client-registration`.** With the flag absent — the default — the
+        path returns 404 and `registration_endpoint` is omitted from the discovery document.
+
+        In the default configuration clients are configured statically through
+        `--identifier-registration-conf` (`identifier-registration.yaml`). That file is the
+        real integration surface; see the `StaticClientRegistration` schema.
+
+        The two surfaces name two fields differently: the dynamic JSON uses `client_name`
+        and `client_uri` where the static YAML uses `name` and `uri`.
       operationId: registerClient
       requestBody:
         required: true
@@ -363,17 +512,22 @@ paths:
                 $ref: '#/components/schemas/ClientRegistrationResponse'
         '400':
           description: Bad request
+        '404':
+          description: Dynamic client registration is not enabled (the default).
 
-  # Identifier Authentication Endpoints
-  /identifier/_/hello:
+  # ------------------------------------------------- identifier JSON API
+  /signin/v1/identifier/_/hello:
     post:
-      tags:
-        - identifier
-      summary: Authentication Status Check
-      description: Checks current authentication status and returns user information if logged in
+      tags: [identifier]
+      summary: Authentication status and flow context
+      description: |
+        Reports whether the caller has a usable identifier session and returns everything the
+        web app needs to render the next screen: branding, the resolved client, the requested
+        scopes with their display metadata, and where to go next.
+
+        The session cookie is read opportunistically. Its absence is **not** an error and not
+        a 401 — the endpoint answers 200 with `success: false`.
       operationId: hello
-      security:
-        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/XSRFHeader'
         - $ref: '#/components/parameters/OriginHeader'
@@ -386,26 +540,30 @@ paths:
               $ref: '#/components/schemas/HelloRequest'
       responses:
         '200':
-          description: Hello response with user info
+          description: |
+            Always returned on a well-formed request, whether or not the caller is
+            authenticated. Inspect `success`.
+
+            This endpoint does **not** have a 204 response; an unauthenticated hello returns
+            200 with `success: false`. The 204 pattern belongs to `logon` and `consent`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HelloResponse'
-        '204':
-          description: Not authenticated
-          headers:
-            Kopano-Konnect-State:
-              schema:
-                type: string
         '400':
-          description: Bad request
+          $ref: '#/components/responses/PlainTextError'
 
-  /identifier/_/logon:
+  /signin/v1/identifier/_/logon:
     post:
-      tags:
-        - identifier
-      summary: User Authentication
-      description: Authenticates user with username and password
+      tags: [identifier]
+      summary: Authenticate a user
+      description: |
+        Validates credentials and, on success, establishes the identifier session cookie.
+
+        When the request carries a nested `hello`, its `client_id` is passed to the identity
+        backend as the logon audience, so including or omitting `hello` can change backend
+        authorization scoping. A successful response embeds the same payload `hello` would
+        have returned.
       operationId: logon
       parameters:
         - $ref: '#/components/parameters/XSRFHeader'
@@ -419,31 +577,49 @@ paths:
               $ref: '#/components/schemas/LogonRequest'
       responses:
         '200':
-          description: Authentication successful
+          description: Authentication successful; session cookie established.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogonResponse'
           headers:
             Set-Cookie:
+              description: |
+                Identifier session cookie. Default name `__Secure-KKT`; the name is set by
+                the configured backend. Attributes:
+                `Path={signinPrefix}/identifier/_/`, `Secure`, `HttpOnly`,
+                `SameSite=None` by default (operator-configurable). No `Expires` or
+                `Max-Age` — expiry is carried inside the encrypted value.
               schema:
                 type: string
-                example: lico-identifier-session=encrypted-data; Path=/; Secure; HttpOnly; SameSite=Strict
+                example: __Secure-KKT=<jwe>; Path=/signin/v1/identifier/_/; HttpOnly; Secure; SameSite=None
         '204':
-          description: Authentication failed
+          description: |
+            Authentication did not succeed. Also returned for a request whose params array
+            describes no usable logon mode — a 1- or 2-element array, or an unknown mode
+            value, is a silent failure here rather than a 400.
           headers:
             Kopano-Konnect-State:
+              description: Echo of the request `state`.
               schema:
                 type: string
         '400':
-          description: Bad request
+          $ref: '#/components/responses/PlainTextError'
+        '500':
+          description: |
+            Backend logon error, or failure to serialize the session cookie. Plain text.
+          content:
+            text/plain:
+              schema:
+                type: string
 
-  /identifier/_/logoff:
+  /signin/v1/identifier/_/logoff:
     post:
-      tags:
-        - identifier
-      summary: User Logout
-      description: Logs out current user and clears session
+      tags: [identifier]
+      summary: Log off
+      description: |
+        Clears the identifier session cookie. `success` is unconditionally `true` on a
+        well-formed request — this endpoint cannot report "you were not signed in".
       operationId: logoff
       parameters:
         - $ref: '#/components/parameters/XSRFHeader'
@@ -457,23 +633,41 @@ paths:
               $ref: '#/components/schemas/StateRequest'
       responses:
         '200':
-          description: Logout successful
+          description: Logoff processed.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StateResponse'
+          headers:
+            Set-Cookie:
+              description: Session cookie cleared, with an expiry far in the past.
+              schema:
+                type: string
         '400':
-          description: Bad request
+          $ref: '#/components/responses/PlainTextError'
+        '500':
+          description: Failure clearing the session cookie. Plain text.
+          content:
+            text/plain:
+              schema:
+                type: string
 
-  /identifier/_/consent:
+  /signin/v1/identifier/_/consent:
     post:
-      tags:
-        - identifier
-      summary: Consent Processing
-      description: Processes user consent decisions for OAuth2/OIDC flows
+      tags: [identifier]
+      summary: Record a consent decision
+      description: |
+        Records the user's allow or deny decision for an authorization request. The decision
+        is stored in a short-lived cookie whose name is derived by hashing the request
+        parameters; `authorize` then looks it up when the flow resumes.
+
+        Because the cookie name is a hash of `state`, `client_id`, `redirect_uri`, `ref` and
+        `flow_nonce`, sending any of those inconsistently produces a cookie the subsequent
+        `authorize` call will not find. No error surfaces here — the flow simply asks for
+        consent again.
+
+        No session cookie is read by this endpoint.
       operationId: consent
-      security:
-        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/XSRFHeader'
         - $ref: '#/components/parameters/OriginHeader'
@@ -486,66 +680,83 @@ paths:
               $ref: '#/components/schemas/ConsentRequest'
       responses:
         '200':
-          description: Consent processed
+          description: 'Consent granted (`allow: true`).'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StateResponse'
           headers:
             Set-Cookie:
+              $ref: '#/components/headers/ConsentCookie'
+        '204':
+          description: 'Consent denied (`allow: false`).'
+          headers:
+            Kopano-Konnect-State:
+              description: |
+                Echo of the request `state`. Sent on this 204 as well — the web app reads it
+                here.
               schema:
                 type: string
-                description: Encrypted consent cookie
-        '204':
-          description: Consent rejected
+            Set-Cookie:
+              $ref: '#/components/headers/ConsentCookie'
         '400':
-          description: Bad request
+          $ref: '#/components/responses/PlainTextError'
+        '500':
+          description: Failure storing the consent cookie. Plain text.
+          content:
+            text/plain:
+              schema:
+                type: string
 
-  # OAuth2 Flow Endpoints  
-  /identifier/oauth2/start:
+  # -------------------------------------------------------- external oauth2
+  /signin/v1/identifier/oauth2/start:
     get:
-      tags:
-        - oauth2
-      summary: OAuth2 Flow Initiation
-      description: Initiates OAuth2 authorization flow with external providers
+      tags: [oauth2]
+      summary: Start an external OAuth2 login
+      description: Begins an OAuth2 authorization flow against a configured external authority.
       operationId: oauth2Start
       responses:
         '302':
-          description: Redirect to external OAuth2 provider
+          description: Redirect to the external OAuth2 provider, or back to `authorize` with an error.
+        '400':
+          description: Malformed request parameters. Plain text.
 
-  /identifier/oauth2/cb:
+  /signin/v1/identifier/oauth2/cb:
     get:
-      tags:
-        - oauth2
-      summary: OAuth2 Callback
-      description: Handles OAuth2 callback from external providers
+      tags: [oauth2]
+      summary: External OAuth2 callback
       operationId: oauth2Callback
       responses:
         '302':
-          description: Redirect after processing callback
+          description: Redirect after processing the callback.
+        '400':
+          description: |
+            Unknown or expired state. Plain text, e.g.
+            `400 Bad Request - state not found`.
 
-  # SAML2 Endpoints
-  /identifier/saml2/metadata:
+  # ----------------------------------------------------------------- saml2
+  /signin/v1/identifier/saml2/metadata:
     get:
-      tags:
-        - saml2
-      summary: SAML2 Metadata
-      description: Returns SAML2 service provider metadata
+      tags: [saml2]
+      summary: SAML2 service provider metadata
+      description: |
+        Only routed usefully when a SAML2 authority is configured. Otherwise returns
+        `404 Not Found - saml not configured`.
       operationId: saml2Metadata
       responses:
         '200':
-          description: SAML2 metadata
+          description: SAML2 metadata, served as `application/samlmetadata+xml`.
           content:
-            application/xml:
+            application/samlmetadata+xml:
               schema:
                 type: string
+        '404':
+          description: No SAML2 authority configured. Plain text.
 
-  /identifier/saml2/acs:
+  /signin/v1/identifier/saml2/acs:
     post:
-      tags:
-        - saml2
+      tags: [saml2]
       summary: SAML2 Assertion Consumer Service
-      description: Processes SAML2 assertions from identity providers
       operationId: saml2ACS
       requestBody:
         content:
@@ -555,53 +766,158 @@ paths:
               properties:
                 SAMLResponse:
                   type: string
+                RelayState:
+                  type: string
       responses:
         '302':
-          description: Redirect after processing assertion
+          description: Redirect after processing the assertion.
+        '400':
+          description: Missing or unknown state. Plain text.
 
-  /identifier/_/saml2/slo:
+  /signin/v1/identifier/_/saml2/slo:
     get:
-      tags:
-        - saml2
+      tags: [saml2]
       summary: SAML2 Single Logout
-      description: Handles SAML2 single logout requests
+      description: Requires either a `SAMLRequest` or a `SAMLResponse` parameter.
       operationId: saml2SLO
       responses:
         '302':
-          description: Redirect after logout
+          description: Redirect after logout.
+        '400':
+          description: |
+            Plain text, e.g.
+            `400 Bad Request - neither SAMLRequest nor SAMLResponse parameter found`.
 
-  # Trampolin
-  /identifier/trampolin:
+  # ------------------------------------------------------------- trampolin
+  /signin/v1/identifier/trampolin:
     get:
-      tags:
-        - identifier
-      summary: Secure Redirect
-      description: Secure redirect mechanism for external URLs
+      tags: [identifier]
+      summary: Secure redirect
+      description: Redirects to a URI held in server-side state, keyed by a state parameter.
       operationId: trampolin
       responses:
-        '302':
-          description: Secure redirect
         '200':
-          description: Trampolin page with JavaScript redirect
+          description: HTML page performing the redirect via JavaScript.
+        '400':
+          description: Missing or unknown state. Plain text, e.g. `400 Bad Request - no state`.
 
-  # Static and UI Endpoints
-  /identifier:
+  /signin/v1/identifier/trampolin/trampolin.js:
     get:
-      tags:
-        - static
-      summary: Main Identifier Application
-      description: Serves the React-based identifier application
+      tags: [identifier]
+      summary: Trampolin redirect script
+      description: The JavaScript used by the trampolin page. Served as `application/javascript`.
+      operationId: trampolinScript
+      responses:
+        '200':
+          description: Script body.
+          content:
+            application/javascript:
+              schema:
+                type: string
+
+  # ------------------------------------------------------ web app + static
+  /signin/v1/identifier:
+    get:
+      tags: [static]
+      summary: Identifier web application
+      description: |
+        Serves the identifier single-page application. The served HTML has
+        `__PATH_PREFIX__` replaced with the signin prefix (exposed as `data-path-prefix` on
+        `#root`) and `__CSP_NONCE__` replaced with a fresh per-request nonce, which is also
+        named in the `Content-Security-Policy` response header.
+
+        There is no trailing-slash variant; `{signin}/identifier/` returns 404.
       operationId: identifierApp
       responses:
         '200':
-          description: Identifier application HTML
+          description: Application HTML.
+          content:
+            text/html:
+              schema:
+                type: string
+          headers:
+            Content-Security-Policy:
+              description: |
+                Per-request policy. Both `script-src` and `style-src` are nonce-based, so any
+                runtime style injection must carry the nonce. Current value:
+                `default-src 'self'; img-src 'self' data:; font-src 'self' data:;
+                script-src 'self' 'nonce-N'; style-src 'self' 'nonce-N'; base-uri 'none';
+                frame-ancestors 'none';`
+              schema:
+                type: string
 
-  /static/{path}:
+  /signin/v1/index.html:
     get:
-      tags:
-        - static
-      summary: Static Assets
-      description: Serves static files (CSS, JS, images)
+      tags: [static]
+      summary: Application HTML (service worker entry)
+      operationId: identifierIndexHtml
+      responses:
+        '200':
+          description: Same document as `{signin}/identifier`.
+
+  /signin/v1/chooseaccount:
+    get:
+      tags: [static]
+      summary: Account selection screen
+      description: Web app entry point; serves the same SPA document, routed client-side.
+      operationId: chooseAccountScreen
+      responses:
+        '200':
+          description: Application HTML.
+
+  /signin/v1/consent:
+    get:
+      tags: [static]
+      summary: Consent screen
+      description: Web app entry point; serves the same SPA document, routed client-side.
+      operationId: consentScreen
+      responses:
+        '200':
+          description: Application HTML.
+
+  /signin/v1/welcome:
+    get:
+      tags: [static]
+      summary: Welcome screen
+      description: Web app entry point; serves the same SPA document, routed client-side.
+      operationId: welcomeScreen
+      responses:
+        '200':
+          description: Application HTML.
+
+  /signin/v1/goodbye:
+    get:
+      tags: [static]
+      summary: Goodbye screen
+      description: |
+        Web app entry point shown after sign-out; `endsession` redirects here. Serves the
+        same SPA document, routed client-side.
+      operationId: goodbyeScreen
+      responses:
+        '200':
+          description: Application HTML.
+
+  /signin/v1/service-worker.js:
+    get:
+      tags: [static]
+      summary: Service worker
+      description: |
+        Routed, but only served if the built web app actually emits the file. The current
+        build does not, so this returns 404.
+      operationId: serviceWorker
+      responses:
+        '200':
+          description: Service worker script.
+        '404':
+          description: Not present in the current build.
+
+  /signin/v1/static/{path}:
+    get:
+      tags: [static]
+      summary: Static assets
+      description: |
+        Serves the built web app's static files from disk. The directory is set by
+        `--identifier-client-path`.
       operationId: staticAssets
       parameters:
         - name: path
@@ -611,9 +927,20 @@ paths:
             type: string
       responses:
         '200':
-          description: Static file content
+          description: Static file content.
         '404':
-          description: File not found
+          description: File not found.
+
+  # -------------------------------------------------------------------- ops
+  /health-check:
+    get:
+      tags: [ops]
+      summary: Health check
+      description: Liveness probe. Returns 200 with an empty body.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is up.
 
 components:
   parameters:
@@ -624,21 +951,56 @@ components:
       schema:
         type: integer
         enum: [1]
-      description: CSRF protection header
+      description: |
+        CSRF protection header, required by every identifier JSON endpoint. Requests
+        carrying it must also present an `Origin` or `Referer` the server accepts.
     OriginHeader:
       name: Origin
       in: header
       schema:
         type: string
         format: uri
-      description: Request origin (required with XSRF header)
+      description: |
+        Request origin. Either this or `Referer` must be present and acceptable; they are
+        not both optional.
     RefererHeader:
       name: Referer
       in: header
       schema:
         type: string
         format: uri
-      description: Request referer (alternative to Origin)
+      description: Alternative to `Origin`.
+
+  headers:
+    ConsentCookie:
+      description: |
+        Short-lived consent cookie, name `__Secure-KKTC-<hash>` where the hash is derived
+        from the consent request parameters. `Max-Age=60`,
+        `Path={signinPrefix}/identifier/_/`, `Secure`, `HttpOnly`, `SameSite=None` by
+        default.
+
+        Set on **both** the allow and the deny response, because it is written before the
+        decision is branched on.
+      schema:
+        type: string
+
+  responses:
+    PlainTextError:
+      description: |
+        Identifier JSON endpoints never return a JSON error body. Errors are `text/plain`
+        shaped `"<status> <reason>[ - <detail>]"`, with
+        `X-Content-Type-Options: nosniff`.
+
+        Details include `failed to decode request JSON`,
+        `failed to parse request values`, `params required`, `state not found` and `no state`.
+
+        The web app does not parse these bodies. It branches on the HTTP status and
+        synthesises its own error identifiers client-side.
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: 400 Bad Request - failed to decode request JSON
 
   securitySchemes:
     cookieAuth:
@@ -646,27 +1008,38 @@ components:
       in: cookie
       name: __Secure-KKT
       description: |
-        Encrypted session cookie. Cookie name may vary based on configuration.
-        Default pattern: __Secure-* for secure contexts, regular name otherwise.
+        Identifier session cookie, an encrypted JWE. Default name `__Secure-KKT`; the name
+        is chosen by the configured backend.
+
+        The cookie is not required by any operation, which is why no operation declares it
+        under `security:`. Endpoints that consult it treat its absence as "not signed in"
+        (200 with `success: false`) rather than as an authentication failure.
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT access token
+      description: OAuth2 access token, required by the UserInfo endpoint.
     clientBasicAuth:
       type: http
       scheme: basic
-      description: Client credentials in Authorization header
-    clientFormAuth:
-      type: apiKey
-      in: query
-      name: client_id
-      description: Client credentials in request body
+      description: |
+        `client_secret_basic` — client id and secret in the `Authorization` header. One of
+        the two advertised `token_endpoint_auth_methods_supported`; the other is `none`,
+        expressed on the token endpoint as an empty security requirement.
 
   schemas:
-    # OIDC Discovery
+    # ------------------------------------------------------------ discovery
     ProviderMetadata:
       type: object
+      description: |
+        `grant_types_supported` is **not** emitted, so clients
+        must fall back to the specification default of
+        `["authorization_code", "implicit"]`. The token endpoint supports
+        `authorization_code` and `refresh_token`, and not `implicit`, so that default does
+        not describe this server; the token endpoint documentation does.
+
+        `code_challenge_methods_supported` is also not emitted even though PKCE with `S256`
+        is implemented.
       required:
         - issuer
         - authorization_endpoint
@@ -680,42 +1053,74 @@ components:
         authorization_endpoint:
           type: string
           format: uri
+          description: Default `{issuer}/signin/v1/identifier/_/authorize`.
         token_endpoint:
           type: string
           format: uri
+          description: Default `{issuer}/konnect/v1/token`.
         userinfo_endpoint:
           type: string
           format: uri
+          description: Default `{issuer}/konnect/v1/userinfo`.
         jwks_uri:
           type: string
           format: uri
+          description: Default `{issuer}/konnect/v1/jwks.json`.
         end_session_endpoint:
           type: string
           format: uri
+          description: Default `{issuer}/signin/v1/identifier/_/endsession`.
         check_session_iframe:
           type: string
           format: uri
+          description: Default `{issuer}/konnect/v1/session/check-session.html`.
         registration_endpoint:
           type: string
           format: uri
+          description: |
+            Emitted **only** when the server runs with
+            `--allow-dynamic-client-registration`. Absent by default.
         scopes_supported:
           type: array
+          description: |
+            Deployment-dependent. Always contains `openid` and `offline_access`, plus the
+            scopes the identity backend supports (`profile`, `email`, `LibgreGraph.UUID`,
+            `LibreGraph.RawSub` for the libregraph backend), plus every key defined in the
+            `--identifier-scopes-conf` file.
+
+            The stable, code-defined scope set a client may rely on is
+            `openid`, `offline_access`, `profile`, `email`, `LibgreGraph.NumericID`,
+            `LibgreGraph.UUID`, `LibreGraph.RawSub`, `LibreGraph.GuestOK` and
+            `LibreGraph.SignedLoginOK`. Note that `LibreGraph.GuestOK` and
+            `LibreGraph.SignedLoginOK` are functional but are never advertised here, even
+            when their features are enabled.
           items:
             type: string
         response_types_supported:
           type: array
+          description: |
+            Emitted as `["id_token token", "id_token", "code id_token",
+            "code id_token token"]`. The authorization endpoint additionally accepts bare
+            `code`, bare `token` and `code token`, so this list under-reports the
+            implementation.
           items:
             type: string
-        grant_types_supported:
-          type: array
-          items:
-            type: string
-            enum: [authorization_code, implicit, refresh_token]
         subject_types_supported:
           type: array
           items:
             type: string
+          description: Emitted as `["public"]`.
         id_token_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+          description: Derived from the configured signing keys, e.g. all RSA and RSA-PSS algorithms for an RSA key.
+        userinfo_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+          description: Same list as `id_token_signing_alg_values_supported`.
+        request_object_signing_alg_values_supported:
           type: array
           items:
             type: string
@@ -723,14 +1128,7 @@ components:
           type: array
           items:
             type: string
-        userinfo_signing_alg_values_supported:
-          type: array
-          items:
-            type: string
-        request_object_signing_alg_values_supported:
-          type: array
-          items:
-            type: string
+          description: Emitted as `["client_secret_basic", "none"]`.
         token_endpoint_auth_signing_alg_values_supported:
           type: array
           items:
@@ -739,6 +1137,14 @@ components:
           type: boolean
         claims_supported:
           type: array
+          description: |
+            Emitted as `["iss", "sub", "aud", "exp", "iat", "name", "family_name",
+            "given_name", "email", "email_verified"]`. Fixed, independent of scope
+            configuration.
+
+            This list under-reports UserInfo: `preferred_username` (with `profile`), and the
+            lico-specific `id`, `username` and `lg.uuid` claims, are returned but not
+            advertised.
           items:
             type: string
         request_parameter_supported:
@@ -748,8 +1154,7 @@ components:
 
     JSONWebKeySet:
       type: object
-      required:
-        - keys
+      required: [keys]
       properties:
         keys:
           type: array
@@ -758,6 +1163,9 @@ components:
 
     JSONWebKey:
       type: object
+      description: |
+        Public keys only. `use` is always `sig`. `kid` defaults to the key file's base name
+        unless the key material carries its own.
       properties:
         kty:
           type: string
@@ -765,6 +1173,7 @@ components:
           type: string
         use:
           type: string
+          enum: [sig]
         alg:
           type: string
         n:
@@ -772,13 +1181,10 @@ components:
         e:
           type: string
 
-    # Token Endpoints
+    # --------------------------------------------------------------- token
     AuthorizationCodeGrant:
       type: object
-      required:
-        - grant_type
-        - code
-        - redirect_uri
+      required: [grant_type, code]
       properties:
         grant_type:
           type: string
@@ -790,16 +1196,17 @@ components:
           format: uri
         client_id:
           type: string
+          description: May instead be supplied via `client_secret_basic`.
         client_secret:
           type: string
+          description: May instead be supplied via `client_secret_basic`.
         code_verifier:
           type: string
+          description: PKCE verifier. Validated when the stored challenge is non-empty.
 
     RefreshTokenGrant:
       type: object
-      required:
-        - grant_type
-        - refresh_token
+      required: [grant_type, refresh_token]
       properties:
         grant_type:
           type: string
@@ -808,12 +1215,16 @@ components:
           type: string
         scope:
           type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
 
     TokenResponse:
       type: object
-      required:
-        - access_token
-        - token_type
+      description: |
+        Every field is omitted when empty. There is **no `scope` member** — the response
+        struct does not define one, so granted scopes are not echoed here.
       properties:
         access_token:
           type: string
@@ -822,15 +1233,30 @@ components:
           enum: [Bearer]
         expires_in:
           type: integer
+          description: Seconds. Set by `--access-token-expiration`.
         refresh_token:
           type: string
         id_token:
           type: string
-        scope:
-          type: string
 
     UserInfo:
       type: object
+      description: |
+        The claim set varies by the scopes granted to the presented access token:
+
+        | Scope | Claims added |
+        | --- | --- |
+        | `openid` | `sub` |
+        | `profile` | `name`, `family_name`, `given_name`, `preferred_username` |
+        | `email` | `email`, `email_verified` |
+        | `LibgreGraph.NumericID` | `id`, `username` |
+        | `LibgreGraph.UUID` | `lg.uuid` |
+
+        Additional claims injected internally by the access token are merged in flat, so
+        callers must tolerate unknown members.
+
+        There is no `picture` claim — the implementing struct has no such field, despite
+        `picture` being mappable in a claims request.
       properties:
         sub:
           type: string
@@ -847,15 +1273,23 @@ components:
           format: email
         email_verified:
           type: boolean
-        picture:
+        id:
+          type: integer
+          format: int64
+          description: lico extension, requires the `LibgreGraph.NumericID` scope.
+        username:
           type: string
-          format: uri
+          description: lico extension, requires the `LibgreGraph.NumericID` scope.
+        lg.uuid:
+          type: string
+          description: lico extension, requires the `LibgreGraph.UUID` scope.
+      additionalProperties: true
 
-    # Client Registration
+    # ------------------------------------------------- client registration
     ClientRegistrationRequest:
       type: object
-      required:
-        - redirect_uris
+      description: Dynamic registration payload. Only reachable when dynamic registration is enabled.
+      required: [redirect_uris]
       properties:
         redirect_uris:
           type: array
@@ -885,6 +1319,17 @@ components:
             format: email
         jwks:
           type: object
+        id_token_signed_response_alg:
+          type: string
+        userinfo_signed_response_alg:
+          type: string
+          description: When set, UserInfo responses for this client are signed JWS (`application/jwt`).
+        request_object_signing_alg:
+          type: string
+        token_endpoint_auth_method:
+          type: string
+        token_endpoint_auth_signing_alg:
+          type: string
         post_logout_redirect_uris:
           type: array
           items:
@@ -895,8 +1340,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/ClientRegistrationRequest'
         - type: object
-          required:
-            - client_id
+          required: [client_id]
           properties:
             client_id:
               type: string
@@ -907,20 +1351,113 @@ components:
             client_secret_expires_at:
               type: integer
 
-    # Identifier Schemas
+    StaticClientRegistration:
+      type: object
+      description: |
+        One entry of the `clients:` array in the `--identifier-registration-conf` file
+        (`identifier-registration.yaml`). **This is the real client configuration surface in
+        a default deployment**, since dynamic registration is disabled by default.
+
+        The same file also carries an `authorities:` array configuring external OAuth2 and
+        SAML2 identity providers, which is out of scope here.
+      properties:
+        id:
+          type: string
+          description: The `client_id`.
+        secret:
+          type: string
+          description: Client secret, in plain text in the file.
+        name:
+          type: string
+          description: Display name shown on the consent screen. Called `client_name` in the dynamic API.
+        uri:
+          type: string
+          description: Called `client_uri` in the dynamic API.
+        trusted:
+          type: boolean
+          description: Skips the consent screen.
+        trusted_scopes:
+          type: array
+          items:
+            type: string
+          description: Scopes auto-approved for a trusted client.
+        insecure:
+          type: boolean
+          description: Relaxes redirect URI scheme and host validation.
+        implicit_scopes:
+          type: array
+          items:
+            type: string
+          description: |
+            Scopes injected into every authorization request for this client, whether or not
+            the client asked for them. These appear in `HelloResponse.scopes`.
+        application_type:
+          type: string
+          enum: [web, native]
+        redirect_uris:
+          type: array
+          items:
+            type: string
+        post_logout_redirect_uris:
+          type: array
+          items:
+            type: string
+        origins:
+          type: array
+          items:
+            type: string
+          description: CORS allow-list.
+        external_authorize_redirect_uris:
+          type: array
+          items:
+            type: string
+        contacts:
+          type: array
+          items:
+            type: string
+        grant_types:
+          type: array
+          items:
+            type: string
+        jwks:
+          type: object
+          description: Inline JWK set used to validate request objects and client assertions.
+        id_token_signed_response_alg:
+          type: string
+        userinfo_signed_response_alg:
+          type: string
+        request_object_signing_alg:
+          type: string
+        token_endpoint_auth_method:
+          type: string
+        token_endpoint_auth_signing_alg:
+          type: string
+
+    # ----------------------------------------------------- identifier API
     HelloRequest:
       type: object
-      required:
-        - state
+      description: |
+        All members are plain strings on the wire; the server parses `scope`, `prompt` and
+        `max_age` itself. A malformed `max_age` is the one parse failure that produces a 400.
+      required: [state]
       properties:
         state:
           type: string
+          description: |
+            Client-generated echo value, not a CSRF token and unrelated to the OAuth2
+            `state`. The web app generates a short random string per request and rejects any
+            response whose `state` does not match.
         flow:
           type: string
+          description: |
+            Flow selector supplied by the web app, e.g. `oidc`. The response's `flow` is not
+            a straight echo — see `HelloResponse.flow`.
         scope:
           type: string
+          description: Space-delimited requested scopes.
         prompt:
           type: string
+          description: Space-delimited OIDC prompt values.
         client_id:
           type: string
         redirect_uri:
@@ -930,30 +1467,46 @@ components:
           type: string
         max_age:
           type: string
+          description: Seconds, as a string. Must parse as an integer if present.
 
     HelloResponse:
       type: object
-      required:
-        - state
-        - flow
-        - success
+      description: |
+        Returned by `hello`, and embedded as `hello` in a successful `logon` response.
+        Optional members are omitted entirely when empty rather than sent as null.
+      required: [state, flow, success]
       properties:
         state:
           type: string
+          description: |
+            Echo of the request `state`. Always present, but may be an empty string — the
+            copy embedded in a `logon` response echoes the nested `hello.state`, which the
+            web app does not set.
         flow:
           type: string
+          description: |
+            Always present, may be empty. It is empty on an unauthenticated `hello` even when
+            the request supplied `flow: "oidc"`, and `"oidc"` on the copy embedded in a
+            successful `logon` response. It is not a straight echo.
         success:
           type: boolean
+          description: Whether the caller has a usable identifier session.
         username:
           type: string
         displayName:
           type: string
+          description: The only camelCase member at this level.
         next:
           type: string
+          description: |
+            The next step the web app should take. `consent` is returned when the client
+            requires a consent screen. Absent when there is nothing to do.
         continue_uri:
           type: string
           format: uri
-          description: URI to continue the authentication flow
+          description: |
+            Absolute URI to resume the interrupted OIDC flow, i.e. the authorization
+            endpoint.
         scopes:
           $ref: '#/components/schemas/ScopesMap'
         client:
@@ -965,49 +1518,56 @@ components:
 
     LogonRequest:
       type: object
-      required:
-        - state
-        - params
+      required: [state, params]
       properties:
         state:
           type: string
         params:
           type: array
           minItems: 1
-          maxItems: 3
           items:
             type: string
           description: |
-            Logon parameters array with format: [username, password, mode]
-            
-            - username (required): User identifier
-            - password: User password (can be empty for mode "0")
-            - mode: Authentication mode (required when array has 3 elements)
-          example: ["john.doe", "secret123", "1"]
+            Positional logon parameters: `[username, password, mode]`. Extensible by design,
+            so no maximum length is enforced — extra elements are ignored.
+
+            Only a 3-element array can ever succeed. A 1- or 2-element array, or an unknown
+            `mode`, is treated as an unsupported logon mode and answered with 204, not 400.
+
+            An empty password is rejected in every mode except mode `0`, where it is
+            mandatory. See `LogonMode`.
+          example: ["user@example.com", "secret123", "1"]
         hello:
-          $ref: '#/components/schemas/HelloRequest'
+          allOf:
+            - $ref: '#/components/schemas/HelloRequest'
+          description: |
+            Optional. When present, `hello.client_id` becomes the logon audience passed to
+            the identity backend, and a successful response embeds the corresponding
+            `HelloResponse`.
 
     LogonResponse:
       type: object
-      required:
-        - success
-        - state
+      required: [success, state]
       properties:
         success:
           type: boolean
         state:
           type: string
         hello:
-          $ref: '#/components/schemas/HelloResponse'
+          allOf:
+            - $ref: '#/components/schemas/HelloResponse'
+          nullable: true
+          description: |
+            Unlike the other optional members in this API, this key is always present and is
+            explicitly `null` when the request carried no `hello`.
 
     ConsentRequest:
       type: object
-      required:
-        - state
-        - allow
-        - scope
-        - client_id
-        - redirect_uri
+      description: |
+        None of these members are validated server-side; missing ones decode as empty
+        strings or `false`. They are all inputs to the consent cookie name hash, so
+        inconsistency is silently lossy rather than an error.
+      required: [state, allow, scope, client_id, redirect_uri]
       properties:
         state:
           type: string
@@ -1022,35 +1582,36 @@ components:
           format: uri
         ref:
           type: string
-          description: Reference to the authorization request state
         flow_nonce:
           type: string
-          description: Flow-specific nonce value
 
     StateRequest:
       type: object
-      required:
-        - state
+      description: |
+        Used by `logoff`. The implementing Go struct carries no JSON tag, so the wire name is
+        matched case-insensitively; `state` works, and so would `State`.
+      required: [state]
       properties:
         state:
           type: string
 
     StateResponse:
       type: object
-      required:
-        - success
-        - state
+      required: [success, state]
       properties:
         success:
           type: boolean
         state:
           type: string
 
-    # Supporting Schemas
+    # -------------------------------------------------- supporting schemas
     ScopesMap:
       type: object
       additionalProperties:
         type: boolean
+      description: |
+        Requested scopes and whether each is granted. Includes any `implicit_scopes` the
+        client registration injects, so it may list scopes the client never asked for.
       example:
         openid: true
         profile: true
@@ -1058,11 +1619,7 @@ components:
 
     ClientDetails:
       type: object
-      required:
-        - id
-        - display_name
-        - redirect_uri
-        - trusted
+      required: [id, display_name, redirect_uri, trusted]
       properties:
         id:
           type: string
@@ -1082,11 +1639,15 @@ components:
 
     Scopes:
       type: object
+      description: |
+        Display metadata for the scopes in this request only — a filtered per-response view,
+        not the server's scope catalogue.
       properties:
         mapping:
           type: object
           additionalProperties:
             type: string
+          description: 'Scope name to definition key, e.g. `{"openid": "basic"}`.'
         definitions:
           type: object
           additionalProperties:
@@ -1096,38 +1657,85 @@ components:
       type: object
       properties:
         priority:
-          type: number
+          type: integer
+          description: Display ordering.
         description:
           type: string
+          description: Literal description, when the definition supplies one instead of an `id`.
+        id:
+          type: string
+          description: |
+            Translation key the web app resolves to localised text, e.g.
+            `scope_alias_basic`. Set for the built-in definitions.
 
     Branding:
       type: object
+      description: |
+        Operator-configurable branding, all members optional and omitted when unset. The
+        mixed casing is the wire format.
       properties:
-        name:
+        bannerLogo:
           type: string
-        logoUri:
+          description: |
+            Logo for the sign-in card. Set by `--identifier-default-banner-logo`. Emitted as
+            a `data:` URI when configured from a local file, which is why the CSP allows
+            `data:` in `img-src`.
+        bannerLogoHeight:
           type: string
-          format: uri
+          description: Size hint consumed by the web app, e.g. `small`, `normal`, `big`.
+        signinPageText:
+          type: string
+        signinPageLogoURI:
+          type: string
+        usernameHintText:
+          type: string
+          description: |
+            Label for the username field. The web app special-cases `Username` and `Email`
+            and otherwise renders the value literally.
+        locales:
+          type: array
+          items:
+            type: string
+          description: Locales offered by the language picker.
 
-    # Logon Modes
     LogonMode:
       type: string
       enum: ["0", "1"]
       description: |
-        Authentication mode for logon requests:
-        - "0": Username with empty password (cookie authentication) - Used for account selection when user already has valid session
-        - "1": Username and password authentication - Standard login flow with credential validation
+        Third element of `LogonRequest.params`. These two values are exhaustive.
+
+        - `"0"` — re-confirm the **already signed-in** user. Requires an empty password and a
+          username equal to the current session's user; succeeds only then. Used by the
+          account selection screen. It does not authenticate anyone new.
+        - `"1"` — validate username and password against the identity backend.
+
+        Any other value is logged and treated as unsupported, yielding a 204.
       example: "1"
 
-    # Error Schemas
+    # -------------------------------------------------------------- errors
     OIDCError:
       type: object
-      required:
-        - error
+      description: |
+        JSON error body of the token endpoint. **Not** used by the identifier JSON endpoints,
+        which return plain text — see the `PlainTextError` response. On `authorize` these same
+        codes are delivered as redirect parameters rather than as a body.
+      required: [error]
       properties:
         error:
           type: string
-          enum: [invalid_request, unauthorized_client, access_denied, unsupported_response_type, invalid_scope, server_error, temporarily_unavailable]
+          enum:
+            - invalid_request
+            - invalid_grant
+            - unauthorized_client
+            - access_denied
+            - unsupported_response_type
+            - unsupported_grant_type
+            - invalid_scope
+            - invalid_token
+            - insufficient_scope
+            - server_error
+            - temporarily_unavailable
+            - login_required
         error_description:
           type: string
         error_uri:
@@ -1135,3 +1743,4 @@ components:
           format: uri
         state:
           type: string
+          description: Present on `authorize` error redirects, echoing the request `state`.
