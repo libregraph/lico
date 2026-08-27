@@ -1,36 +1,25 @@
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import axios from 'axios';
 import { MemoryHistory } from 'history';
 
 import Goodbyescreen from './Goodbyescreen';
-import { HelloResponse, newTestHistory, renderWithProviders } from '../../test-utils';
+import {
+  HelloResponse,
+  fetchMock,
+  jsonReply,
+  newTestHistory,
+  postedBody,
+  postedInit,
+  postedUrl,
+  renderWithProviders,
+  stubFetch
+} from '../../test-utils';
 
-vi.mock('axios', () => ({
-  default: { post: vi.fn() }
-}));
-
-interface HttpReply {
-  status: number;
-  data: unknown;
-  headers: Record<string, string>;
-}
-
-interface RequestConfig {
-  headers: Record<string, string>;
-}
-
-/* Every request body carries the client generated echo nonce. */
-type PostBody = { state: string } & Record<string, unknown>;
-
-const post = vi.mocked(
-  axios.post as unknown as (
-    url: string,
-    body: PostBody,
-    config: RequestConfig
-  ) => Promise<HttpReply>
-);
+const POSTED_HEADERS = {
+  'Content-Type': 'application/json',
+  'Kopano-Konnect-XSRF': '1'
+};
 
 const Subject = Goodbyescreen;
 
@@ -56,12 +45,14 @@ const signedOut: HelloResponse = {
  * carried, which is what the client checks the response against.
  */
 function replyByUrl(handlers: Record<string, () => Record<string, unknown>>): void {
-  post.mockImplementation((url, body) => {
+  fetchMock().mockImplementation((url: string, init: RequestInit) => {
     const handler = handlers[url];
     if (!handler) {
       return Promise.reject(new Error(`unexpected request to ${url}`));
     }
-    return Promise.resolve({ status: 200, data: { ...handler(), state: body.state }, headers: {} });
+    // The body is whatever the screen just serialized, so it needs no checking.
+    const sent = JSON.parse(String(init.body)) as { state?: string };
+    return Promise.resolve(jsonReply(200, { ...handler(), state: sent.state }));
   });
 }
 
@@ -85,27 +76,26 @@ function renderGoodbye(history: MemoryHistory = newTestHistory('/goodbye', 'POP'
 }
 
 function urlsPosted(): string[] {
-  return post.mock.calls.map((call) => call[0]);
+  return fetchMock().mock.calls.map((call) => String(call[0]));
 }
 
 describe('Goodbyescreen', () => {
   beforeEach(() => {
-    post.mockReset();
+    stubFetch();
     replyByUrl({ [HELLO_URL]: () => ({ ...signedOut }) });
   });
 
   it('asks the server for the current session on mount', async () => {
     renderGoodbye();
 
-    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
-    const [url, body, config] = post.mock.calls[0];
-    expect(url).toBe(HELLO_URL);
-    expect(typeof body.state).toBe('string');
-    expect(config.headers['Kopano-Konnect-XSRF']).toBe('1');
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
+    expect(postedUrl()).toBe(HELLO_URL);
+    expect(typeof postedBody().state).toBe('string');
+    expect(postedInit().headers).toEqual(POSTED_HEADERS);
   });
 
   it('shows only a progress indicator until the server answers', () => {
-    post.mockImplementation(() => new Promise<HttpReply>(() => undefined));
+    fetchMock().mockImplementation(() => new Promise<Response>(() => undefined));
 
     renderGoodbye();
 
@@ -186,9 +176,9 @@ describe('Goodbyescreen', () => {
     userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(urlsPosted()).toContain(LOGOFF_URL));
-    const [, body, config] = post.mock.calls.filter((call) => call[0] === LOGOFF_URL)[0];
-    expect(typeof body.state).toBe('string');
-    expect(config.headers['Kopano-Konnect-XSRF']).toBe('1');
+    const logoff = urlsPosted().indexOf(LOGOFF_URL);
+    expect(typeof postedBody(logoff).state).toBe('string');
+    expect(postedInit(logoff).headers).toEqual(POSTED_HEADERS);
   });
 
   it('re-reads the session and lands on the goodbye page after signing out', async () => {
