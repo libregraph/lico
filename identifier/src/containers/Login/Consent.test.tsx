@@ -206,20 +206,27 @@ describe('Consent', () => {
     expect(consentBodies()[0].allow).toBe(true);
   });
 
-  it('keeps the actions inside a submitting form so Enter reaches a handler (regression: the form must stay a form)', async () => {
+  it('keeps the actions inside a form so Enter reaches the buttons (regression: the form must stay a form)', async () => {
     // The abandoned modernization replaced this <form onSubmit> with a plain
-    // <div>, which drops keyboard submission. Which decision the submit handler
-    // sends is deliberately not asserted, see DEFECTS FOUND.
+    // <div>, which drops keyboard submission. Enter works by activating the
+    // focused button, which requires the buttons to stay inside the form.
     const { container } = renderConsent();
 
     const form = container.querySelector('form');
     expect(form).not.toBeNull();
     expect(form).toContainElement(screen.getByRole('button', { name: 'Allow' }));
     expect(screen.getByRole('button', { name: 'Allow' })).toHaveAttribute('type', 'submit');
+  });
 
-    fireEvent.submit(form as HTMLFormElement);
+  it('decides nothing when the form itself is submitted', async () => {
+    // Submitting the form without activating a button expresses no choice, so it
+    // must not be taken as a refusal.
+    const { container } = renderConsent();
 
-    await waitFor(() => expect(consentBodies()).toHaveLength(1));
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Allow' })).toBeEnabled());
+    expect(consentBodies()).toHaveLength(0);
   });
 
   it('locks both decisions and shows progress while a decision is in flight', async () => {
