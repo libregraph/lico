@@ -28,28 +28,20 @@ class Main extends PureComponent {
       </div>
     );
   }
-
-  reload(event) {
-    event.preventDefault();
-
-    window.location.reload();
-  }
 }
 
 Main.propTypes = {
   classes: PropTypes.object.isRequired,
 
   hello: PropTypes.object,
-  updateAvailable: PropTypes.bool.isRequired,
   pathPrefix: PropTypes.string.isRequired
 };
 
 const mapStateToProps = (state) => {
-  const { hello, updateAvailable, pathPrefix } = state.common;
+  const { hello, pathPrefix } = state.common;
 
   return {
     hello,
-    updateAvailable,
     pathPrefix
   };
 };
