@@ -1,16 +1,17 @@
 import React from 'react';
 import { screen } from '@testing-library/react';
-import axios from 'axios';
-import type { Mock } from 'vitest';
 
 import Consent from '../containers/Login/Consent';
 import {
   ClientDetails,
   HelloResponse,
   ScopesMeta,
+  fetchMock,
   getTestI18n,
+  jsonReply,
   newTestHistory,
-  renderWithProviders
+  renderWithProviders,
+  stubFetch
 } from '../test-utils';
 
 import de from './de/translation.json';
@@ -19,9 +20,6 @@ import fr from './fr/translation.json';
 import itIT from './it/translation.json';
 import nl from './nl/translation.json';
 import zhCN from './zh-CN/translation.json';
-
-vi.mock('axios', () => ({ default: { post: vi.fn() } }));
-const post = axios.post as unknown as Mock;
 
 /*
  * These files are generated from i18n/*.po by `make -C identifier/i18n json`,
@@ -77,8 +75,9 @@ const query = {
 };
 
 beforeEach(() => {
-  post.mockReset();
-  post.mockResolvedValue({ status: 200, headers: {}, data: { success: true } });
+  stubFetch();
+  // These tests never submit, so the stub only guarantees no request escapes.
+  fetchMock().mockResolvedValue(jsonReply(200, { success: true }));
 });
 
 for (const lng of Object.keys(locales)) {

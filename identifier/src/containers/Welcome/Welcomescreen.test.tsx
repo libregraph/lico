@@ -1,35 +1,19 @@
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import axios from 'axios';
 
 import Welcomescreen from './Welcomescreen';
-import { HelloResponse, newTestHistory, renderWithProviders } from '../../test-utils';
-
-vi.mock('axios', () => ({
-  default: { post: vi.fn() }
-}));
-
-interface HttpReply {
-  status: number;
-  data: unknown;
-  headers: Record<string, string>;
-}
-
-interface RequestConfig {
-  headers: Record<string, string>;
-}
-
-/* Every request body carries the client generated echo nonce. */
-type PostBody = { state: string } & Record<string, unknown>;
-
-const post = vi.mocked(
-  axios.post as unknown as (
-    url: string,
-    body: PostBody,
-    config: RequestConfig
-  ) => Promise<HttpReply>
-);
+import {
+  HelloResponse,
+  fetchMock,
+  newTestHistory,
+  postedBody,
+  postedInit,
+  postedUrl,
+  renderWithProviders,
+  replyEchoingState,
+  stubFetch
+} from '../../test-utils';
 
 const Subject = Welcomescreen;
 
@@ -58,14 +42,12 @@ function renderWelcome(history = newTestHistory('/welcome', 'POP')) {
 
 /* Answers a request by echoing back the nonce it carried, as the server does. */
 function replyWith(payload: Record<string, unknown>): void {
-  post.mockImplementation((_url, body) =>
-    Promise.resolve({ status: 200, data: { ...payload, state: body.state }, headers: {} })
-  );
+  replyEchoingState(200, payload);
 }
 
 describe('Welcomescreen', () => {
   beforeEach(() => {
-    post.mockReset();
+    stubFetch();
   });
 
   it('greets the signed in user and confirms the session', () => {
@@ -92,7 +74,7 @@ describe('Welcomescreen', () => {
     // Unlike Goodbyescreen this screen trusts the hello it was routed with.
     renderWelcome();
 
-    expect(post).not.toHaveBeenCalled();
+    expect(fetchMock()).not.toHaveBeenCalled();
   });
 
   it('does not redirect when arriving by client side navigation', () => {
@@ -121,11 +103,13 @@ describe('Welcomescreen', () => {
 
     userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
 
-    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
-    const [url, body, config] = post.mock.calls[0];
-    expect(url).toBe('./identifier/_/logoff');
-    expect(typeof body.state).toBe('string');
-    expect(config.headers['Kopano-Konnect-XSRF']).toBe('1');
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
+    expect(postedUrl()).toBe('./identifier/_/logoff');
+    expect(typeof postedBody().state).toBe('string');
+    expect(postedInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      'Kopano-Konnect-XSRF': '1'
+    });
   });
 
   it('sends the user back to the identifier page after a successful sign out', async () => {
@@ -145,7 +129,7 @@ describe('Welcomescreen', () => {
 
     userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
 
-    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
     expect(history.location.pathname).toBe('/welcome');
   });
 });

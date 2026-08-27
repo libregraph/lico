@@ -13,6 +13,7 @@ import thunkMiddleware from 'redux-thunk';
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
+import type { Mock } from 'vitest';
 
 import rootReducer from './reducers';
 
@@ -249,4 +250,78 @@ export interface LogonResponse {
 export interface StateResponse {
   success: boolean;
   state: string;
+}
+
+/*
+ * The network stub. Every identifier endpoint is a POST whose body carries a
+ * random state nonce, and the client rejects a reply which does not echo it, so
+ * a stub has to read the nonce back out of the body it was handed.
+ *
+ * These build real Response objects rather than plain look-alikes, so the code
+ * under test goes through the actual status, header and body-parsing paths. In
+ * particular header lookups are case-insensitive here exactly as they are in a
+ * browser.
+ */
+export function stubFetch(): void {
+  vi.stubGlobal('fetch', vi.fn());
+}
+
+export function fetchMock(): Mock {
+  const stubbed: unknown = globalThis.fetch;
+  if (typeof stubbed !== 'function' || !('mock' in stubbed)) {
+    throw new Error('fetch is not stubbed: call stubFetch() first');
+  }
+  // Checked immediately above, which is all the shape a mock accessor needs.
+  const mock = stubbed as Mock;
+  return mock;
+}
+
+export function jsonReply(
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {}
+): Response {
+  return new Response(JSON.stringify(body), { status, headers });
+}
+
+function sentState(init: RequestInit): string | undefined {
+  // The body is whatever the code under test just serialized, so reading the
+  // nonce back out of it needs no validation.
+  const sent = JSON.parse(String(init.body)) as { state?: string };
+  return sent.state;
+}
+
+/* Answers with the given status and body, echoing the request's state nonce. */
+export function replyEchoingState(status: number, body: Record<string, unknown> = {}): void {
+  fetchMock().mockImplementation((_url: string, init: RequestInit) =>
+    Promise.resolve(jsonReply(status, { ...body, state: sentState(init) }))
+  );
+}
+
+/* Answers 204, where the nonce comes back in a header because there is no body. */
+export function replyNoContentEchoingState(): void {
+  fetchMock().mockImplementation((_url: string, init: RequestInit) => {
+    const state = sentState(init);
+    return Promise.resolve(
+      new Response(null, {
+        status: 204,
+        headers: state === undefined ? {} : { 'Kopano-Konnect-State': state }
+      })
+    );
+  });
+}
+
+export function postedUrl(n = 0): string {
+  return String(fetchMock().mock.calls[n][0]);
+}
+
+export function postedInit(n = 0): RequestInit {
+  // fetch's second argument, as the code under test passed it.
+  const init = fetchMock().mock.calls[n][1] as RequestInit;
+  return init;
+}
+
+export function postedBody(n = 0): Record<string, unknown> {
+  const body = JSON.parse(String(postedInit(n).body)) as Record<string, unknown>;
+  return body;
 }

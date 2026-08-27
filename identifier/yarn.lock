@@ -4655,15 +4655,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^0.22.0":
-  version: 0.22.0
-  resolution: "axios@npm:0.22.0"
-  dependencies:
-    follow-redirects: "npm:^1.14.4"
-  checksum: 36092519d28c8c853ddd65495519183d0370b716df6336320065d3bdebe429a483002cf792b816dfd88d24ac92cdbea5c5c37860605a9790dc6a1b0d9623e4a4
-  languageName: node
-  linkType: hard
-
 "axobject-query@npm:^3.2.1":
   version: 3.2.1
   resolution: "axobject-query@npm:3.2.1"
@@ -6778,16 +6769,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.14.4":
-  version: 1.15.4
-  resolution: "follow-redirects@npm:1.15.4"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 2e8f5f259a6b02dfa8dc199e08431848a7c3beed32eb4c19945966164a52c89f07b86c3afcc32ebe4279cf0a960520e45a63013d6350309c5ec90133c5d9351a
-  languageName: node
-  linkType: hard
-
 "for-each@npm:^0.3.3":
   version: 0.3.3
   resolution: "for-each@npm:0.3.3"
@@ -7666,7 +7647,6 @@ __metadata:
     "@typescript-eslint/typescript-estree": "npm:^6.11.0"
     "@vitejs/plugin-legacy": "npm:^4.0.0"
     "@vitejs/plugin-react": "npm:^4.1.1"
-    axios: "npm:^0.22.0"
     classnames: "npm:^2.3.2"
     cldr: "npm:^7.4.0"
     eslint: "npm:^8.53.0"

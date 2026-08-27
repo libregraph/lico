@@ -1,31 +1,26 @@
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import axios from 'axios';
-import type { Mock } from 'vitest';
 
 import Login from './Login';
 import { REQUEST_LOGON } from '../../actions/types';
-import { Branding, newTestHistory, renderWithProviders } from '../../test-utils';
+import {
+  Branding,
+  fetchMock,
+  newTestHistory,
+  postedBody,
+  postedInit,
+  postedUrl,
+  renderWithProviders,
+  replyEchoingState,
+  stubFetch
+} from '../../test-utils';
 
-// No request may escape the test. The mock echoes the client generated state
-// nonce, because the action rejects a response whose state differs.
-vi.mock('axios', () => ({
-  default: { post: vi.fn() }
-}));
-
-interface LogonRequestBody {
-  params: string[];
-  hello: Record<string, string>;
-  state: string;
-}
-
-const post = axios.post as unknown as Mock;
-
-const logonBodies = (): LogonRequestBody[] =>
-  post.mock.calls
-    .filter((call: unknown[]) => call[0] === './identifier/_/logon')
-    .map((call: unknown[]) => call[1] as LogonRequestBody);
+const logonBodies = (): Record<string, unknown>[] =>
+  fetchMock()
+    .mock.calls.map((_call: unknown[], index: number) => index)
+    .filter((index) => postedUrl(index) === './identifier/_/logon')
+    .map((index) => postedBody(index));
 
 /*
  * Material-UI v4 only wires a label to its input when the TextField is given an
@@ -60,15 +55,11 @@ const renderLogin = (branding?: Branding, loading = '') => {
   });
 };
 
+// No request may escape the test. The stub echoes the client generated state
+// nonce, because the action rejects a response whose state differs.
 beforeEach(() => {
-  post.mockReset();
-  post.mockImplementation((url: string, data: LogonRequestBody) =>
-    Promise.resolve({
-      status: 200,
-      headers: {},
-      data: { success: true, state: data.state, hello: null }
-    })
-  );
+  stubFetch();
+  replyEchoingState(200, { success: true, hello: null });
 });
 
 describe('Login', () => {
@@ -131,9 +122,12 @@ describe('Login', () => {
     userEvent.type(fieldOf('Username'), 'user1@example.test');
     userEvent.type(fieldOf('Password'), 'secret123{enter}');
 
-    await waitFor(() => expect(post).toHaveBeenCalled());
-    expect(post.mock.calls[0][0]).toBe('./identifier/_/logon');
-    expect(post.mock.calls[0][2]).toEqual({ headers: { 'Kopano-Konnect-XSRF': '1' } });
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalled());
+    expect(postedUrl()).toBe('./identifier/_/logon');
+    expect(postedInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      'Kopano-Konnect-XSRF': '1'
+    });
   });
 
   it('submits the logon when the next button is clicked', async () => {
@@ -154,7 +148,7 @@ describe('Login', () => {
     userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(screen.getByText('Enter a valid value.')).toBeInTheDocument());
-    expect(post).not.toHaveBeenCalled();
+    expect(fetchMock()).not.toHaveBeenCalled();
   });
 
   it('refuses to submit without a password and says so', async () => {
@@ -164,7 +158,7 @@ describe('Login', () => {
     userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(screen.getByText('Enter your password.')).toBeInTheDocument());
-    expect(post).not.toHaveBeenCalled();
+    expect(fetchMock()).not.toHaveBeenCalled();
   });
 
   it('hides the password until the visibility toggle is used', () => {

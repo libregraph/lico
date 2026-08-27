@@ -1,7 +1,6 @@
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import axios from 'axios';
 import { MemoryHistory } from 'history';
 
 import Chooseaccount from './Chooseaccount';
@@ -10,34 +9,16 @@ import { REQUEST_LOGON } from '../../actions/types';
 import {
   HelloResponse,
   PreloadedState,
+  fetchMock,
   newTestHistory,
-  renderWithProviders
+  postedBody,
+  postedInit,
+  postedUrl,
+  renderWithProviders,
+  replyEchoingState,
+  replyNoContentEchoingState,
+  stubFetch
 } from '../../test-utils';
-
-vi.mock('axios', () => ({
-  default: { post: vi.fn() }
-}));
-
-interface HttpReply {
-  status: number;
-  data: unknown;
-  headers: Record<string, string>;
-}
-
-interface RequestConfig {
-  headers: Record<string, string>;
-}
-
-/* Every request body carries the client generated echo nonce. */
-type PostBody = { state: string; params?: string[] } & Record<string, unknown>;
-
-const post = vi.mocked(
-  axios.post as unknown as (
-    url: string,
-    body: PostBody,
-    config: RequestConfig
-  ) => Promise<HttpReply>
-);
 
 const Subject = Chooseaccount;
 
@@ -61,16 +42,9 @@ function renderChooseaccount(history: MemoryHistory, preloaded: PreloadedState =
   return renderWithProviders(<Subject history={history} />, { history, preloaded });
 }
 
-/* Answers a request by echoing back the nonce it carried, as the server does. */
-function replyWith(payload: Record<string, unknown>): void {
-  post.mockImplementation((_url, body) =>
-    Promise.resolve({ status: 200, data: { ...payload, state: body.state }, headers: {} })
-  );
-}
-
 describe('Chooseaccount', () => {
   beforeEach(() => {
-    post.mockReset();
+    stubFetch();
   });
 
   it('lists the signed in account alongside an option to use another', () => {
@@ -167,21 +141,23 @@ describe('Chooseaccount', () => {
   });
 
   it('logs the chosen account on with an empty password in cookie mode', async () => {
-    replyWith({ success: true, hello: null });
+    replyEchoingState(200, { success: true, hello: null });
     renderChooseaccount(newTestHistory('/chooseaccount', 'PUSH'), { common: { hello: session } });
 
     userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
 
-    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
-    const [url, body, config] = post.mock.calls[0];
-    expect(url).toBe('./identifier/_/logon');
-    expect(body.params).toEqual(['user1@example.com', '', '0']);
-    expect(typeof body.state).toBe('string');
-    expect(config.headers['Kopano-Konnect-XSRF']).toBe('1');
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
+    expect(postedUrl()).toBe('./identifier/_/logon');
+    expect(postedBody().params).toEqual(['user1@example.com', '', '0']);
+    expect(typeof postedBody().state).toBe('string');
+    expect(postedInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      'Kopano-Konnect-XSRF': '1'
+    });
   });
 
   it('advances to the welcome page after the chosen account is logged on', async () => {
-    replyWith({ success: true, hello: null });
+    replyEchoingState(200, { success: true, hello: null });
     const history = newTestHistory('/chooseaccount', 'PUSH');
     renderChooseaccount(history, { common: { hello: session } });
 
@@ -192,13 +168,7 @@ describe('Chooseaccount', () => {
 
   it('reports a refused logon instead of advancing', async () => {
     // A refused logon answers 204 with the echo nonce in a header.
-    post.mockImplementation((_url, body) =>
-      Promise.resolve({
-        status: 204,
-        data: '',
-        headers: { 'kopano-konnect-state': body.state }
-      })
-    );
+    replyNoContentEchoingState();
     const history = newTestHistory('/chooseaccount', 'PUSH');
     renderChooseaccount(history, { common: { hello: session } });
 
@@ -222,6 +192,6 @@ describe('Chooseaccount', () => {
     // It pushes, so the chooser stays reachable by going back, and it asks the
     // server for nothing on the way out.
     expect(history.length).toBe(2);
-    expect(post).not.toHaveBeenCalled();
+    expect(fetchMock()).not.toHaveBeenCalled();
   });
 });

@@ -1,13 +1,19 @@
-import axios from 'axios';
 import { AnyAction, Store } from 'redux';
-import type { Mock } from 'vitest';
 
 import rootReducer from '../reducers';
 import {
   HelloResponse,
   PreloadedState,
+  fetchMock,
+  jsonReply,
   makeStore,
-  newTestHistory
+  newTestHistory,
+  postedBody,
+  postedInit,
+  postedUrl,
+  replyEchoingState,
+  replyNoContentEchoingState,
+  stubFetch
 } from '../test-utils';
 import {
   ERROR_HTTP_NETWORK_ERROR,
@@ -26,12 +32,6 @@ import {
   executeLogonIfFormValid,
   validateUsernamePassword
 } from './login';
-
-vi.mock('axios');
-
-// The axios default export is a callable object, which vi.mocked cannot narrow
-// through on axios 0.22. One cast here keeps the tests below free of casts.
-const post = axios.post as unknown as Mock;
 
 /*
  * redux-thunk 2.4 keeps its redux Dispatch augmentation in an opt-in
@@ -61,43 +61,18 @@ function newHarness(preloaded: PreloadedState = {}) {
   return { store: store as unknown as ThunkStore, actions };
 }
 
-/*
- * Every request body carries a random state nonce and the client rejects a
- * reply which does not echo it, so the mock has to read it back out of the
- * body it was handed.
- */
-function replyWith(status: number, body: Record<string, unknown>): void {
-  post.mockImplementation((_url: string, data: { state: string }) =>
-    Promise.resolve({ status, data: { ...body, state: data.state }, headers: {} })
-  );
-}
-
-// A 204 carries no body, so the nonce comes back in a response header.
-function replyWithNoContent(): void {
-  post.mockImplementation((_url: string, data: { state: string }) =>
-    Promise.resolve({
-      status: 204,
-      data: '',
-      headers: { 'kopano-konnect-state': data.state }
-    })
-  );
-}
-
 beforeEach(() => {
-  vi.resetAllMocks();
+  stubFetch();
 });
 
 describe('executeLogon', () => {
   it('announces the request and clears the session before it posts', async () => {
     const { store, actions } = newHarness();
     let seenAtPost: AnyAction[] = [];
-    post.mockImplementation((_url: string, data: { state: string }) => {
+    fetchMock().mockImplementation((_url: string, init: RequestInit) => {
       seenAtPost = [...actions];
-      return Promise.resolve({
-        status: 200,
-        data: { success: true, state: data.state },
-        headers: {}
-      });
+      const sent = JSON.parse(String(init.body)) as { state?: string };
+      return Promise.resolve(jsonReply(200, { success: true, state: sent.state }));
     });
 
     await store.dispatch(executeLogon('user1@example.com', 'secret'));
@@ -118,24 +93,25 @@ describe('executeLogon', () => {
   });
 
   it('posts to a page relative endpoint with the XSRF header', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
     await store.dispatch(executeLogon('user1', 'secret'));
 
-    expect(post.mock.calls[0][0]).toBe('./identifier/_/logon');
-    expect(post.mock.calls[0][2]).toEqual({
-      headers: { 'Kopano-Konnect-XSRF': '1' }
+    expect(postedUrl()).toBe('./identifier/_/logon');
+    expect(postedInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      'Kopano-Konnect-XSRF': '1'
     });
   });
 
   it('posts the username, the password and mode 1 by default', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
     await store.dispatch(executeLogon('user1@example.com', 'secret'));
 
-    expect(post.mock.calls[0][1].params).toEqual([
+    expect(postedBody().params).toEqual([
       'user1@example.com',
       'secret',
       '1'
@@ -143,13 +119,13 @@ describe('executeLogon', () => {
   });
 
   it('posts an empty password with mode 0 for an already signed in user', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
     await store.dispatch(executeLogon('user1@example.com', 'secret', '0'));
 
     // Mode 0 rides on the session cookie, so the password must not be sent.
-    expect(post.mock.calls[0][1].params).toEqual([
+    expect(postedBody().params).toEqual([
       'user1@example.com',
       '',
       '0'
@@ -157,7 +133,7 @@ describe('executeLogon', () => {
   });
 
   it('includes a hello request built from the flow and query', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness({
       common: {
         flow: 'oidc',
@@ -171,7 +147,7 @@ describe('executeLogon', () => {
 
     await store.dispatch(executeLogon('user1', 'secret'));
 
-    expect(post.mock.calls[0][1].hello).toEqual({
+    expect(postedBody().hello).toEqual({
       flow: 'oidc',
       scope: 'openid profile',
       client_id: 'playground.js',
@@ -188,7 +164,7 @@ describe('executeLogon', () => {
       displayName: 'Lala 123 abc',
       next: 'consent'
     };
-    replyWith(200, { success: true, hello });
+    replyEchoingState(200, { success: true, hello });
     const { store, actions } = newHarness({ common: { flow: 'oidc' } });
 
     const response = await store.dispatch(
@@ -216,7 +192,7 @@ describe('executeLogon', () => {
     expect(response).toEqual({
       success: true,
       hello,
-      state: post.mock.calls[0][1].state
+      state: postedBody().state
     });
     expect(store.getState().common.hello).toEqual({
       state: true,
@@ -227,7 +203,7 @@ describe('executeLogon', () => {
   });
 
   it('synthesises a hello from the username when the response carries none', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store, actions } = newHarness();
 
     await store.dispatch(executeLogon('user1@example.com', 'secret'));
@@ -243,16 +219,18 @@ describe('executeLogon', () => {
 
   it('treats a 204 as a failed logon and echoes the state from the header', async () => {
     // This is what a wrong password looks like on the wire.
-    replyWithNoContent();
+    replyNoContentEchoingState();
     const { store, actions } = newHarness();
 
     const response = await store.dispatch(executeLogon('user1', 'wrong'));
 
-    expect(response.success).toBe(false);
-    expect(response.errors.http.message).toBe(ERROR_LOGIN_FAILED);
-    // Passing the state check proves the nonce was read from the lowercase
-    // response header, which is how axios exposes it.
-    expect(response.state).toBe(post.mock.calls[0][1].state);
+    // Passing the state check proves the nonce was read back out of the
+    // Kopano-Konnect-State response header.
+    expect(response).toEqual({
+      success: false,
+      state: postedBody().state,
+      errors: { http: new Error(ERROR_LOGIN_FAILED) }
+    });
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
@@ -263,24 +241,27 @@ describe('executeLogon', () => {
     expect(actions[3]).toEqual({
       type: types.RECEIVE_LOGON,
       success: false,
-      errors: response.errors
+      errors: { http: new Error(ERROR_LOGIN_FAILED) }
     });
     expect(store.getState().login.errors.http.message).toBe(ERROR_LOGIN_FAILED);
     expect(store.getState().login.loading).toBe('');
   });
 
   it('reports a 204 whose state header does not echo the request', async () => {
-    post.mockResolvedValue({
-      status: 204,
-      data: '',
-      headers: { 'kopano-konnect-state': 'not-the-nonce' }
-    });
+    fetchMock().mockResolvedValue(
+      new Response(null, {
+        status: 204,
+        headers: { 'Kopano-Konnect-State': 'not-the-nonce' }
+      })
+    );
     const { store, actions } = newHarness();
 
     const result = await store.dispatch(executeLogon('user1', 'wrong'));
 
-    expect(result.success).toBe(false);
-    expect(result.errors.http.message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
+    expect(result).toMatchObject({
+      success: false,
+      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } }
+    });
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
@@ -289,14 +270,22 @@ describe('executeLogon', () => {
   });
 
   it('reports an unexpected response status as a logon error', async () => {
-    post.mockResolvedValue({ status: 500, data: 'internal server error', headers: {} });
+    // fetch resolves for a 500, so the thunk's own status switch is the only
+    // thing that turns it into an error.
+    fetchMock().mockResolvedValue(new Response('internal server error', { status: 500 }));
     const { store, actions } = newHarness();
 
     const result = await store.dispatch(executeLogon('user1', 'secret'));
 
-    expect(result.success).toBe(false);
-    expect(result.errors.http.message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
-    expect(result.errors.http.values.status).toBe(500);
+    expect(result).toMatchObject({
+      success: false,
+      errors: {
+        http: {
+          message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
+          values: { status: 500 }
+        }
+      }
+    });
     // A failed logon reports through the form errors, never through the global
     // error which hello uses.
     expect(actions.map((a) => a.type)).toEqual([
@@ -308,19 +297,38 @@ describe('executeLogon', () => {
   });
 
   it('reports a request which never got a response as a network error', async () => {
-    post.mockRejectedValue({ request: {}, message: 'Network Error' });
+    fetchMock().mockRejectedValue(new TypeError('Failed to fetch'));
     const { store } = newHarness();
 
     const result = await store.dispatch(executeLogon('user1', 'secret'));
 
-    expect(result.errors.http.message).toBe(ERROR_HTTP_NETWORK_ERROR);
+    expect(result).toMatchObject({
+      errors: { http: { message: ERROR_HTTP_NETWORK_ERROR } }
+    });
     expect(store.getState().login.errors.http.message).toBe(ERROR_HTTP_NETWORK_ERROR);
+  });
+
+  it('stays silent on an abort and resolves an unsuccessful result', async () => {
+    // The caller cancelled the request itself, so there is nothing to report on
+    // a form which is going away.
+    fetchMock().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    const { store, actions } = newHarness();
+
+    const response = await store.dispatch(executeLogon('user1', 'secret'));
+
+    expect(actions.map((a) => a.type)).toEqual([
+      types.REQUEST_LOGON,
+      types.RECEIVE_HELLO
+    ]);
+    expect(response).toEqual({ success: false, errors: {} });
+    expect(store.getState().login.errors).toEqual({});
+    expect(store.getState().common.error).toBeNull();
   });
 });
 
 describe('executeConsent', () => {
   it('posts the scope and the client details from the query', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness({
       common: {
         flow: 'consent',
@@ -335,13 +343,14 @@ describe('executeConsent', () => {
 
     await store.dispatch(executeConsent(true, 'openid profile email'));
 
-    expect(post.mock.calls[0][0]).toBe('./identifier/_/consent');
-    expect(post.mock.calls[0][2]).toEqual({
-      headers: { 'Kopano-Konnect-XSRF': '1' }
+    expect(postedUrl()).toBe('./identifier/_/consent');
+    expect(postedInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      'Kopano-Konnect-XSRF': '1'
     });
     // ref carries the caller's state while the body's own state is the client
     // generated echo nonce. Two different values with the same name.
-    expect(post.mock.calls[0][1]).toEqual({
+    expect(postedBody()).toEqual({
       allow: true,
       scope: 'openid profile email',
       client_id: 'playground.js',
@@ -350,16 +359,16 @@ describe('executeConsent', () => {
       flow_nonce: 'caller-nonce',
       state: expect.any(String)
     });
-    expect(post.mock.calls[0][1].state).not.toBe('caller-state');
+    expect(postedBody().state).not.toBe('caller-state');
   });
 
   it('sends empty strings for query members which are absent', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
     await store.dispatch(executeConsent());
 
-    expect(post.mock.calls[0][1]).toEqual({
+    expect(postedBody()).toEqual({
       allow: false,
       scope: '',
       client_id: '',
@@ -371,7 +380,7 @@ describe('executeConsent', () => {
   });
 
   it('announces an allow differently from a cancel', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const allowed = newHarness();
     const cancelled = newHarness();
 
@@ -383,7 +392,7 @@ describe('executeConsent', () => {
   });
 
   it('dispatches the received consent and resolves with the response on a 200', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store, actions } = newHarness();
 
     const response = await store.dispatch(executeConsent(true, 'openid'));
@@ -397,16 +406,16 @@ describe('executeConsent', () => {
       success: true,
       errors: undefined
     });
-    expect(response).toEqual({ success: true, state: post.mock.calls[0][1].state });
+    expect(response).toEqual({ success: true, state: postedBody().state });
   });
 
   it('treats a 204 as a successful cancel rather than as a failure', async () => {
-    replyWithNoContent();
+    replyNoContentEchoingState();
     const { store, actions } = newHarness();
 
     const response = await store.dispatch(executeConsent(false, ''));
 
-    expect(response.success).toBe(true);
+    expect(response).toEqual({ success: true, state: postedBody().state });
     expect(actions[1]).toEqual({
       type: types.RECEIVE_CONSENT,
       success: true,
@@ -415,13 +424,15 @@ describe('executeConsent', () => {
   });
 
   it('reports an unexpected response status through the form errors', async () => {
-    post.mockResolvedValue({ status: 500, data: 'internal server error', headers: {} });
+    fetchMock().mockResolvedValue(new Response('internal server error', { status: 500 }));
     const { store, actions } = newHarness();
 
     const result = await store.dispatch(executeConsent(true, 'openid'));
 
-    expect(result.success).toBe(false);
-    expect(result.errors.http.message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
+    expect(result).toMatchObject({
+      success: false,
+      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS } }
+    });
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_CONSENT_ALLOW,
       types.RECEIVE_VALIDATE_LOGON
@@ -429,20 +440,31 @@ describe('executeConsent', () => {
   });
 
   it('reports a reply whose state does not echo the request', async () => {
-    post.mockResolvedValue({
-      status: 200,
-      data: { success: true, state: 'not-the-nonce' },
-      headers: {}
-    });
+    fetchMock().mockResolvedValue(jsonReply(200, { success: true, state: 'not-the-nonce' }));
     const { store, actions } = newHarness();
 
     const result = await store.dispatch(executeConsent(true, 'openid'));
 
-    expect(result.errors.http.message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
+    expect(result).toMatchObject({
+      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } }
+    });
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_CONSENT_ALLOW,
       types.RECEIVE_VALIDATE_LOGON
     ]);
+  });
+
+  it('stays silent on an abort and resolves an unsuccessful result', async () => {
+    // A request the caller cancelled is not a consent failure to report.
+    fetchMock().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    const { store, actions } = newHarness();
+
+    const response = await store.dispatch(executeConsent(true, 'openid'));
+
+    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW]);
+    expect(response).toEqual({ success: false, errors: {} });
+    expect(store.getState().login.errors).toEqual({});
+    expect(store.getState().common.error).toBeNull();
   });
 });
 
@@ -510,19 +532,19 @@ describe('validateUsernamePassword', () => {
 
 describe('executeLogonIfFormValid', () => {
   it('logs on with mode 1 when the user is not signed in', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store, actions } = newHarness();
 
     const response = await store.dispatch(
       executeLogonIfFormValid('user1@example.com', 'secret', false)
     );
 
-    expect(post.mock.calls[0][1].params).toEqual([
+    expect(postedBody().params).toEqual([
       'user1@example.com',
       'secret',
       '1'
     ]);
-    expect(response.success).toBe(true);
+    expect(response).toMatchObject({ success: true });
     expect(actions.map((a) => a.type)).toEqual([
       types.RECEIVE_VALIDATE_LOGON,
       types.REQUEST_LOGON,
@@ -533,14 +555,14 @@ describe('executeLogonIfFormValid', () => {
   });
 
   it('logs on with mode 0 when the user is already signed in', async () => {
-    replyWith(200, { success: true });
+    replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
     await store.dispatch(
       executeLogonIfFormValid('user1@example.com', '', true)
     );
 
-    expect(post.mock.calls[0][1].params).toEqual([
+    expect(postedBody().params).toEqual([
       'user1@example.com',
       '',
       '0'
@@ -552,10 +574,14 @@ describe('executeLogonIfFormValid', () => {
 
     const result = await store.dispatch(executeLogonIfFormValid('', '', false));
 
-    expect(post).not.toHaveBeenCalled();
-    expect(result.success).toBe(false);
-    expect(result.errors.username.message).toBe(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
-    expect(result.errors.password.message).toBe(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD);
+    expect(fetchMock()).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      success: false,
+      errors: {
+        username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME },
+        password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD }
+      }
+    });
     expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_VALIDATE_LOGON]);
   });
 });

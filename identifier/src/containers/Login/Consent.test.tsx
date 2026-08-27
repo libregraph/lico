@@ -1,23 +1,20 @@
 import React from 'react';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import axios from 'axios';
-import type { Mock } from 'vitest';
 
 import Consent from './Consent';
 import {
   ClientDetails,
   HelloResponse,
   ScopesMeta,
+  fetchMock,
   newTestHistory,
-  renderWithProviders
+  postedInit,
+  postedUrl,
+  renderWithProviders,
+  replyEchoingState,
+  stubFetch
 } from '../../test-utils';
-
-// No request may escape the test. The mock echoes the client generated state
-// nonce, because the action rejects a response whose state differs.
-vi.mock('axios', () => ({
-  default: { post: vi.fn() }
-}));
 
 interface ConsentRequestBody {
   allow: boolean;
@@ -29,12 +26,14 @@ interface ConsentRequestBody {
   state: string;
 }
 
-const post = axios.post as unknown as Mock;
-
 const consentBodies = (): ConsentRequestBody[] =>
-  post.mock.calls
-    .filter((call: unknown[]) => call[0] === './identifier/_/consent')
-    .map((call: unknown[]) => call[1] as ConsentRequestBody);
+  fetchMock()
+    .mock.calls.filter((call: unknown[]) => call[0] === './identifier/_/consent')
+    .map((call: unknown[]) => {
+      // fetch's second argument, as the action passed it.
+      const init = call[1] as RequestInit;
+      return JSON.parse(String(init.body)) as ConsentRequestBody;
+    });
 
 const client: ClientDetails = {
   id: 'playground.js',
@@ -91,11 +90,11 @@ const renderConsent = (details: HelloResponse = helloResponse()) => {
   });
 };
 
+// No request may escape the test. The stub echoes the client generated state
+// nonce, because the action rejects a response whose state differs.
 beforeEach(() => {
-  post.mockReset();
-  post.mockImplementation((url: string, data: ConsentRequestBody) =>
-    Promise.resolve({ status: 200, headers: {}, data: { success: true, state: data.state } })
-  );
+  stubFetch();
+  replyEchoingState(200, { success: true });
 });
 
 describe('Consent', () => {
@@ -188,9 +187,12 @@ describe('Consent', () => {
 
     userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
-    await waitFor(() => expect(post).toHaveBeenCalled());
-    expect(post.mock.calls[0][0]).toBe('./identifier/_/consent');
-    expect(post.mock.calls[0][2]).toEqual({ headers: { 'Kopano-Konnect-XSRF': '1' } });
+    await waitFor(() => expect(fetchMock()).toHaveBeenCalled());
+    expect(postedUrl()).toBe('./identifier/_/consent');
+    expect(postedInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      'Kopano-Konnect-XSRF': '1'
+    });
   });
 
   it('grants consent when Enter is pressed on the focused allow button', async () => {
@@ -231,7 +233,7 @@ describe('Consent', () => {
 
   it('locks both decisions and shows progress while a decision is in flight', async () => {
     renderConsent();
-    post.mockReturnValue(new Promise(() => undefined)); // Never settles.
+    fetchMock().mockReturnValue(new Promise(() => undefined)); // Never settles.
 
     userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
@@ -250,7 +252,7 @@ describe('Consent', () => {
 
   it('reports an unexpected response status to the user', async () => {
     renderConsent();
-    post.mockResolvedValue({ status: 500, headers: {}, data: '' });
+    fetchMock().mockResolvedValue(new Response('', { status: 500 }));
 
     userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 

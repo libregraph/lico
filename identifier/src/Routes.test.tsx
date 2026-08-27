@@ -1,37 +1,20 @@
 import React, { Suspense } from 'react';
 import { screen } from '@testing-library/react';
-import type { Mock } from 'vitest';
-import axios from 'axios';
 
 import {
   newTestHistory,
   renderWithProviders,
+  replyEchoingState,
+  stubFetch,
   HelloResponse,
   RenderWithProvidersOptions
 } from './test-utils';
 import Routes from './Routes';
 import RedirectWithQuery from './components/RedirectWithQuery';
 
-vi.mock('axios', () => ({
-  default: { post: vi.fn() }
-}));
-
-// The whole module is replaced by the factory above, so post is a vitest mock.
-const post = axios.post as unknown as Mock;
-
 /* The client rejects a response whose state does not echo the request's. */
-function echoState(data: unknown): unknown {
-  return data && typeof data === 'object' && 'state' in data ? data.state : undefined;
-}
-
 function mockSignedOutHello(): void {
-  post.mockImplementation((url: string, data: unknown) =>
-    Promise.resolve({
-      status: 200,
-      headers: {},
-      data: { success: false, flow: '', state: echoState(data) }
-    })
-  );
+  replyEchoingState(200, { success: false, flow: '' });
 }
 
 const signedIn = {
@@ -61,6 +44,10 @@ function renderRoutes(hello: object | null, options: RenderWithProvidersOptions)
     options
   );
 }
+
+beforeEach(() => {
+  stubFetch();
+});
 
 describe('Routes', () => {
   beforeEach(mockSignedOutHello);

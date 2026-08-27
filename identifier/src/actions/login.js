@@ -1,4 +1,3 @@
-import axios from 'axios';
 import queryString from 'query-string';
 
 import { newHelloRequest } from '../models/hello';
@@ -14,7 +13,7 @@ import {
 
 import * as types from './types';
 import { receiveHello } from './common';
-import { handleAxiosError } from './utils';
+import { postJSON, isAbortError } from './utils';
 
 // Modes for logon.
 export const ModeLogonUsernameEmptyPasswordCookie = '0';
@@ -69,8 +68,8 @@ export function receiveConsent(logon) {
   };
 }
 
-export function executeLogon(username, password, mode=ModeLogonUsernamePassword) {
-  return function(dispatch, getState) {
+export function executeLogon(username, password, mode=ModeLogonUsernamePassword, options={}) {
+  return async function(dispatch, getState) {
     dispatch(requestLogon(username, password));
     dispatch(receiveHello({
       username
@@ -98,31 +97,32 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
       params: params,
       hello: newHelloRequest(flow, query)
     });
-    return axios.post('./identifier/_/logon', r, {
-      headers: {
-        'Kopano-Konnect-XSRF': '1'
-      }
-    }).then(response => {
-      switch (response.status) {
+    try {
+      const { status, headers, data } = await postJSON('./identifier/_/logon', r, options);
+
+      let response;
+      switch (status) {
         case 200:
           // success.
-          return response.data;
+          response = data;
+          break;
         case 204:
-          // login failed.
-          return {
+          // login failed. The state travels in a header, because there is no
+          // body to carry it.
+          response = {
             success: false,
-            state: response.headers['kopano-konnect-state'],
+            state: headers.get('Kopano-Konnect-State'),
             errors: {
               http: new Error(ERROR_LOGIN_FAILED)
             }
           };
+          break;
         default:
-          // error.
-          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response);
+          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
-    }).then(response => {
+
       if (response.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response);
+        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: response.state });
       }
 
       let { hello } = response;
@@ -134,9 +134,14 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
       }
       dispatch(receiveHello(hello));
       dispatch(receiveLogon(response));
-      return Promise.resolve(response);
-    }).catch(error => {
-      error = handleAxiosError(error);
+      return response;
+    } catch (error) {
+      // An abort is nobody's failure to report, so it resolves to the same
+      // shape without an error attached.
+      if (isAbortError(error)) {
+        return { success: false, errors: {} };
+      }
+
       const errors = {
         http: error
       };
@@ -146,12 +151,12 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword)
         success: false,
         errors: errors
       };
-    });
+    }
   };
 }
 
-export function executeConsent(allow=false, scope='') {
-  return function(dispatch, getState) {
+export function executeConsent(allow=false, scope='', options={}) {
+  return async function(dispatch, getState) {
     dispatch(requestConsent(allow));
 
     const { query } = getState().common;
@@ -164,34 +169,40 @@ export function executeConsent(allow=false, scope='') {
       ref: query.state || '',
       flow_nonce: query.nonce || '' // eslint-disable-line camelcase
     });
-    return axios.post('./identifier/_/consent', r, {
-      headers: {
-        'Kopano-Konnect-XSRF': '1'
-      }
-    }).then(response => {
-      switch (response.status) {
+    try {
+      const { status, headers, data } = await postJSON('./identifier/_/consent', r, options);
+
+      let response;
+      switch (status) {
         case 200:
           // success.
-          return response.data;
+          response = data;
+          break;
         case 204:
-          // cancel reply.
-          return {
+          // cancel reply. The state travels in a header, because there is no
+          // body to carry it.
+          response = {
             success: true,
-            state: response.headers['kopano-konnect-state']
+            state: headers.get('Kopano-Konnect-State')
           };
+          break;
         default:
-          // error.
-          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, response);
+          throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
-    }).then(response => {
+
       if (response.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, response);
+        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: response.state });
       }
 
       dispatch(receiveConsent(response));
-      return Promise.resolve(response);
-    }).catch(error => {
-      error = handleAxiosError(error);
+      return response;
+    } catch (error) {
+      // An abort is nobody's failure to report, so it resolves to the same
+      // shape without an error attached.
+      if (isAbortError(error)) {
+        return { success: false, errors: {} };
+      }
+
       const errors = {
         http: error
       };
@@ -201,7 +212,7 @@ export function executeConsent(allow=false, scope='') {
         success: false,
         errors: errors
       };
-    });
+    }
   };
 }
 
@@ -227,13 +238,13 @@ export function validateUsernamePassword(username, password, isSignedIn) {
   };
 }
 
-export function executeLogonIfFormValid(username, password, isSignedIn) {
+export function executeLogonIfFormValid(username, password, isSignedIn, options={}) {
   return (dispatch) => {
     return dispatch(
       validateUsernamePassword(username, password, isSignedIn)
     ).then(() => {
       const mode = isSignedIn ? ModeLogonUsernameEmptyPasswordCookie : ModeLogonUsernamePassword;
-      return dispatch(executeLogon(username, password, mode));
+      return dispatch(executeLogon(username, password, mode, options));
     }).catch((errors) => {
       return {
         success: false,
