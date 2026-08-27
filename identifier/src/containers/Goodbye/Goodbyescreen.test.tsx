@@ -204,10 +204,10 @@ describe('Goodbyescreen', () => {
     expect(history.length).toBe(2);
   });
 
-  it('strands the user on a progress indicator when the server refuses the sign out', async () => {
-    // Signing out clears the stored session before the request is sent, and
-    // nothing re-reads it when the request is refused, so the confirmation
-    // disappears without anything replacing it.
+  it('recovers the confirmation when the server refuses the sign out', async () => {
+    // Signing out clears the stored session before the request is sent. The
+    // session has to be read again even when the request is refused, otherwise
+    // the confirmation disappears and nothing replaces it.
     replyByUrl({
       [HELLO_URL]: () => ({ ...signedIn }),
       [LOGOFF_URL]: () => ({ success: false })
@@ -218,9 +218,9 @@ describe('Goodbyescreen', () => {
     userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(urlsPosted()).toContain(LOGOFF_URL));
-    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+
+    expect(await screen.findByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     expect(history.length).toBe(1);
-    expect(urlsPosted().filter((url) => url === HELLO_URL)).toHaveLength(1);
+    expect(urlsPosted().filter((url) => url === HELLO_URL)).toHaveLength(2);
   });
 });
