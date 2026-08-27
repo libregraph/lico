@@ -250,7 +250,7 @@ func (i *Identifier) handleLogon(rw http.ResponseWriter, req *http.Request) {
 			user = logonedUser
 
 		default:
-			i.logger.Debugln("identifier unknown logon mode: %v", params[2])
+			i.logger.WithField("mode", params[2]).Debugln("identifier unknown logon mode")
 		}
 
 		break
