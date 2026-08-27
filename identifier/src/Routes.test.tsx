@@ -100,6 +100,18 @@ describe('PrivateRoute through Routes', () => {
     expect(history.location.pathname).toBe('/identifier');
   });
 
+  it('sends a visitor away once hello has answered that nobody is signed in', async () => {
+    // The hello state becomes an object as soon as the server answers, so a
+    // guard testing only for its presence would let this visitor through and
+    // then render the welcome screen with an empty name.
+    const history = newTestHistory('/welcome');
+
+    renderRoutes(signedOut, { history, preloaded: { common: { hello: signedOut } } });
+
+    expect(await screen.findByText('Sign in')).toBeInTheDocument();
+    expect(history.location.pathname).toBe('/identifier');
+  });
+
   it('lets a visitor with a session reach the welcome route', async () => {
     const history = newTestHistory('/welcome');
 
