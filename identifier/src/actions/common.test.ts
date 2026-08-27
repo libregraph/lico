@@ -374,4 +374,16 @@ describe('executeLogoff', () => {
     expect(actions[2].error.message).toBe(ERROR_HTTP_NETWORK_ERROR);
     expect(store.getState().common.error.message).toBe(ERROR_HTTP_NETWORK_ERROR);
   });
+
+  it('resolves an unsuccessful result on failure rather than nothing', async () => {
+    // Welcomescreen and Goodbyescreen both read success off the resolved value,
+    // so resolving undefined made a failed sign out throw instead of report.
+    post.mockRejectedValue({ request: {}, message: 'Network Error' });
+    const { store } = newHarness();
+
+    const response = await store.dispatch(executeLogoff());
+
+    expect(response.success).toBe(false);
+    expect(response.errors.http.message).toBe(ERROR_HTTP_NETWORK_ERROR);
+  });
 });

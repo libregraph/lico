@@ -128,6 +128,15 @@ export function executeLogoff() {
       error = handleAxiosError(error);
 
       dispatch(receiveError(error));
+
+      // Callers read success off the resolved value, so a failure has to be
+      // reported as one rather than as undefined.
+      return {
+        success: false,
+        errors: {
+          http: error
+        }
+      };
     });
   };
 }
