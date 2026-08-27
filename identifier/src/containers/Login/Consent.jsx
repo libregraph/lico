@@ -96,6 +96,13 @@ class Consent extends React.PureComponent {
   render() {
     const { classes, loading, hello, errors, client, t } = this.props;
 
+    // The mount guard sends the visitor away when there is nothing to consent
+    // to, but that only happens after this first render, and it deliberately
+    // stays put when the application itself navigated here.
+    if (!hello || !hello.details || !client) {
+      return null;
+    }
+
     const scopes = hello.details.scopes || {};
     const meta = hello.details.meta || {};
 
@@ -118,7 +125,7 @@ class Consent extends React.PureComponent {
             </Tooltip> wants to
           </Trans>
         </Typography>
-        <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta.scopes}></ScopesList>
+        <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta.scopes || {}}></ScopesList>
 
         <Typography variant="subtitle1" gutterBottom>
           <Trans t={t} i18nKey="konnect.consent.question">
@@ -177,7 +184,7 @@ Consent.propTypes = {
   loading: PropTypes.string.isRequired,
   errors: PropTypes.object.isRequired,
   hello: PropTypes.object,
-  client: PropTypes.object.isRequired,
+  client: PropTypes.object,
 
   dispatch: PropTypes.func.isRequired,
   history: PropTypes.object.isRequired
@@ -187,11 +194,13 @@ const mapStateToProps = (state) => {
   const { hello } = state.common;
   const { loading, errors } = state.login;
 
+  // No session means no client, and the mount guard tests for exactly that, so
+  // it must not be given an empty object which would read as one being present.
   return {
     loading: loading,
     errors,
     hello,
-    client: hello.details.client || {}
+    client: hello && hello.details ? hello.details.client : undefined
   };
 };
 
