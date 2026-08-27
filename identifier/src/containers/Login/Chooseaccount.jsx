@@ -76,7 +76,7 @@ class Chooseaccount extends React.PureComponent {
               className={classes.accountListItem}
               disabled={!!loading}
               onClick={(event) => this.logon(event)}
-            ><ListItemAvatar><Avatar>{username.substr(0, 1)}</Avatar></ListItemAvatar>
+            ><ListItemAvatar><Avatar>{username.slice(0, 1)}</Avatar></ListItemAvatar>
               <ListItemText primary={username} />
             </ListItem>
             <ListItem

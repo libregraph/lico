@@ -40,10 +40,6 @@ languageDetector.addDetector(queryUiLocalesDetector);
 i18n
   .use(resourcesToBackend((language, namespace, callback) => {
     import(
-      /* webpackMode: "lazy-once" */
-      /* webpackInclude: /\.json$/ */
-      /* webpackChunkName: "all-i18n-data" */
-      /* webpackPrefetch: true */
       `./locales/${language}/${namespace}.json`
     )
       .then((resources) => {
