@@ -71,7 +71,9 @@ class Consent extends React.PureComponent {
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.
   }
 
-  action = (allow=false, scopes={}) => (event) => {
+  // No default for allow: the form passes it undefined to mean "decide nothing",
+  // and a default would turn that into an explicit refusal.
+  action = (allow, scopes={}) => (event) => {
     event.preventDefault();
 
     if (allow === undefined) {
