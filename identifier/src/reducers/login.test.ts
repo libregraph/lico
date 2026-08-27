@@ -183,6 +183,23 @@ describe('loginReducer', () => {
     expect(state.errors.password).toBeDefined();
   });
 
+  it('leaves the previous state untouched when it clears a field error', () => {
+    // The reducer used to delete from the incoming state's own errors object and
+    // then share that object with the state it returned, so the error vanished
+    // from both and replaying the previous state no longer reproduced it.
+    const invalid: LoginState = loginReducer(
+      initial(),
+      receiveValidateLogon({
+        username: new ExtendedError(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME)
+      })
+    );
+
+    const state: LoginState = loginReducer(invalid, updateInput('username', 'u'));
+
+    expect(invalid.errors.username).toBeDefined();
+    expect(state.errors).not.toBe(invalid.errors);
+  });
+
   it('returns the same state object for an unrelated action', () => {
     const before = initial();
 

@@ -46,11 +46,17 @@ function loginReducer(state = {
         password: ''
       });
 
-    case UPDATE_INPUT:
-      delete state.errors[action.name];
+    case UPDATE_INPUT: {
+      // Editing a field clears the error recorded for it. The previous state
+      // must not be touched, so copy the errors rather than deleting from them.
+      const errors = Object.assign({}, state.errors);
+      delete errors[action.name];
+
       return Object.assign({}, state, {
+        errors,
         [action.name]: action.value
       });
+    }
 
     default:
       return state;
