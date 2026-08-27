@@ -1,10 +1,10 @@
-import React from 'react';
+
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Welcomescreen from './Welcomescreen';
 import {
-  HelloResponse,
+  type HelloResponse,
   fetchMock,
   newTestHistory,
   postedBody,

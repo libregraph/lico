@@ -26,11 +26,12 @@
     "build": "vite build",
     "serve": "vite preview",
     "test": "vitest",
-    "lint": "eslint --max-warnings=0 src/**/*.{ts,tsx,js,jsx}",
+    "lint": "biome lint --error-on-warnings .",
     "licenses": "node ../scripts/js-license-ranger.mjs",
     "analyze": "source-map-explorer 'build/static/assets/*.js'"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.10",
     "@testing-library/dom": "^8.20.1",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^12.1.5",
@@ -43,15 +44,9 @@
     "@types/react-router": "5.1.20",
     "@types/react-router-dom": "5.3.3",
     "@types/validator": "^13",
-    "@typescript-eslint/eslint-plugin": "^6.11.0",
-    "@typescript-eslint/parser": "^6.9.0",
-    "@typescript-eslint/typescript-estree": "^6.11.0",
     "@vitejs/plugin-legacy": "^4.0.0",
     "@vitejs/plugin-react": "^4.1.1",
     "cldr": "^7.4.0",
-    "eslint": "^8.53.0",
-    "eslint-config-react-app-bump": "^1.0.16",
-    "eslint-plugin-i18next": "^5.2.1",
     "gettext-parser": "^5.1.2",
     "glob": "^8.1.0",
     "i18next-conv": "^12.1.1",
@@ -63,36 +58,6 @@
     "vite": "^4.5.13",
     "vite-plugin-checker": "^0.6.2",
     "vitest": "^0.34.6"
-  },
-  "eslintConfig": {
-    "plugins": [
-      "i18next"
-    ],
-    "extends": [
-      "react-app-bump",
-      "plugin:react/recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:i18next/recommended"
-    ],
-    "rules": {
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "error"
-      ],
-      "no-use-before-define": "off",
-      "@typescript-eslint/no-use-before-define": [
-        "error"
-      ],
-      "i18next/no-literal-string": [
-        "off",
-        {
-          "markupOnly": true
-        }
-      ],
-      "react/prop-types": [
-        "warn"
-      ]
-    }
   },
   "browserslist": {
     "production": [

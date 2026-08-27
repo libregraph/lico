@@ -1,7 +1,7 @@
-import React from 'react';
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18next, { i18n as I18nInstance } from 'i18next';
+import i18next, { type i18n as I18nInstance } from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 

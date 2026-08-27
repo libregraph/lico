@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable */
 
 const cldr = require('cldr');
 
@@ -45,7 +44,7 @@ function Locale(locale, overrides={}) {
     let nativeName = localeCapitalize(languageDisplayNames[code], locale);
     if (name && nativeName) {
       if (country) {
-        let countryNative = localeCapitalize(cldr.extractTerritoryDisplayNames(code)[country], locale);
+        const countryNative = localeCapitalize(cldr.extractTerritoryDisplayNames(code)[country], locale);
         nativeName = `${nativeName} (${countryNative})`;
         name = `${name} (${localeCapitalize(englishTerritoryDisplayNames[country], 'en')})`;
       }
@@ -64,15 +63,15 @@ var locales = [
   Locale('en-GB', { name: 'English', nativeName: 'English' }), // Always add en-GB as English.
 ]
 
-pos.map((po) => {
+for (const po of pos) {
   const locale = Locale(po.replace(/\.[^/.]+$/, ''));
   if (locale) {
     locales.push(locale);
   }
-});
+}
 
 locales.sort((a, b) => {
   return a.locale > b.locale ? 1 : -1;
 })
 
-require('fs').writeFileSync(output, JSON.stringify(locales, null, 2));
+require('node:fs').writeFileSync(output, JSON.stringify(locales, null, 2));

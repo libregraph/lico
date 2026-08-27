@@ -69,7 +69,7 @@ export function receiveConsent(logon) {
 }
 
 export function executeLogon(username, password, mode=ModeLogonUsernamePassword, options={}) {
-  return async function(dispatch, getState) {
+  return async (dispatch, getState) => {
     dispatch(requestLogon(username, password));
     dispatch(receiveHello({
       username
@@ -156,7 +156,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword,
 }
 
 export function executeConsent(allow=false, scope='', options={}) {
-  return async function(dispatch, getState) {
+  return async (dispatch, getState) => {
     dispatch(requestConsent(allow));
 
     const { query } = getState().common;
@@ -164,10 +164,10 @@ export function executeConsent(allow=false, scope='', options={}) {
     const r = withClientRequestState({
       allow,
       scope,
-      client_id: query.client_id || '', // eslint-disable-line camelcase
-      redirect_uri: query.redirect_uri || '', // eslint-disable-line camelcase
+      client_id: query.client_id || '',
+      redirect_uri: query.redirect_uri || '',
       ref: query.state || '',
-      flow_nonce: query.nonce || '' // eslint-disable-line camelcase
+      flow_nonce: query.nonce || ''
     });
     try {
       const { status, headers, data } = await postJSON('./identifier/_/consent', r, options);
@@ -217,8 +217,7 @@ export function executeConsent(allow=false, scope='', options={}) {
 }
 
 export function validateUsernamePassword(username, password, isSignedIn) {
-  return function(dispatch) {
-    return new Promise((resolve, reject) => {
+  return (dispatch) => new Promise((resolve, reject) => {
       const errors = {};
 
       if (!username) {
@@ -235,7 +234,6 @@ export function validateUsernamePassword(username, password, isSignedIn) {
         reject(errors);
       }
     });
-  };
 }
 
 export function executeLogonIfFormValid(username, password, isSignedIn, options={}) {
@@ -278,7 +276,7 @@ export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
         }
         if (hello.details.continue_uri) {
           q.prompt = 'none';
-          window.location.replace(hello.details.continue_uri + '?' + queryString.stringify(q));
+          window.location.replace(`${hello.details.continue_uri}?${queryString.stringify(q)}`);
           return;
         }
 

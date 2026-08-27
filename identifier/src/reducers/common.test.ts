@@ -1,6 +1,6 @@
 import commonReducer from './common';
 import { receiveError, receiveHello, resetHello } from '../actions/common';
-import { Branding, HelloResponse } from '../test-utils';
+import type { Branding, HelloResponse } from '../test-utils';
 
 const initial = () => commonReducer(undefined, { type: '@@INIT' });
 

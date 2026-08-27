@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import resourcesToBackend from 'i18next-resources-to-backend';
-import LanguageDetector, { CustomDetector } from 'i18next-browser-languagedetector';
+import LanguageDetector, { type CustomDetector } from 'i18next-browser-languagedetector';
 
 import queryString from 'query-string';
 
@@ -20,7 +20,7 @@ const supportedLanguages = locales.map((locale) => {
 
 const queryUiLocalesDetector: CustomDetector = {
   name: 'queryUiLocales',
-  lookup: (options): string | string[] | undefined => {
+  lookup: (): string | string[] | undefined => {
     const query = queryString.parse(document.location.search);
     const ui_locales = query[config.uiLocalesQueryName];
     if (!ui_locales) {

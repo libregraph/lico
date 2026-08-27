@@ -12,18 +12,18 @@ export function newHelloRequest(flow, query) {
     case 'consent':
     case 'oidc':
       r.scope = query.scope || '';
-      r.client_id = query.client_id || ''; // eslint-disable-line camelcase
-      r.redirect_uri = query.redirect_uri || '';  // eslint-disable-line camelcase
+      r.client_id = query.client_id || '';
+      r.redirect_uri = query.redirect_uri || '';
       if (query.id_token_hint) {
-        r.id_token_hint = query.id_token_hint;  // eslint-disable-line camelcase
+        r.id_token_hint = query.id_token_hint;
       }
       if (query.max_age) {
-        r.max_age = query.max_age;  // eslint-disable-line camelcase
+        r.max_age = query.max_age;
       }
       if (query.claims_scope) {
         // Add additional scopes from claims request if given. The request may
         // carry no scope of its own, so joining must not leave a leading space.
-        r.scope = r.scope ? r.scope + ' ' + query.claims_scope : query.claims_scope;
+        r.scope = r.scope ? `${r.scope} ${query.claims_scope}` : query.claims_scope;
       }
       break;
 

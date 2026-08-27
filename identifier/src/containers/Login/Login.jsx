@@ -74,8 +74,13 @@ function Login(props) {
   const [showPassword, setShowPassword] = React.useState(false);
   const passwordInputRef = useRef();
 
+  // This effect decides once, on mount, whether an already signed-in visitor
+  // should be redirected onwards and whether login_hint should prefill the
+  // username. Naming its dependencies would re-run both on every change to the
+  // query, the history or the store, which would fight the user as they type.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if (hello && hello.state && history.action !== 'PUSH') {
+    if (hello?.state && history.action !== 'PUSH') {
       if (!query.prompt || query.prompt.indexOf('select_account') === -1) {
         dispatch(advanceLogonFlow(true, history));
         return;
@@ -86,7 +91,7 @@ function Login(props) {
     }
 
     // If login_hint is an email, set it into the username field automatically.
-    if (query && query.login_hint) {
+    if (query?.login_hint) {
       if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
         dispatch(updateInput("username", query.login_hint));
         setTimeout(() => {
@@ -94,7 +99,7 @@ function Login(props) {
         }, 0);
       }
     }
-  }, [ /* no dependencies */ ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (name) => (event) => {
     dispatch(updateInput(name, event.target.value));

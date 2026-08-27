@@ -36,7 +36,7 @@ export function receiveHello(hello) {
 }
 
 export function executeHello(options={}) {
-  return async function(dispatch, getState) {
+  return async (dispatch, getState) => {
     dispatch(resetHello());
 
     const { flow, query } = getState().common;
@@ -67,7 +67,7 @@ export function executeHello(options={}) {
 }
 
 export function retryHello(options={}) {
-  return function(dispatch) {
+  return (dispatch) => {
     dispatch(receiveError(null));
 
     return dispatch(executeHello(options));
@@ -88,7 +88,7 @@ export function receiveLogoff(state) {
 }
 
 export function executeLogoff(options={}) {
-  return async function(dispatch) {
+  return async (dispatch) => {
     dispatch(resetHello());
     dispatch(requestLogoff());
 

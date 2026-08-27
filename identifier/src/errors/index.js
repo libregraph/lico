@@ -1,5 +1,3 @@
-/* eslint react/prop-types: 0 */
-
 import { withTranslation } from 'react-i18next';
 
 export const ERROR_LOGIN_VALIDATE_MISSINGUSERNAME = 'konnect.error.login.validate.missingUsername';

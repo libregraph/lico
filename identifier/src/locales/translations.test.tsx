@@ -1,11 +1,11 @@
-import React from 'react';
+
 import { screen } from '@testing-library/react';
 
 import Consent from '../containers/Login/Consent';
 import {
-  ClientDetails,
-  HelloResponse,
-  ScopesMeta,
+  type ClientDetails,
+  type HelloResponse,
+  type ScopesMeta,
   fetchMock,
   getTestI18n,
   jsonReply,

@@ -1,7 +1,7 @@
-import React from 'react';
+
 import { screen } from '@testing-library/react';
 
-import { renderWithProviders, ScopesMeta } from '../test-utils';
+import { renderWithProviders, type ScopesMeta } from '../test-utils';
 import ScopesList from './ScopesList';
 
 /*
