@@ -21,8 +21,9 @@ export function newHelloRequest(flow, query) {
         r.max_age = query.max_age;  // eslint-disable-line camelcase
       }
       if (query.claims_scope) {
-        // Add additional scopes from claims request if given.
-        r.scope += ' ' + query.claims_scope;
+        // Add additional scopes from claims request if given. The request may
+        // carry no scope of its own, so joining must not leave a leading space.
+        r.scope = r.scope ? r.scope + ' ' + query.claims_scope : query.claims_scope;
       }
       break;
 

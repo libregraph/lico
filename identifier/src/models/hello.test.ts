@@ -74,6 +74,15 @@ describe('newHelloRequest', () => {
         });
       });
 
+      it('uses the claims scope alone when the query carries no scope', () => {
+        expect(newHelloRequest(flow, { claims_scope: 'email' })).toEqual({
+          flow,
+          scope: 'email',
+          client_id: '',
+          redirect_uri: ''
+        });
+      });
+
       it('does not report the claims scope as a member of its own', () => {
         const request = newHelloRequest(flow, { scope: 'openid', claims_scope: 'email' });
 
