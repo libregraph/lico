@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
-"PO-Revision-Date: 2022-03-09 18:45+0100\n"
+"PO-Revision-Date: 2026-08-27 12:00+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: Dutch <http://translate.kopano.io/projects/kopano/konnect/nl/>\n"
 "Language: nl\n"
@@ -60,12 +60,12 @@ msgstr "Door op \"Toestaan\" te klikken word je doorverwezen naar: {{redirectURI
 #. From: konnect##login##usernameField##placeholder##email
 #: konnect##login##usernameField##placeholder##email
 msgid "Email"
-msgstr ""
+msgstr "E-mail"
 
 #. From: konnect##error##login##validate##missingUsername
 #: konnect##error##login##validate##missingUsername
 msgid "Enter a valid value."
-msgstr ""
+msgstr "Voer een geldige waarde in."
 
 #. From: konnect##error##login##validate##missingPassword
 #: konnect##error##login##validate##missingPassword
@@ -95,7 +95,7 @@ msgstr "Hoi {{displayName}}"
 #. From: konnect##login##usernameField##placeholder##identity
 #: konnect##login##usernameField##placeholder##identity
 msgid "Identity"
-msgstr ""
+msgstr "Identiteit"
 
 #. From: konnect##scopeDescription##offlineAccess
 #: konnect##scopeDescription##offlineAccess
