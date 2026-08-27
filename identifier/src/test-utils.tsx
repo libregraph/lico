@@ -27,7 +27,6 @@ export interface CommonState {
   error: unknown;
   flow: string;
   query: Record<string, string>;
-  updateAvailable: boolean;
   pathPrefix: string;
 }
 
@@ -44,7 +43,6 @@ export const defaultCommonState: CommonState = {
   error: null,
   flow: '',
   query: {},
-  updateAvailable: false,
   pathPrefix: '/signin/v1'
 };
 

@@ -1,6 +1,5 @@
 import commonReducer from './common';
 import { receiveError, receiveHello, resetHello } from '../actions/common';
-import { SERVICE_WORKER_NEW_CONTENT } from '../actions/types';
 import { Branding, HelloResponse } from '../test-utils';
 
 const initial = () => commonReducer(undefined, { type: '@@INIT' });
@@ -12,7 +11,6 @@ describe('commonReducer', () => {
     expect(state.hello).toBeNull();
     expect(state.branding).toBeNull();
     expect(state.error).toBeNull();
-    expect(state.updateAvailable).toBe(false);
   });
 
   it('falls back to the default path prefix when the placeholder was not substituted', () => {
@@ -107,12 +105,6 @@ describe('commonReducer', () => {
 
     expect(state.hello).toBeNull();
     expect(state.branding).toBeNull();
-  });
-
-  it('flags an available update from the service worker', () => {
-    const state = commonReducer(initial(), { type: SERVICE_WORKER_NEW_CONTENT });
-
-    expect(state.updateAvailable).toBe(true);
   });
 
   it('returns the same state object for an unrelated action', () => {
