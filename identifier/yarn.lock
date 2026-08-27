@@ -5136,13 +5136,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"classnames@npm:^2.3.2":
-  version: 2.3.2
-  resolution: "classnames@npm:2.3.2"
-  checksum: ba3151c12e8b6a84c64b340ab4259ad0408947652009314462d828e94631505989c6a7d7e796bec1d309be9295d3111b498ad18a9d533fe3e6f859e51e574cbb
-  languageName: node
-  linkType: hard
-
 "cldr@npm:^7.4.0":
   version: 7.4.0
   resolution: "cldr@npm:7.4.0"
@@ -7647,7 +7640,6 @@ __metadata:
     "@typescript-eslint/typescript-estree": "npm:^6.11.0"
     "@vitejs/plugin-legacy": "npm:^4.0.0"
     "@vitejs/plugin-react": "npm:^4.1.1"
-    classnames: "npm:^2.3.2"
     cldr: "npm:^7.4.0"
     eslint: "npm:^8.53.0"
     eslint-config-react-app-bump: "npm:^1.0.16"
@@ -7670,7 +7662,6 @@ __metadata:
     redux: "npm:^4.2.1"
     redux-logger: "npm:^3.0.6"
     redux-thunk: "npm:^2.4.2"
-    render-if: "npm:^0.1.1"
     source-map-explorer: "npm:^2.5.3"
     terser: "npm:^5.30.4"
     typescript: "npm:^5.2.2"
@@ -9989,13 +9980,6 @@ __metadata:
   version: 1.1.0
   resolution: "remove-trailing-separator@npm:1.1.0"
   checksum: d3c20b5a2d987db13e1cca9385d56ecfa1641bae143b620835ac02a6b70ab88f68f117a0021838db826c57b31373d609d52e4f31aca75fc490c862732d595419
-  languageName: node
-  linkType: hard
-
-"render-if@npm:^0.1.1":
-  version: 0.1.1
-  resolution: "render-if@npm:0.1.1"
-  checksum: fb8a1a46cf6ae8199800f35d0387ff95d1260657b3973d1d545622d399fa822e5a5f820a37568b5172677c32f752de302b92e080adcd1f5f720638a3698969be
   languageName: node
   linkType: hard
 

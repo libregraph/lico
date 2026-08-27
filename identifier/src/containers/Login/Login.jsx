@@ -4,7 +4,6 @@ import { connect } from 'react-redux';
 
 import { useTranslation } from 'react-i18next';
 
-import renderIf from 'render-if';
 import { isEmail } from 'validator';
 
 import { withStyles } from '@material-ui/core/styles';
@@ -192,11 +191,11 @@ function Login(props) {
           </div>
         </DialogActions>
 
-        {renderIf(errors.http)(() => (
+        {errors.http && (
           <Typography variant="subtitle2" color="error" className={classes.message}>
             <ErrorMessage error={errors.http}></ErrorMessage>
           </Typography>
-        ))}
+        )}
 
         {branding?.signinPageText && <Typography variant="body2">{branding.signinPageText}</Typography>}
       </form>
