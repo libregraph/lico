@@ -8,6 +8,47 @@ import Select from '@material-ui/core/Select';
 
 import allLocales from '../locales';
 
+/*
+ * Returns the first supported locale the browser asks for, preferring an exact
+ * match and then one sharing the primary language, or null when none fits.
+ *
+ * i18next's own matcher cannot be scoped to a subset of locales: its language
+ * utilities capture the supported list when they are constructed, so narrowing
+ * it afterwards has no effect and would mutate options shared with the rest of
+ * the application.
+ */
+function bestSupportedLocale(wanted, supported) {
+  const lower = supported.map(locale => locale.toLowerCase());
+  const find = (code) => {
+    const index = lower.indexOf(code.toLowerCase());
+    return index === -1 ? null : supported[index];
+  };
+
+  for (const code of wanted) {
+    const exact = find(code);
+    if (exact) {
+      return exact;
+    }
+
+    const primary = code.split('-')[0].toLowerCase();
+    const related = supported.find(locale => locale.toLowerCase().split('-')[0] === primary);
+    if (related) {
+      return related;
+    }
+  }
+
+  return null;
+}
+
+/* The languages the browser reports, most preferred first. */
+function browserLanguages() {
+  const { languages, language } = window.navigator;
+  if (languages && languages.length > 0) {
+    return languages;
+  }
+  return language ? [language] : [];
+}
+
 function LocaleSelect({ locales: localesProp, ...other } = {}) {
   const { i18n, ready } = useTranslation();
 
@@ -27,18 +68,13 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
 
   useEffect(() => {
     if (locales) {
-      const found = locales.find((locale) => {
-        return locale.locale === i18n.language;
-      });
-      if (found) {
+      const codes = locales.map(locale => locale.locale);
+      if (codes.includes(i18n.language)) {
         // Have language -> is supported all good.
         return;
       }
-      const wanted = i18n.modules.languageDetector.detectors.navigator.lookup();
-      i18n.modules.languageDetector.services.languageUtils.options.supportedLngs = locales.map(locale => locale.locale);
-      i18n.modules.languageDetector.services.languageUtils.options.fallbackLng = null;
 
-      let best = i18n.modules.languageDetector.services.languageUtils.getBestMatchFromCodes(wanted);
+      let best = bestSupportedLocale(browserLanguages(), codes);
       if (!best) {
         best = locales[0].locale;
       }
