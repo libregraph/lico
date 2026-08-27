@@ -263,4 +263,47 @@ describe('Consent', () => {
     );
     expect(screen.getByRole('button', { name: 'Allow' })).toBeEnabled();
   });
+
+  it('sends a visitor arriving without a session back to the identifier', () => {
+    // Reaching consent with no session used to throw while mapping state, before
+    // the mount guard which is meant to catch exactly this could run.
+    const history = newTestHistory('/consent?client_id=demo#frag', 'POP');
+
+    renderWithProviders(<Subject history={history} />, {
+      history,
+      preloaded: { common: { hello: null, query } }
+    });
+
+    expect(history.location.pathname).toBe('/identifier');
+    expect(history.location.search).toBe('?client_id=demo');
+    expect(history.location.hash).toBe('#frag');
+  });
+
+  it('sends a visitor away when the session names no client', () => {
+    // The client was defaulted to an empty object, which reads as one being
+    // present, so this case rendered on and failed inside the scopes list.
+    const history = newTestHistory('/consent', 'POP');
+    const hello = { state: true, username: 'u', displayName: 'D', details: {} };
+
+    renderWithProviders(<Subject history={history} />, {
+      history,
+      preloaded: { common: { hello, query } }
+    });
+
+    expect(history.location.pathname).toBe('/identifier');
+  });
+
+  it('renders nothing rather than failing when it stays without a session', () => {
+    // The guard deliberately stays put when the application itself navigated
+    // here, so this render has to be survivable.
+    const history = newTestHistory('/consent', 'PUSH');
+
+    const { container } = renderWithProviders(<Subject history={history} />, {
+      history,
+      preloaded: { common: { hello: null, query } }
+    });
+
+    expect(history.location.pathname).toBe('/consent');
+    expect(container).toBeEmptyDOMElement();
+  });
 });
