@@ -21,7 +21,7 @@ import {
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
   ExtendedError
 } from '../errors';
-import { LoginState, StateResponse } from '../test-utils';
+import type { LoginState, StateResponse } from '../test-utils';
 
 const initial = (): LoginState => loginReducer(undefined, { type: '@@INIT' });
 

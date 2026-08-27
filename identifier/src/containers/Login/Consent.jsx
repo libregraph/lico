@@ -62,7 +62,7 @@ Tooltip.propTypes = {
 class Consent extends React.PureComponent {
   componentDidMount() {
     const { dispatch, hello, history, client } = this.props;
-    if ((!hello || !hello.state || !client) && history.action !== 'PUSH') {
+    if ((!hello?.state || !client) && history.action !== 'PUSH') {
       history.replace(`/identifier${history.location.search}${history.location.hash}`);
     }
 
@@ -97,7 +97,7 @@ class Consent extends React.PureComponent {
     // The mount guard sends the visitor away when there is nothing to consent
     // to, but that only happens after this first render, and it deliberately
     // stays put when the application itself navigated here.
-    if (!hello || !hello.details || !client) {
+    if (!hello?.details || !client) {
       return null;
     }
 
@@ -198,7 +198,7 @@ const mapStateToProps = (state) => {
     loading: loading,
     errors,
     hello,
-    client: hello && hello.details ? hello.details.client : undefined
+    client: hello?.details ? hello.details.client : undefined
   };
 };
 

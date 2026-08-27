@@ -1,14 +1,14 @@
-import React from 'react';
+
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryHistory } from 'history';
+import type { MemoryHistory } from 'history';
 
 import Chooseaccount from './Chooseaccount';
 import { ERROR_LOGIN_FAILED } from '../../errors';
 import { REQUEST_LOGON } from '../../actions/types';
 import {
-  HelloResponse,
-  PreloadedState,
+  type HelloResponse,
+  type PreloadedState,
   fetchMock,
   newTestHistory,
   postedBody,

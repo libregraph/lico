@@ -1,11 +1,11 @@
-import React from 'react';
+
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryHistory } from 'history';
+import type { MemoryHistory } from 'history';
 
 import Goodbyescreen from './Goodbyescreen';
 import {
-  HelloResponse,
+  type HelloResponse,
   fetchMock,
   jsonReply,
   newTestHistory,

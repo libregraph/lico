@@ -3,12 +3,12 @@
  * never enters the production module graph.
  */
 
-import React from 'react';
-import { render, RenderOptions, RenderResult } from '@testing-library/react';
+import type React from 'react';
+import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Router } from 'react-router-dom';
-import { createMemoryHistory, MemoryHistory } from 'history';
-import { applyMiddleware, createStore, Store } from 'redux';
+import { createMemoryHistory, type MemoryHistory } from 'history';
+import { applyMiddleware, createStore, type Store } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';

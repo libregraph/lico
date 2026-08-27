@@ -27,13 +27,13 @@ i18n: vendor
 	@$(MAKE) -C i18n
 
 .PHONY: lint
-lint: vendor ; $(info running eslint ...)	@
-	@$(YARN) lint . --cache && echo "eslint: no lint errors"
+lint: vendor ; $(info running biome ...)	@
+	@$(YARN) lint && echo "biome: no lint errors"
 
 .PHONY: lint-checkstyle
-lint-checkstyle: vendor ; $(info running eslint checkstyle ...)	@
+lint-checkstyle: vendor ; $(info running biome checkstyle ...)	@
 	@mkdir -p ../test
-	$(YARN) lint -f checkstyle -o ../test/tests.eslint.xml . || true
+	$(YARN) biome lint --error-on-warnings --reporter=checkstyle --reporter-file=../test/tests.biome.xml . || true
 
 # Yarn
 

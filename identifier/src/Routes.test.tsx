@@ -1,4 +1,5 @@
-import React, { Suspense } from 'react';
+import type React from 'react';
+import { Suspense } from 'react';
 import { screen } from '@testing-library/react';
 
 import {
@@ -6,8 +7,8 @@ import {
   renderWithProviders,
   replyEchoingState,
   stubFetch,
-  HelloResponse,
-  RenderWithProvidersOptions
+  type HelloResponse,
+  type RenderWithProvidersOptions
 } from './test-utils';
 import Routes from './Routes';
 import RedirectWithQuery from './components/RedirectWithQuery';

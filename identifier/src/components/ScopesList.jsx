@@ -1,4 +1,4 @@
-import React from 'react';
+
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -24,7 +24,7 @@ const ScopesList = ({scopes, meta, classes, ...rest}) => {
   const known = {};
 
   // TODO(longsleep): Sort scopes according to priority.
-  for (let scope in scopes) {
+  for (const scope in scopes) {
     if (!scopes[scope]) {
       continue;
     }
@@ -37,7 +37,7 @@ const ScopesList = ({scopes, meta, classes, ...rest}) => {
     } else {
       id = scope;
     }
-    let definition = definitions[id];
+    const definition = definitions[id];
     let label;
     if (definition) {
       switch (definition.id) {

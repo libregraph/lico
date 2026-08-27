@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import {
@@ -13,7 +13,7 @@ import theme from './theme';
 
 const LazyMain = lazy(() => import(/* webpackChunkName: "identifier-main" */ './Main'));
 
-console.info(`Kopano Identifier build version: ${version.build}`); // eslint-disable-line no-console
+console.info(`Kopano Identifier build version: ${version.build}`);
 
 const App = () => {
   return (

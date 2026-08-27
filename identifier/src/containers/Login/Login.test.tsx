@@ -1,11 +1,11 @@
-import React from 'react';
+
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Login from './Login';
 import { REQUEST_LOGON } from '../../actions/types';
 import {
-  Branding,
+  type Branding,
   fetchMock,
   newTestHistory,
   postedBody,

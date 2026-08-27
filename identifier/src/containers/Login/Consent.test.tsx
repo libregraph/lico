@@ -1,12 +1,12 @@
-import React from 'react';
+
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Consent from './Consent';
 import {
-  ClientDetails,
-  HelloResponse,
-  ScopesMeta,
+  type ClientDetails,
+  type HelloResponse,
+  type ScopesMeta,
   fetchMock,
   newTestHistory,
   postedInit,

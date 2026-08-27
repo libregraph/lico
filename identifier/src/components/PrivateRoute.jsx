@@ -1,4 +1,4 @@
-import React from 'react';
+
 import PropTypes from 'prop-types';
 import { Route } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ import RedirectWithQuery from './RedirectWithQuery';
 // flag does.
 const PrivateRoute = ({ component: Target, hello, ...rest }) => (
   <Route {...rest} render={props => (
-    hello && hello.state ? (
+    hello?.state ? (
       <Target {...props}/>
     ) : (
       <RedirectWithQuery target='/identifier' />

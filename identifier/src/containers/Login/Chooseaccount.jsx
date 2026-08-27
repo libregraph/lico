@@ -39,7 +39,7 @@ const styles = theme => ({
 class Chooseaccount extends React.PureComponent {
   componentDidMount() {
     const { hello, history } = this.props;
-    if ((!hello || !hello.state) && history.action !== 'PUSH') {
+    if ((!hello?.state) && history.action !== 'PUSH') {
       history.replace(`/identifier${history.location.search}${history.location.hash}`);
     }
   }
@@ -55,7 +55,7 @@ class Chooseaccount extends React.PureComponent {
     }
 
     let username = '';
-    if (hello && hello.state) {
+    if (hello?.state) {
       username = hello.username;
     }
 

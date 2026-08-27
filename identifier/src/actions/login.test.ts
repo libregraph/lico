@@ -1,9 +1,9 @@
-import { AnyAction, Store } from 'redux';
+import type { AnyAction, Store } from 'redux';
 
 import rootReducer from '../reducers';
 import {
-  HelloResponse,
-  PreloadedState,
+  type HelloResponse,
+  type PreloadedState,
   fetchMock,
   jsonReply,
   makeStore,

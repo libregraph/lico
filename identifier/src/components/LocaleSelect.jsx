@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { useTranslation } from 'react-i18next';
