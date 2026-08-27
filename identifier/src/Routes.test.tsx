@@ -1,0 +1,154 @@
+import React, { Suspense } from 'react';
+import { screen } from '@testing-library/react';
+import type { Mock } from 'vitest';
+import axios from 'axios';
+
+import {
+  newTestHistory,
+  renderWithProviders,
+  HelloResponse,
+  RenderWithProvidersOptions
+} from './test-utils';
+import Routes from './Routes';
+import RedirectWithQuery from './components/RedirectWithQuery';
+
+vi.mock('axios', () => ({
+  default: { post: vi.fn() }
+}));
+
+// The whole module is replaced by the factory above, so post is a vitest mock.
+const post = axios.post as unknown as Mock;
+
+/* The client rejects a response whose state does not echo the request's. */
+function echoState(data: unknown): unknown {
+  return data && typeof data === 'object' && 'state' in data ? data.state : undefined;
+}
+
+function mockSignedOutHello(): void {
+  post.mockImplementation((url: string, data: unknown) =>
+    Promise.resolve({
+      status: 200,
+      headers: {},
+      data: { success: false, flow: '', state: echoState(data) }
+    })
+  );
+}
+
+const signedIn = {
+  state: true,
+  username: 'user1@example.com',
+  displayName: 'Lala 123 abc',
+  details: {} as HelloResponse
+};
+
+const signedOut = {
+  state: false,
+  username: undefined,
+  displayName: undefined,
+  details: {} as HelloResponse
+};
+
+// withRouter erases the wrapped component's own props while RedirectWithQuery is
+// still JavaScript, so target has to be reintroduced here. Goes away in Phase 3.
+const Redirector = RedirectWithQuery as unknown as React.ComponentType<{ target: string }>;
+
+/* The lazily loaded route targets need a boundary; App supplies one in production. */
+function renderRoutes(hello: object | null, options: RenderWithProvidersOptions) {
+  return renderWithProviders(
+    <Suspense fallback={<div>loading</div>}>
+      <Routes hello={hello} />
+    </Suspense>,
+    options
+  );
+}
+
+describe('Routes', () => {
+  beforeEach(mockSignedOutHello);
+
+  it('shows the sign in screen to a visitor who is not signed in', async () => {
+    renderRoutes(null, { route: '/identifier' });
+
+    expect(await screen.findByText('Sign in')).toBeInTheDocument();
+  });
+
+  it('shows the sign in screen for an unknown path below the index route', async () => {
+    const history = newTestHistory('/somewhere-else');
+
+    renderRoutes(null, { history });
+
+    expect(await screen.findByText('Sign in')).toBeInTheDocument();
+    expect(history.location.pathname).toBe('/identifier');
+  });
+
+  it('shows the goodbye screen on the goodbye route', async () => {
+    renderRoutes(null, { route: '/goodbye', preloaded: { common: { hello: signedOut } } });
+
+    expect(await screen.findByText('Goodbye')).toBeInTheDocument();
+  });
+});
+
+describe('PrivateRoute through Routes', () => {
+  beforeEach(mockSignedOutHello);
+
+  it('sends a visitor without a session away from the welcome route', async () => {
+    const history = newTestHistory('/welcome');
+
+    renderRoutes(null, { history });
+
+    // Redirected onto the index route, which then shows the sign in screen.
+    expect(await screen.findByText('Sign in')).toBeInTheDocument();
+    expect(history.location.pathname).toBe('/identifier');
+  });
+
+  it('lets a visitor with a session reach the welcome route', async () => {
+    const history = newTestHistory('/welcome');
+
+    renderRoutes(signedIn, { history, preloaded: { common: { hello: signedIn } } });
+
+    expect(await screen.findByText('Welcome Lala 123 abc')).toBeInTheDocument();
+    expect(history.location.pathname).toBe('/welcome');
+  });
+
+  it('carries the query string and hash along when it sends the visitor away', async () => {
+    const history = newTestHistory('/welcome?client_id=demo&prompt=consent#anchor');
+
+    renderRoutes(null, { history });
+
+    await screen.findByText('Sign in');
+    expect(history.location.search).toBe('?client_id=demo&prompt=consent');
+    expect(history.location.hash).toBe('#anchor');
+  });
+});
+
+describe('RedirectWithQuery', () => {
+  it('redirects to the target while keeping the query string and the hash', () => {
+    const history = newTestHistory('/welcome?client_id=demo&scope=openid#section');
+
+    renderWithProviders(<Redirector target="/identifier" />, { history });
+
+    expect(history.location.pathname).toBe('/identifier');
+    expect(history.location.search).toBe('?client_id=demo&scope=openid');
+    expect(history.location.hash).toBe('#section');
+  });
+
+  it('redirects with an empty query string and hash when the source had none', () => {
+    const history = newTestHistory('/welcome');
+
+    renderWithProviders(<Redirector target="/identifier" />, { history });
+
+    expect(history.location.pathname).toBe('/identifier');
+    expect(history.location.search).toBe('');
+    expect(history.location.hash).toBe('');
+  });
+
+  it('replaces the current entry rather than pushing a new one', () => {
+    const history = newTestHistory('/welcome');
+    const before = history.length;
+
+    renderWithProviders(<Redirector target="/identifier" />, { history });
+
+    // A guard redirect must not leave the guarded path in the back history.
+    expect(history.length).toBe(before);
+    expect(history.action).toBe('REPLACE');
+  });
+});
