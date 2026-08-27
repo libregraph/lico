@@ -67,17 +67,16 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
   }, [localesProp]);
 
   useEffect(() => {
-    if (locales) {
+    // An empty list is possible: the branding may enable only locales this build
+    // does not ship, and filtering then leaves nothing to choose from.
+    if (locales && locales.length > 0) {
       const codes = locales.map(locale => locale.locale);
       if (codes.includes(i18n.language)) {
         // Have language -> is supported all good.
         return;
       }
 
-      let best = bestSupportedLocale(browserLanguages(), codes);
-      if (!best) {
-        best = locales[0].locale;
-      }
+      const best = bestSupportedLocale(browserLanguages(), codes) || codes[0];
 
       // Auto change language to best one found if the current selected one is not enabled.
       if (i18n.language !== best) {

@@ -129,6 +129,18 @@ describe('LocaleSelect', () => {
     expect(screen.getByRole('button')).toHaveTextContent('Deutsch');
   });
 
+  it('renders nothing and keeps the language when no enabled locale is shipped', async () => {
+    // The branding may name only locales this build does not carry, in which
+    // case filtering leaves an empty list and there is nothing to choose.
+    setTestLanguages(['it-IT', 'it']);
+    const instance = newProductionLikeI18n('en-GB');
+
+    const { container } = renderSelect(instance, ['kl', 'wa']);
+
+    expect(container).toBeEmptyDOMElement();
+    await waitFor(() => expect(instance.language).toBe('en-GB'));
+  });
+
   it('keeps the current language when it is among the enabled locales', async () => {
     setTestLanguages(['fr-CH', 'fr']);
     const instance = newProductionLikeI18n('de');
