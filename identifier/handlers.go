@@ -206,7 +206,7 @@ func (i *Identifier) handleLogon(rw http.ResponseWriter, req *http.Request) {
 		paramSize := len(params)
 		if paramSize == 0 {
 			i.ErrorPage(rw, http.StatusBadRequest, "", "params required")
-			break
+			return
 		}
 
 		if paramSize >= 3 && params[1] == "" && params[2] == ModeLogonUsernameEmptyPasswordCookie {
