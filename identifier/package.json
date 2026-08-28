@@ -59,6 +59,9 @@
     "vite-plugin-checker": "^0.6.2",
     "vitest": "^0.34.6"
   },
+  "resolutions": {
+    "@types/react": "^17.0.70"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
