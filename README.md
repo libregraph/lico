@@ -3,7 +3,8 @@
 LibreGraph Connect implements an [OpenID provider](http://openid.net/specs/openid-connect-core-1_0.html)
 (OP) with integrated web login and consent forms.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/libregraph/lico)](https://goreportcard.com/report/github.com/libregraph/lico)
+[![Build](https://github.com/libregraph/lico/actions/workflows/build.yml/badge.svg)](https://github.com/libregraph/lico/actions/workflows/build.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/libregraph/lico.svg)](https://pkg.go.dev/github.com/libregraph/lico)
 
 LibreGraph Connect has it origin in Kopano Konnect and is meant as its vendor
 agnostic successor.
@@ -57,14 +58,20 @@ the limits worth knowing before you build on it.
 
 ## Build dependencies
 
-Make sure you have Go 1.24 or later installed. This project uses Go Modules.
+Make sure you have Go 1.25 or later installed, as declared in `go.mod`. This
+project uses Go Modules.
 
-Lico also includes a modern web app which requires a couple of additional
-build dependencies which are furthermore also assumed to be in your $PATH.
+Lico also includes a modern web app, which needs one additional build
+dependency, assumed to be in your $PATH.
 
-  - yarn - [Yarn](https://yarnpkg.com)
-  - convert, identify - [Imagemagick](https://www.imagemagick.org)
-  - scour - [Scour](https://github.com/scour-project/scour)
+  - bun - [Bun](https://bun.com) 1.4.0 or later
+
+Regenerating the favicon from `identifier/src/images/lico-icon.svg` with
+`make -C identifier/src/images icons` additionally needs the two below. No
+other target uses them, so an ordinary build does not require either.
+
+  - magick, or convert on ImageMagick 6 - [ImageMagick](https://www.imagemagick.org)
+  - rsvg-convert - [librsvg](https://gitlab.gnome.org/GNOME/librsvg)
 
 To build Lico, a `Makefile` is provided, which requires [make](https://www.gnu.org/software/make/manual/make.html).
 
@@ -86,16 +93,26 @@ integration. Those tools are mostly used by make to perform various tasks and
 are expected to be found in your $PATH.
 
   - golangci-lint - [golangci-lint](https://github.com/golangci/golangci-lint)
-  - go2xunit - [go2xunit](https://github.com/tebeka/go2xunit)
-  - gocov - [gocov](https://github.com/axw/gocov)
-  - gocov-xml - [gocov-xml](https://github.com/AlekSi/gocov-xml)
-  - gocovmerge - [gocovmerge](https://github.com/wadey/gocovmerge)
+  - gotestsum - [gotestsum](https://github.com/gotestyourself/gotestsum)
+  - gocover-cobertura - [gocover-cobertura](https://github.com/boumenot/gocover-cobertura)
 
 ### Build with Docker
+
+The image carries Go, Bun and the optional tools above, so nothing beyond the
+container engine is needed.
 
 ```
 docker build -t licod-builder -f Dockerfile.build .
 docker run -it --rm -u $(id -u):$(id -g) -v $(pwd):/build licod-builder
+```
+
+With rootless podman, use `--userns=keep-id` instead of `-u`. Podman maps your
+user to root inside the container, so passing your own uid lands on an
+unprivileged one that cannot write the mounted tree.
+
+```
+podman build -t licod-builder -f Dockerfile.build .
+podman run -it --rm --userns=keep-id -v $(pwd):/build licod-builder
 ```
 
 ## Running Lico
