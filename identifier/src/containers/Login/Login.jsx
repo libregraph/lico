@@ -4,7 +4,13 @@ import { connect } from 'react-redux';
 
 import { useTranslation } from 'react-i18next';
 
-import { isEmail } from 'validator';
+// The ESM build, imported by module path. The package root is a CommonJS barrel
+// whose default export is one object literal holding every validator, so nothing
+// can be shaken out of it and the whole library ships: 122 KB to answer one
+// question. This path is the same source compiled to ESM and reaches six
+// modules, which is why it costs about 5 KB instead. Aliasing the root to the
+// ESM build does not help, because that object literal is still what it exports.
+import isEmail from 'validator/es/lib/isEmail';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -21,6 +27,46 @@ import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment'
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
+
+/*
+ * login_hint decides only whether the username field is prefilled. The server
+ * remains the authority on what is a valid identity.
+ *
+ * A hint may be a whole address or just the local part of one, so the local part
+ * is recognised by testing it against a placeholder domain.
+ */
+function looksLikeIdentity(hint) {
+  return isEmail(hint) || isEmail(`${hint}@example.com`);
+}
+
+/*
+ * A user may type an internationalised domain, and one may arrive in login_hint.
+ * The field keeps whatever was typed, but the domain is encoded to ASCII before
+ * the username goes on the wire, because the backends behind this expect a
+ * domain in its IDNA form. The local part is left alone: punycode applies to
+ * domain labels only, and a UTF-8 local part was already submitted verbatim.
+ *
+ * The URL parser does the encoding, which is the platform's own IDNA
+ * implementation, so there is nothing to install and nothing to keep current.
+ * The split has to come first: new URL('http://user@host') would read the whole
+ * thing as userinfo plus host and hand back only the host.
+ */
+function withAsciiDomain(username) {
+  const at = username.lastIndexOf('@');
+  if (at === -1) {
+    return username;
+  }
+
+  const local = username.slice(0, at);
+  const domain = username.slice(at + 1);
+  try {
+    const { hostname } = new URL(`http://${domain}`);
+    return hostname ? `${local}@${hostname}` : username;
+  } catch {
+    // Not a domain the parser accepts. Send it as typed and let the server say so.
+    return username;
+  }
+}
 
 const styles = theme => ({
   button: {
@@ -90,14 +136,18 @@ function Login(props) {
       return;
     }
 
-    // If login_hint is an email, set it into the username field automatically.
-    if (query?.login_hint) {
-      if (isEmail(query.login_hint) || isEmail(`${query.login_hint}@example.com`)) {
-        dispatch(updateInput("username", query.login_hint));
-        setTimeout(() => {
-          passwordInputRef.current.focus();
-        }, 0);
-      }
+    // Prefill the username from login_hint when it looks like an identity.
+    if (query?.login_hint && looksLikeIdentity(query.login_hint)) {
+      dispatch(updateInput("username", query.login_hint));
+
+      // Move focus on to the password once the field above has its value. The
+      // timer is cleared on unmount, because otherwise the callback runs against
+      // a component which has already gone and the ref is null by then.
+      const focusPassword = setTimeout(() => {
+        passwordInputRef.current?.focus();
+      }, 0);
+
+      return () => clearTimeout(focusPassword);
     }
   }, []);
 
@@ -108,7 +158,7 @@ function Login(props) {
   const handleNextClick = (event) => {
     event.preventDefault();
 
-    dispatch(executeLogonIfFormValid(username, password, false)).then((response) => {
+    dispatch(executeLogonIfFormValid(withAsciiDomain(username), password, false)).then((response) => {
       if (response.success) {
         dispatch(advanceLogonFlow(response.success, history));
       }
