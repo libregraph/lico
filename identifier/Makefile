@@ -1,6 +1,11 @@
 # Tools
 
-YARN ?= yarn
+BUN  ?= bun
+
+# --bun matters: package binaries carry a "#!/usr/bin/env node" shebang and
+# bun x honours it. bunfig.toml's "[run] bun = true" covers bun run only, and
+# only when bun starts in the directory holding that file, which i18n/ is not.
+BUNX ?= $(BUN) --bun x
 
 # Variables
 
@@ -16,7 +21,7 @@ all: build
 build: vendor | src i18n ; $(info building identifier Webapp ...)	@
 	@rm -rf build
 
-	VITE_KOPANO_BUILD="${VERSION}" CI=false $(YARN) run build
+	VITE_KOPANO_BUILD="${VERSION}" CI=false $(BUN) --bun run build
 
 .PHONY: src
 src:
@@ -28,35 +33,31 @@ i18n: vendor
 
 .PHONY: lint
 lint: vendor ; $(info running biome ...)	@
-	@$(YARN) lint && echo "biome: no lint errors"
+	@$(BUN) --bun run lint && echo "biome: no lint errors"
 
 .PHONY: lint-checkstyle
 lint-checkstyle: vendor ; $(info running biome checkstyle ...)	@
 	@mkdir -p ../test
-	$(YARN) biome lint --error-on-warnings --reporter=checkstyle --reporter-file=../test/tests.biome.xml . || true
+	$(BUNX) biome lint --error-on-warnings --reporter=checkstyle --reporter-file=../test/tests.biome.xml . || true
 
-# Yarn
+# Bun
 
 .PHONY: vendor
-vendor: .yarninstall
-
-.yarninstall: package.json ; $(info getting depdencies with yarn ...)   @
-	@$(YARN) install --immutable
-	@touch $@
+vendor: package.json bun.lock ; $(info getting depdencies with bun ...)   @
+	@$(BUN) install --frozen-lockfile
 
 # Stuff
 
 .PHONY: licenses
 licenses:
 	echo "## LibreGraph Connect identifier web app\n"
-	@$(YARN) run licenses
+	@$(BUN) --bun run licenses
 
 .PHONY: clean ; $(info cleaning identifier Webapp ...)	@
 clean:
-	$(YARN) cache clean
+	$(BUN) pm cache rm
 	@rm -rf build
 	@rm -rf node_modules
-	@rm -f .yarninstall
 
 	@$(MAKE) -C src clean
 

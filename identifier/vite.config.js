@@ -54,7 +54,7 @@ export default defineConfig((env) => {
       env.mode !== "test" &&
         // Type checking only. vite-plugin-checker's biome mode needs
         // vite >= 5.4.21 and this is Vite 4.5, so the dev server has no inline
-        // lint feedback: lint runs through the yarn script and the Makefile.
+        // lint feedback: lint runs through the bun script and the Makefile.
         checker({
           typescript: true,
         }),

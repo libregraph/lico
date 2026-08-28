@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * js-license-ranger. A simple script to generate a 3rd party license file out
- * of javascript bundles. Requires https://www.npmjs.com/package/source-map-explorer.
+ * of javascript bundles. Reads the bundle sourcemaps directly and needs no
+ * dependencies of its own.
  *
- * Copyright 2018-2022 Kopano and its licensors
+ * Copyright 2018-2024 Kopano and its licensors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,12 +25,10 @@
 
 'use strict';
 
-import fs from 'fs';
-import path from 'path';
-import sourcemapExplorer from '../identifier/node_modules/source-map-explorer/lib/index.js';
-import glob from '../identifier/node_modules/glob/glob.js';
+const fs = require('fs'),
+  path = require('path');
 
-const version = '20240910-1'; // eslint-disable-line
+const version = '20260825-1'; // Unused, kept as a record of the script revision.
 
 const licenseFilenames = [
   'LICENSE',
@@ -52,6 +51,9 @@ const noticeFilenames = [
 
 function findModuleViaPackageJSON(mp) {
   const p = mp.split('/');
+  if (p[p.length - 1] === 'esm') {
+    p.pop()
+  }
   while (p.length > 0) {
     const bp = p.join('/') + '/package.json';
     if (fs.existsSync(bp)) {
@@ -89,7 +91,7 @@ function findLicense(mp) {
   for (let i=0; i < licenseFilenames.length; i++) {
     const fn = mp + '/' + licenseFilenames[i];
     if (fs.existsSync(fn)) {
-      result.licenseFile = fn;
+      result.licenseFile = path.resolve(fn);
       break;
     }
   }
@@ -97,13 +99,16 @@ function findLicense(mp) {
   for (let i=0; i < noticeFilenames.length; i++) {
     const fn = mp + '/' + noticeFilenames[i];
     if (fs.existsSync(fn)) {
-      result.noticeFile = fn;
+      result.noticeFile = path.resolve(fn);
       break;
     }
   }
 
   // Ensure we have a license.
   if (!result.license && !result.licenseFile) {
+    if (fs.existsSync(mp + '/../package.json')) {
+      return findLicense(mp + '/..');
+    }
     throw new Error('no license found: ' + mp);
   }
 
@@ -153,6 +158,7 @@ function updateThirdPartyModules(modules, files) {
 }
 
 function printLicensesDocument(modules) {
+  const seen = {};
   const keys = Object.keys(modules);
   keys.sort();
 
@@ -160,13 +166,17 @@ function printLicensesDocument(modules) {
     const key = keys[i];
     const entry = modules[key];
     if (!entry) {
-      console.error('> skipped' + key);
+      console.error('> skipped', key);
       continue;
     }
+    if (entry.licenseFile && seen[entry.licenseFile]) {
+      continue
+    }
+    seen[entry.licenseFile] = true;
 
     const name = entry.name ? entry.name : key;
     let headline = name;
-    if (entry.url) {
+    if (false && entry.url) {
       headline += ' - ' + entry.url;
     }
 
@@ -192,27 +202,79 @@ function printLicensesDocument(modules) {
   }
 }
 
+// Vendored sources live in the tree instead of node_modules, so no sourcemap path can point at
+// them. They are picked up from their directory metadata instead, or their notice would be missing
+// from the generated document even though the code ships in the bundle.
+function updateVendoredModules(modules, dir) {
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+
+  fs.readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((entry) => {
+      const mp = `${dir}/${entry.name}`;
+      const metaFile = `${mp}/vendored.json`;
+      if (!fs.existsSync(metaFile)) {
+        throw new Error('vendored source without vendored.json: ' + mp);
+      }
+
+      const meta = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
+      const result = {
+        name: meta.name,
+        url: meta.repository,
+        description: meta.description,
+        license: meta.license,
+      };
+
+      for (let i = 0; i < licenseFilenames.length; i++) {
+        const fn = mp + '/' + licenseFilenames[i];
+        if (fs.existsSync(fn)) {
+          result.licenseFile = path.resolve(fn);
+          break;
+        }
+      }
+      if (!result.license && !result.licenseFile) {
+        throw new Error('no license found: ' + mp);
+      }
+
+      console.error('+ vendored', mp);
+      modules[mp] = result;
+    });
+}
+
 // Main.
-async function main() {
+if (require.main === module) { // eslint-disable-line no-undef
   const modules = {};
-  const files = glob.sync('./build/static/assets/*.js');
+  const assets = './build/static/assets';
+  const files = fs
+    .readdirSync(assets)
+    .filter((name) => name.endsWith('.js'))
+    .sort()
+    .map((name) => `${assets}/${name}`);
   console.error('Bundles:', files);
 
-  for (const f of files) {
+  files.forEach((f) => {
     if (fs.existsSync(`${f}.map`)) {
       console.error('> processing', f);
-      const data = await sourcemapExplorer.explore({code: f, map: `${f}.map`}, {onlyMapped: true, noBorderChecks: true});
-	  const files = data.bundles[0].files;
-      updateThirdPartyModules(modules, files);
+      // Only the source paths are needed to find which packages ended up in the bundle. Reading
+      // them straight out of the sourcemap avoids a dependency on a bundle size analyzer.
+      const map = JSON.parse(fs.readFileSync(`${f}.map`, 'utf8'));
+      const sources = {};
+      (map.sources || []).forEach((source) => {
+        sources[source] = true;
+      });
+      updateThirdPartyModules(modules, sources);
     } else {
       console.warn('> skipped', f, '(no map file)');
     }
-  };
+  });
+
+  updateVendoredModules(modules, './src/third_party');
 
   console.error(`Found: ${Object.keys(modules).length} modules`);
 
   // Print to stdout.
   printLicensesDocument(modules);
 }
-
-await main();
