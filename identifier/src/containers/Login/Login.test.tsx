@@ -187,4 +187,150 @@ describe('Login', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
+
+  describe('login_hint prefill', () => {
+    /*
+     * The hint decides only whether the username field is prefilled, so the test
+     * is permissive by design: the server remains the authority on what is a
+     * valid identity. These pin that judgement, which was previously unpinned.
+     */
+    const renderWithHint = (hint?: string) => {
+      const history = newTestHistory('/identifier');
+
+      return renderWithProviders(<Subject history={history} />, {
+        history,
+        preloaded: {
+          common: {
+            hello: null,
+            branding: null,
+            query: hint === undefined ? {} : { login_hint: hint }
+          },
+          login: { loading: '' }
+        }
+      });
+    };
+
+    it('prefills the username from a full address', () => {
+      renderWithHint('user1@example.com');
+
+      expect(fieldOf('Username')).toHaveValue('user1@example.com');
+    });
+
+    it('prefills the username from a bare local part', () => {
+      // A hint need not carry a domain; the local part alone identifies a user
+      // in a directory-backed deployment.
+      renderWithHint('user1');
+
+      expect(fieldOf('Username')).toHaveValue('user1');
+    });
+
+    it('prefills the username from a name which is not ASCII', () => {
+      // The reason the check is hand-written rather than an RFC 5322 grammar:
+      // RFC atext is ASCII only, so a strict implementation refuses these, and
+      // they are ordinary identities for this deployment.
+      renderWithHint('müller@example.com');
+
+      expect(fieldOf('Username')).toHaveValue('müller@example.com');
+    });
+
+    it('prefills the username from a bare name which is not ASCII', () => {
+      renderWithHint('jörg.schmidt');
+
+      expect(fieldOf('Username')).toHaveValue('jörg.schmidt');
+    });
+
+    it('ignores a hint whose domain has no top level part', () => {
+      // A domain has to carry a dot, so user@corp does not prefill. This matches
+      // what the previous implementation did.
+      renderWithHint('user@corp');
+
+      expect(fieldOf('Username')).toHaveValue('');
+    });
+
+    it('ignores a hint which cannot be an identity', () => {
+      renderWithHint('not a name');
+
+      expect(fieldOf('Username')).toHaveValue('');
+    });
+
+    it('ignores a hint carrying more than one at sign', () => {
+      renderWithHint('a@b@c');
+
+      expect(fieldOf('Username')).toHaveValue('');
+    });
+
+    it('ignores a malformed address', () => {
+      renderWithHint('user..name@example.com');
+
+      expect(fieldOf('Username')).toHaveValue('');
+    });
+
+    it('prefills the username from an international domain', () => {
+      // Accepted as typed. The conversion to ASCII happens on submit, not here,
+      // so the field shows the visitor what they were sent.
+      renderWithHint('user@münchen.de');
+
+      expect(fieldOf('Username')).toHaveValue('user@münchen.de');
+    });
+
+    it('leaves the field empty when no hint is given', () => {
+      renderWithHint();
+
+      expect(fieldOf('Username')).toHaveValue('');
+    });
+  });
+
+  describe('submitting an international domain', () => {
+    /*
+     * The backends behind this expect a domain in its IDNA form, so the domain is
+     * encoded before the username goes on the wire. The local part is untouched:
+     * punycode covers domain labels only.
+     */
+    const submit = async (username: string) => {
+      renderLogin();
+      userEvent.type(fieldOf('Username'), username);
+      userEvent.type(fieldOf('Password'), 'secret123{enter}');
+      await waitFor(() => expect(logonBodies()).toHaveLength(1));
+
+      return logonBodies()[0].params;
+    };
+
+    it('encodes an international domain to ASCII', async () => {
+      expect(await submit('user@münchen.de')).toEqual([
+        'user@xn--mnchen-3ya.de',
+        'secret123',
+        '1'
+      ]);
+    });
+
+    it('encodes every label of a subdomain', async () => {
+      expect(await submit('user@sub.münchen.de')).toEqual([
+        'user@sub.xn--mnchen-3ya.de',
+        'secret123',
+        '1'
+      ]);
+    });
+
+    it('leaves a local part which is not ASCII alone', async () => {
+      // Punycode applies to the domain. A UTF-8 local part goes as it was typed,
+      // exactly as it did before.
+      expect(await submit('müller@example.com')).toEqual([
+        'müller@example.com',
+        'secret123',
+        '1'
+      ]);
+    });
+
+    it('sends an address which is already ASCII unchanged', async () => {
+      expect(await submit('user1@example.com')).toEqual([
+        'user1@example.com',
+        'secret123',
+        '1'
+      ]);
+    });
+
+    it('sends a username with no domain unchanged', async () => {
+      expect(await submit('user1')).toEqual(['user1', 'secret123', '1']);
+    });
+  });
 });
