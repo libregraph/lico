@@ -29,6 +29,12 @@ const addScriptCSPNoncePlaceholderPlugin = () => {
 
 export default defineConfig((env) => {
   return {
+    resolve: {
+      // react-router and hoist-non-react-statics each resolve a react-is of
+      // their own, which puts three copies of it in the bundle. react-is tracks
+      // the React major, so the one copy to keep is the one matching React.
+      dedupe: ['react-is'],
+    },
     build: {
       outDir: 'build',
       assetsDir: 'static/assets',
