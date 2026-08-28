@@ -1,6 +1,10 @@
 # Tools
 
-YARN ?= yarn
+BUN  ?= bun
+
+# --bun so the "#!/usr/bin/env node" shebang on the i18next binaries does not
+# send them to Node. There is no bunfig.toml in this directory to do it.
+BUNX ?= $(BUN) --bun x
 MSGCAT ?= msgcat
 MSGMERGE ?= msgmerge
 MSGFMT ?= msgfmt
@@ -19,12 +23,12 @@ build: json
 json:
 	@for po in $(POS); do \
 		lang=$$(echo $$po | sed "s/\.po//"); \
-		$(YARN) i18next-conv -K --skipUntranslated -l $$lang -s $$po -t ../src/locales/$$lang/translation.json; \
+		$(BUNX) i18next-conv -K --skipUntranslated -l $$lang -s $$po -t ../src/locales/$$lang/translation.json; \
 	done
-	$(YARN) node build-json.js ../src/locales/locales.json $(POS)
+	$(BUN) build-json.js ../src/locales/locales.json $(POS)
 
 dev-translation.json: FORCE
-	$(YARN) i18next --fail-on-warnings
+	$(BUNX) i18next --fail-on-warnings
 
 .PHONY: extract
 extract: pot
@@ -34,8 +38,8 @@ pot: dev-translation.json
 	@tmpfile1=$(shell mktemp).po; \
 	tmpfile2=$(shell mktemp).po; \
 	trap 'rm -f "$$tmpfile1" "$$tmpfile2"' EXIT; \
-	$(YARN) i18next-conv --project "LibreGraph Connect Identifier" -K -l en -s dev-translation.json -t $$tmpfile1; \
-	$(YARN) node build-pot.js $$tmpfile1 $$tmpfile2; \
+	$(BUNX) i18next-conv --project "LibreGraph Connect Identifier" -K -l en -s dev-translation.json -t $$tmpfile1; \
+	$(BUN) build-pot.js $$tmpfile1 $$tmpfile2; \
 	$(MSGCAT) --no-wrap -o $(POT) $$tmpfile2
 
 .PHONY: merge

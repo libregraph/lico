@@ -27,8 +27,7 @@
     "serve": "vite preview",
     "test": "vitest",
     "lint": "biome lint --error-on-warnings .",
-    "licenses": "node ../scripts/js-license-ranger.mjs",
-    "analyze": "source-map-explorer 'build/static/assets/*.js'"
+    "licenses": "bun ../scripts/js-license-ranger.cjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.10",
@@ -48,11 +47,9 @@
     "@vitejs/plugin-react": "^4.1.1",
     "cldr": "^7.4.0",
     "gettext-parser": "^5.1.2",
-    "glob": "^8.1.0",
     "i18next-conv": "^12.1.1",
     "i18next-parser": "^5.4.0",
     "jsdom": "^22.1.0",
-    "source-map-explorer": "^2.5.3",
     "terser": "^5.30.4",
     "typescript": "^5.2.2",
     "vite": "^4.5.13",
@@ -74,5 +71,7 @@
       "last 1 safari version"
     ]
   },
-  "packageManager": "yarn@4.0.2"
+  "engines": {
+    "bun": ">=1.4.0"
+  }
 }
