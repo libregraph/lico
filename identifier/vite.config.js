@@ -40,6 +40,16 @@ export default defineConfig((env) => {
       assetsDir: 'static/assets',
       manifest: 'asset-manifest.json',
       sourcemap: true,
+      // terser is smaller than the default esbuild minifier here, and it is
+      // already a dependency because plugin-legacy minifies the legacy chunks
+      // with it. The second compress pass is worth a further couple of KB and
+      // applies to those chunks too.
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          passes: 2,
+        },
+      },
     },
     base: './',
     server: {
