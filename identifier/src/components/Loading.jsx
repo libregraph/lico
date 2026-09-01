@@ -1,6 +1,5 @@
-import React from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { withTranslation } from 'react-i18next';
 
@@ -31,61 +30,50 @@ const styles = theme => ({
   }
 });
 
-class Loading extends React.PureComponent {
-  render() {
-    const { classes, error, t } = this.props;
+function Loading(props) {
+  const { classes, t } = props;
 
-    return (
-      <Grid container direction="column" alignItems="center" justifyContent="center" spacing={0} className={classes.root}>
-        <Grid item align="center">
-          {error === null ? (
-            <LinearProgress className={classes.progress} />
-          ) : (
-            <div>
-              <Typography variant="h5" gutterBottom align="center">
-                {t("konnect.loading.error.headline", "Failed to connect to server")}
-              </Typography>
-              <Typography  gutterBottom align="center" color="error">
-                <ErrorMessage error={error}></ErrorMessage>
-              </Typography>
-              <Button
-                autoFocus
-                color="primary"
-                variant="outlined"
-                className={classes.button}
-                onClick={(event) => this.retry(event)}
-              >
-                {t("konnect.login.retryButton.label", "Retry")}
-              </Button>
-            </div>
-          )}
-        </Grid>
-      </Grid>
-    );
-  }
+  const dispatch = useDispatch();
+  const error = useSelector(state => state.common.error);
 
-  retry(event) {
+  const handleRetry = (event) => {
     event.preventDefault();
 
-    this.props.dispatch(retryHello());
-  }
+    dispatch(retryHello());
+  };
+
+  return (
+    <Grid container direction="column" alignItems="center" justifyContent="center" spacing={0} className={classes.root}>
+      <Grid item align="center">
+        {error === null ? (
+          <LinearProgress className={classes.progress} />
+        ) : (
+          <div>
+            <Typography variant="h5" gutterBottom align="center">
+              {t("konnect.loading.error.headline", "Failed to connect to server")}
+            </Typography>
+            <Typography  gutterBottom align="center" color="error">
+              <ErrorMessage error={error}></ErrorMessage>
+            </Typography>
+            <Button
+              autoFocus
+              color="primary"
+              variant="outlined"
+              className={classes.button}
+              onClick={handleRetry}
+            >
+              {t("konnect.login.retryButton.label", "Retry")}
+            </Button>
+          </div>
+        )}
+      </Grid>
+    </Grid>
+  );
 }
 
 Loading.propTypes = {
   classes: PropTypes.object.isRequired,
   t: PropTypes.func.isRequired,
-
-  error: PropTypes.object,
-
-  dispatch: PropTypes.func.isRequired,
 };
 
-const mapStateToProps = (state) => {
-  const { error } = state.common;
-
-  return {
-    error
-  };
-};
-
-export default connect(mapStateToProps)(withTranslation()(withStyles(styles)(Loading)));
+export default withTranslation()(withStyles(styles)(Loading));

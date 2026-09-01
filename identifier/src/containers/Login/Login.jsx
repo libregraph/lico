@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { useTranslation } from 'react-i18next';
 
@@ -102,18 +102,17 @@ const styles = theme => ({
 });
 
 function Login(props) {
-  const {
-    hello,
-    branding,
-    query,
-    dispatch,
-    history,
-    loading,
-    errors,
-    classes,
-    username,
-    password,
-  } = props;
+  const { history, classes } = props;
+
+  const dispatch = useDispatch();
+
+  const hello = useSelector(state => state.common.hello);
+  const branding = useSelector(state => state.common.branding);
+  const query = useSelector(state => state.common.query);
+  const loading = useSelector(state => state.login.loading);
+  const errors = useSelector(state => state.login.errors);
+  const username = useSelector(state => state.login.username);
+  const password = useSelector(state => state.login.password);
 
   const { t } = useTranslation();
 
@@ -261,31 +260,7 @@ function Login(props) {
 Login.propTypes = {
   classes: PropTypes.object.isRequired,
 
-  loading: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired,
-  password: PropTypes.string.isRequired,
-  errors: PropTypes.object.isRequired,
-  branding: PropTypes.object,
-  hello: PropTypes.object,
-  query: PropTypes.object.isRequired,
-
-  dispatch: PropTypes.func.isRequired,
   history: PropTypes.object.isRequired
 };
 
-const mapStateToProps = (state) => {
-  const { loading, username, password, errors} = state.login;
-  const { branding, hello, query } = state.common;
-
-  return {
-    loading,
-    username,
-    password,
-    errors,
-    branding,
-    hello,
-    query
-  };
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(Login));
+export default withStyles(styles)(Login);
