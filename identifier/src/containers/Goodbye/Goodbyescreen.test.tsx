@@ -173,7 +173,7 @@ describe('Goodbyescreen', () => {
     signOutSucceeds();
     renderGoodbye();
 
-    userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(urlsPosted()).toContain(LOGOFF_URL));
     const logoff = urlsPosted().indexOf(LOGOFF_URL);
@@ -186,7 +186,7 @@ describe('Goodbyescreen', () => {
     const history = newTestHistory('/goodbye', 'PUSH');
     renderGoodbye(history);
 
-    userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
 
     expect(await screen.findByText('Goodbye')).toBeInTheDocument();
     expect(urlsPosted().filter((url) => url === HELLO_URL)).toHaveLength(2);
@@ -205,7 +205,7 @@ describe('Goodbyescreen', () => {
     const history = newTestHistory('/goodbye', 'PUSH');
     renderGoodbye(history);
 
-    userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(urlsPosted()).toContain(LOGOFF_URL));
 

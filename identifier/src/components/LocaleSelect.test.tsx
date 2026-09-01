@@ -54,11 +54,11 @@ describe('LocaleSelect', () => {
     restoreLanguages();
   });
 
-  it('renders one menu item per enabled locale, labelled with its native name', () => {
+  it('renders one menu item per enabled locale, labelled with its native name', async () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance, deAndFr);
-    userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('button'));
 
     expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([
       'Deutsch',
@@ -66,11 +66,11 @@ describe('LocaleSelect', () => {
     ]);
   });
 
-  it('drops a requested locale the application does not ship', () => {
+  it('drops a requested locale the application does not ship', async () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance, ['de', 'fr', 'kl']);
-    userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('button'));
 
     expect(screen.getAllByRole('option')).toHaveLength(2);
   });
@@ -83,11 +83,11 @@ describe('LocaleSelect', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('offers every shipped locale when no list is given', () => {
+  it('offers every shipped locale when no list is given', async () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance);
-    userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('button'));
 
     expect(screen.getAllByRole('option')).toHaveLength(allLocales.length);
   });
@@ -157,8 +157,8 @@ describe('LocaleSelect', () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance, deAndFr);
-    userEvent.click(screen.getByRole('button'));
-    userEvent.click(screen.getByRole('option', { name: 'Français' }));
+    await userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('option', { name: 'Français' }));
 
     await waitFor(() => expect(instance.language).toBe('fr'));
     expect(screen.getByRole('button')).toHaveTextContent('Français');

@@ -144,7 +144,7 @@ describe('Chooseaccount', () => {
     replyEchoingState(200, { success: true, hello: null });
     renderChooseaccount(newTestHistory('/chooseaccount', 'PUSH'), { common: { hello: session } });
 
-    userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
+    await userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
     expect(postedUrl()).toBe('./identifier/_/logon');
@@ -161,7 +161,7 @@ describe('Chooseaccount', () => {
     const history = newTestHistory('/chooseaccount', 'PUSH');
     renderChooseaccount(history, { common: { hello: session } });
 
-    userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
+    await userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
 
     await waitFor(() => expect(history.location.pathname).toBe('/welcome'));
   });
@@ -172,7 +172,7 @@ describe('Chooseaccount', () => {
     const history = newTestHistory('/chooseaccount', 'PUSH');
     renderChooseaccount(history, { common: { hello: session } });
 
-    userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
+    await userEvent.click(screen.getByRole('button', { name: /user1@example\.com/ }));
 
     expect(
       await screen.findByText('Logon failed. Please verify your credentials and try again.')
@@ -180,11 +180,11 @@ describe('Chooseaccount', () => {
     expect(history.location.pathname).toBe('/chooseaccount');
   });
 
-  it('sends the user to the identifier page to use another account', () => {
+  it('sends the user to the identifier page to use another account', async () => {
     const history = newTestHistory('/chooseaccount?flow=oidc#frag', 'PUSH');
     renderChooseaccount(history, { common: { hello: session } });
 
-    userEvent.click(screen.getByRole('button', { name: /Use another account/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Use another account/ }));
 
     expect(history.location.pathname).toBe('/identifier');
     expect(history.location.search).toBe('?flow=oidc');

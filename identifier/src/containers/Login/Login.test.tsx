@@ -110,8 +110,8 @@ describe('Login', () => {
     // a plain <div>, which silently removed keyboard submission.
     renderLogin();
 
-    userEvent.type(fieldOf('Username'), 'user1@example.test');
-    userEvent.type(fieldOf('Password'), 'secret123{enter}');
+    await userEvent.type(fieldOf('Username'), 'user1@example.test');
+    await userEvent.type(fieldOf('Password'), 'secret123{Enter}');
 
     await waitFor(() => expect(logonBodies()).toHaveLength(1));
     expect(logonBodies()[0].params).toEqual(['user1@example.test', 'secret123', '1']);
@@ -120,8 +120,8 @@ describe('Login', () => {
   it('sends the logon to the relative endpoint with the XSRF header', async () => {
     renderLogin();
 
-    userEvent.type(fieldOf('Username'), 'user1@example.test');
-    userEvent.type(fieldOf('Password'), 'secret123{enter}');
+    await userEvent.type(fieldOf('Username'), 'user1@example.test');
+    await userEvent.type(fieldOf('Password'), 'secret123{Enter}');
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalled());
     expect(postedUrl()).toBe('./identifier/_/logon');
@@ -134,9 +134,9 @@ describe('Login', () => {
   it('submits the logon when the next button is clicked', async () => {
     renderLogin();
 
-    userEvent.type(fieldOf('Username'), 'user1@example.test');
-    userEvent.type(fieldOf('Password'), 'secret123');
-    userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.type(fieldOf('Username'), 'user1@example.test');
+    await userEvent.type(fieldOf('Password'), 'secret123');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(logonBodies()).toHaveLength(1));
     expect(logonBodies()[0].params).toEqual(['user1@example.test', 'secret123', '1']);
@@ -145,8 +145,8 @@ describe('Login', () => {
   it('refuses to submit without a username and says so', async () => {
     renderLogin();
 
-    userEvent.type(fieldOf('Password'), 'secret123');
-    userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.type(fieldOf('Password'), 'secret123');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(screen.getByText('Enter a valid value.')).toBeInTheDocument());
     expect(fetchMock()).not.toHaveBeenCalled();
@@ -155,23 +155,23 @@ describe('Login', () => {
   it('refuses to submit without a password and says so', async () => {
     renderLogin();
 
-    userEvent.type(fieldOf('Username'), 'user1@example.test');
-    userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.type(fieldOf('Username'), 'user1@example.test');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(screen.getByText('Enter your password.')).toBeInTheDocument());
     expect(fetchMock()).not.toHaveBeenCalled();
   });
 
-  it('hides the password until the visibility toggle is used', () => {
+  it('hides the password until the visibility toggle is used', async () => {
     renderLogin();
 
     const password = fieldOf('Password');
     expect(password).toHaveAttribute('type', 'password');
 
-    userEvent.click(screen.getByLabelText('toggle password visibility'));
+    await userEvent.click(screen.getByLabelText('toggle password visibility'));
     expect(password).toHaveAttribute('type', 'text');
 
-    userEvent.click(screen.getByLabelText('toggle password visibility'));
+    await userEvent.click(screen.getByLabelText('toggle password visibility'));
     expect(password).toHaveAttribute('type', 'password');
   });
 
@@ -332,8 +332,8 @@ describe('Login', () => {
      */
     const submit = async (username: string) => {
       renderLogin();
-      userEvent.type(fieldOf('Username'), username);
-      userEvent.type(fieldOf('Password'), 'secret123{enter}');
+      await userEvent.type(fieldOf('Username'), username);
+      await userEvent.type(fieldOf('Password'), 'secret123{Enter}');
       await waitFor(() => expect(logonBodies()).toHaveLength(1));
 
       return logonBodies()[0].params;

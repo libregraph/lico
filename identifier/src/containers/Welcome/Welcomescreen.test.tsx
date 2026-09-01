@@ -101,7 +101,7 @@ describe('Welcomescreen', () => {
     replyWith({ success: true });
     renderWelcome();
 
-    userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
     expect(postedUrl()).toBe('./identifier/_/logoff');
@@ -117,7 +117,7 @@ describe('Welcomescreen', () => {
     const history = newTestHistory('/welcome', 'PUSH');
     renderWelcome(history);
 
-    userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(history.location.pathname).toBe('/identifier'));
   });
@@ -127,7 +127,7 @@ describe('Welcomescreen', () => {
     const history = newTestHistory('/welcome', 'PUSH');
     renderWelcome(history);
 
-    userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
     expect(history.location.pathname).toBe('/welcome');

@@ -159,7 +159,7 @@ describe('Consent', () => {
   it('grants the requested scopes when allow is clicked', async () => {
     renderConsent();
 
-    userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
     await waitFor(() => expect(consentBodies()).toHaveLength(1));
     const body = consentBodies()[0];
@@ -175,7 +175,7 @@ describe('Consent', () => {
   it('denies the request when cancel is clicked', async () => {
     renderConsent();
 
-    userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => expect(consentBodies()).toHaveLength(1));
     expect(consentBodies()[0].allow).toBe(false);
@@ -185,7 +185,7 @@ describe('Consent', () => {
   it('sends the consent to the relative endpoint with the XSRF header', async () => {
     renderConsent();
 
-    userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalled());
     expect(postedUrl()).toBe('./identifier/_/consent');
@@ -202,7 +202,7 @@ describe('Consent', () => {
     allow.focus();
     // skipClick, because user-event otherwise clicks the button to focus it,
     // which would already count as a decision.
-    userEvent.type(allow, '{enter}', { skipClick: true });
+    await userEvent.type(allow, '{Enter}', { skipClick: true });
 
     await waitFor(() => expect(consentBodies()).toHaveLength(1));
     expect(consentBodies()[0].allow).toBe(true);
@@ -235,7 +235,7 @@ describe('Consent', () => {
     renderConsent();
     fetchMock().mockReturnValue(new Promise(() => undefined)); // Never settles.
 
-    userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Allow' })).toBeDisabled());
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
@@ -254,7 +254,7 @@ describe('Consent', () => {
     renderConsent();
     fetchMock().mockResolvedValue(new Response('', { status: 500 }));
 
-    userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
 
     await waitFor(() =>
       expect(
