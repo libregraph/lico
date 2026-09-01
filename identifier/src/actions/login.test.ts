@@ -1,6 +1,6 @@
-import type { AnyAction, Store } from 'redux';
-
 import rootReducer from '../reducers';
+
+import type { AppAction } from './types';
 import {
   type HelloResponse,
   type PreloadedState,
@@ -34,13 +34,17 @@ import {
 } from './login';
 
 /*
- * redux-thunk 2.4 keeps its redux Dispatch augmentation in an opt-in
- * declaration file which this program does not load, so a store's dispatch is
- * typed for plain actions only. These tests dispatch nothing but thunks.
+ * Reading a payload means naming which member of the closed action union is
+ * expected. This throws on a mismatch, so a test which dispatched something
+ * else names the action which actually arrived rather than reading undefined
+ * and failing later on an unrelated line.
  */
-type ThunkStore = Omit<Store, 'dispatch'> & {
-  dispatch<R>(thunk: (dispatch: unknown, getState: unknown) => R): R;
-};
+function receiveHelloAction(action: AppAction): types.ReceiveHelloAction {
+  if (action.type !== types.RECEIVE_HELLO) {
+    throw new Error(`expected ${types.RECEIVE_HELLO}, dispatched was ${action.type}`);
+  }
+  return action;
+}
 
 /*
  * makeStore builds its dispatch chain inside applyMiddleware, so replacing the
@@ -50,7 +54,7 @@ type ThunkStore = Omit<Store, 'dispatch'> & {
  */
 function newHarness(preloaded: PreloadedState = {}) {
   const store = makeStore(preloaded);
-  const actions: AnyAction[] = [];
+  const actions: AppAction[] = [];
 
   store.replaceReducer((state, action) => {
     actions.push(action);
@@ -58,7 +62,7 @@ function newHarness(preloaded: PreloadedState = {}) {
   });
   actions.length = 0; // replaceReducer dispatches an init action of its own.
 
-  return { store: store as unknown as ThunkStore, actions };
+  return { store, actions };
 }
 
 beforeEach(() => {
@@ -68,7 +72,7 @@ beforeEach(() => {
 describe('executeLogon', () => {
   it('announces the request and clears the session before it posts', async () => {
     const { store, actions } = newHarness();
-    let seenAtPost: AnyAction[] = [];
+    let seenAtPost: AppAction[] = [];
     fetchMock().mockImplementation((_url: string, init: RequestInit) => {
       seenAtPost = [...actions];
       const sent = JSON.parse(String(init.body)) as { state?: string };
@@ -237,7 +241,7 @@ describe('executeLogon', () => {
       types.RECEIVE_HELLO,
       types.RECEIVE_LOGON
     ]);
-    expect(actions[2].state).toBe(false);
+    expect(receiveHelloAction(actions[2]).state).toBe(false);
     expect(actions[3]).toEqual({
       type: types.RECEIVE_LOGON,
       success: false,

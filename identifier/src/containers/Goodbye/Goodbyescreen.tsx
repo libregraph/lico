@@ -1,18 +1,19 @@
 import { useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { useDispatch, useSelector } from 'react-redux';
+import type { History } from 'history';
 
 import { useTranslation } from 'react-i18next';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
+import type { Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
 
 import ResponsiveScreen from '../../components/ResponsiveScreen';
 import { executeHello, executeLogoff } from '../../actions/common';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 
-const styles = theme => ({
+const styles = (theme: Theme) => createStyles({
   subHeader: {
     marginBottom: theme.spacing(5)
   },
@@ -23,21 +24,27 @@ const styles = theme => ({
   }
 });
 
-function Goodbyescreen(props) {
+export interface GoodbyescreenProps {
+  classes: { subHeader: string; wrapper: string };
+  // Supplied by the Route which renders this screen.
+  history: History;
+}
+
+function Goodbyescreen(props: GoodbyescreenProps) {
   const { classes, history } = props;
 
   const { t } = useTranslation();
 
-  const dispatch = useDispatch();
-  const branding = useSelector(state => state.common.branding);
-  const hello = useSelector(state => state.common.hello);
+  const dispatch = useAppDispatch();
+  const branding = useAppSelector(state => state.common.branding);
+  const hello = useAppSelector(state => state.common.hello);
 
   // dispatch is stable for the store's lifetime, so this runs once on mount.
   useEffect(() => {
     dispatch(executeHello());
   }, [dispatch]);
 
-  const handleLogoff = (event) => {
+  const handleLogoff = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
 
     dispatch(executeLogoff()).then((response) => {
@@ -87,7 +94,6 @@ function Goodbyescreen(props) {
               <Button
                 color="secondary"
                 variant="outlined"
-                className={classes.button}
                 onClick={handleLogoff}
               >
                 {t("konnect.goodbye.signoutButton.label", "Sign out")}
@@ -99,11 +105,5 @@ function Goodbyescreen(props) {
     </ResponsiveScreen>
   );
 }
-
-Goodbyescreen.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  history: PropTypes.object.isRequired
-};
 
 export default withStyles(styles)(Goodbyescreen);

@@ -1,12 +1,11 @@
 
-
 import {
   Fade,
   CircularProgress,
  } from '@material-ui/core';
- import { makeStyles } from '@material-ui/core/styles';
+ import { createStyles, makeStyles } from '@material-ui/core/styles';
 
- const useStyles = makeStyles(() => ({
+ const useStyles = makeStyles(() => createStyles({
   root: {
     position: 'fixed',
     top: '50%',

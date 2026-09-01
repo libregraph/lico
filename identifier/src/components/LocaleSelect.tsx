@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import type React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
+import type { SelectProps } from '@material-ui/core/Select';
 
 import allLocales from '../locales';
 
@@ -17,9 +18,9 @@ import allLocales from '../locales';
  * it afterwards has no effect and would mutate options shared with the rest of
  * the application.
  */
-function bestSupportedLocale(wanted, supported) {
+function bestSupportedLocale(wanted: readonly string[], supported: readonly string[]): string | null {
   const lower = supported.map(locale => locale.toLowerCase());
-  const find = (code) => {
+  const find = (code: string): string | null => {
     const index = lower.indexOf(code.toLowerCase());
     return index === -1 ? null : supported[index];
   };
@@ -41,7 +42,7 @@ function bestSupportedLocale(wanted, supported) {
 }
 
 /* The languages the browser reports, most preferred first. */
-function browserLanguages() {
+function browserLanguages(): readonly string[] {
   const { languages, language } = window.navigator;
   if (languages && languages.length > 0) {
     return languages;
@@ -49,11 +50,18 @@ function browserLanguages() {
   return language ? [language] : [];
 }
 
-function LocaleSelect({ locales: localesProp, ...other } = {}) {
+export interface LocaleSelectProps extends Omit<SelectProps, 'value' | 'onChange'> {
+  // The locale codes the branding enables. Every shipped locale is offered when
+  // this is absent.
+  locales?: string[];
+}
+
+function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event) => {
-    i18n.changeLanguage(event.target.value);
+  const handleChange = useCallback((event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
+    // Every menu item below carries a locale code as its value.
+    i18n.changeLanguage(event.target.value as string);
   }, [ i18n ])
 
   const locales = useMemo(() => {
@@ -103,9 +111,5 @@ function LocaleSelect({ locales: localesProp, ...other } = {}) {
     })}
   </Select>;
 }
-
-LocaleSelect.propTypes = {
-  locales: PropTypes.arrayOf(PropTypes.string),
-};
 
 export default LocaleSelect;

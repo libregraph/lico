@@ -1,29 +1,40 @@
 import { newHelloRequest } from '../models/hello';
+import type { AttemptResult, HelloResponse, StateResponse } from '../models/api';
 
 import { withClientRequestState } from '../utils';
 import {
   ExtendedError,
+  asError,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE
 } from '../errors';
+import type { AppThunk } from '../store';
 
 import { postJSON, isAbortError } from './utils';
+import type { PostJSONOptions } from './utils';
 import * as types from './types';
+import type {
+  ReceiveErrorAction,
+  ReceiveHelloAction,
+  ReceiveLogoffAction,
+  RequestLogoffAction,
+  ResetHelloAction
+} from './types';
 
-export function receiveError(error) {
+export function receiveError(error: Error | null): ReceiveErrorAction {
   return {
     type: types.RECEIVE_ERROR,
     error
   };
 }
 
-export function resetHello() {
+export function resetHello(): ResetHelloAction {
   return {
     type: types.RESET_HELLO
   };
 }
 
-export function receiveHello(hello) {
+export function receiveHello(hello: Partial<HelloResponse>): ReceiveHelloAction {
   const { success, username, displayName } = hello;
 
   return {
@@ -35,7 +46,9 @@ export function receiveHello(hello) {
   };
 }
 
-export function executeHello(options={}) {
+export function executeHello(
+  options: PostJSONOptions = {}
+): AppThunk<Promise<HelloResponse | undefined>> {
   return async (dispatch, getState) => {
     dispatch(resetHello());
 
@@ -49,24 +62,30 @@ export function executeHello(options={}) {
       if (status !== 200) {
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
-      if (data.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: data.state });
+
+      // The body is whatever the endpoint sent; the nonce comparison below is
+      // what establishes that this reply answers this request.
+      const hello = data as HelloResponse;
+      if (hello.state !== r.state) {
+        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: hello.state });
       }
 
-      dispatch(receiveHello(data));
-      return data;
+      dispatch(receiveHello(hello));
+      return hello;
     } catch (error) {
       if (isAbortError(error)) {
         return undefined;
       }
 
-      dispatch(receiveError(error));
+      dispatch(receiveError(asError(error)));
       return undefined;
     }
   };
 }
 
-export function retryHello(options={}) {
+export function retryHello(
+  options: PostJSONOptions = {}
+): AppThunk<Promise<HelloResponse | undefined>> {
   return (dispatch) => {
     dispatch(receiveError(null));
 
@@ -74,21 +93,21 @@ export function retryHello(options={}) {
   };
 }
 
-export function requestLogoff() {
+export function requestLogoff(): RequestLogoffAction {
   return {
     type: types.REQUEST_LOGOFF
   };
 }
 
-export function receiveLogoff(state) {
+export function receiveLogoff(state: boolean): ReceiveLogoffAction {
   return {
     type: types.RECEIVE_LOGOFF,
     state
   };
 }
 
-export function executeLogoff(options={}) {
-  return async (dispatch) => {
+export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<AttemptResult>> {
+  return async (dispatch): Promise<AttemptResult> => {
     dispatch(resetHello());
     dispatch(requestLogoff());
 
@@ -99,12 +118,14 @@ export function executeLogoff(options={}) {
       if (status !== 200) {
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
-      if (data.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: data.state });
+
+      const result = data as StateResponse;
+      if (result.state !== r.state) {
+        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: result.state });
       }
 
-      dispatch(receiveLogoff(data.success === true));
-      return data;
+      dispatch(receiveLogoff(result.success === true));
+      return result;
     } catch (error) {
       // Callers read success off the resolved value, so a failure has to be
       // reported as one rather than as undefined. An abort reports the same
@@ -113,12 +134,13 @@ export function executeLogoff(options={}) {
         return { success: false, errors: {} };
       }
 
-      dispatch(receiveError(error));
+      const failure = asError(error);
+      dispatch(receiveError(failure));
 
       return {
         success: false,
         errors: {
-          http: error
+          http: failure
         }
       };
     }

@@ -1,13 +1,11 @@
-import PropTypes from 'prop-types';
-import { useSelector } from 'react-redux';
-
 import { BrowserRouter } from 'react-router-dom';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
 
 import Routes from './Routes';
+import { useAppSelector } from './hooks/redux';
 
-const styles = () => ({
+const styles = () => createStyles({
   root: {
     position: 'relative',
     display: 'flex',
@@ -15,11 +13,15 @@ const styles = () => ({
   }
 });
 
-function Main(props) {
+export interface MainProps {
+  classes: { root: string };
+}
+
+function Main(props: MainProps) {
   const { classes } = props;
 
-  const hello = useSelector(state => state.common.hello);
-  const pathPrefix = useSelector(state => state.common.pathPrefix);
+  const hello = useAppSelector(state => state.common.hello);
+  const pathPrefix = useAppSelector(state => state.common.pathPrefix);
 
   return (
     <div className={classes.root}>
@@ -29,9 +31,5 @@ function Main(props) {
     </div>
   );
 }
-
-Main.propTypes = {
-  classes: PropTypes.object.isRequired,
-};
 
 export default withStyles(styles)(Main);

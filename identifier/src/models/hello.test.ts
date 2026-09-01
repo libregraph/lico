@@ -110,8 +110,10 @@ describe('newHelloRequest', () => {
   });
 
   it('emits nothing at all when no flow was determined', () => {
-    // The common reducer leaves flow undefined when the page was opened
-    // without one, and hello is then asked for the plain sign in state.
+    // The common reducer stores an empty string when the page was opened
+    // without a flow, so this pins tolerance of an absent one rather than the
+    // reducer's own output: either way hello is asked for the plain sign in
+    // state.
     expect(newHelloRequest(undefined, fullQuery)).toEqual({});
   });
 

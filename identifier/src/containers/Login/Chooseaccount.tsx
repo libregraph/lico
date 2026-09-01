@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { useDispatch, useSelector } from 'react-redux';
+import type { History } from 'history';
 
 import { useTranslation } from 'react-i18next';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
+import type { Theme } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -16,8 +16,9 @@ import DialogContent from '@material-ui/core/DialogContent';
 import { executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
 import { withSearchAndHash } from '../../utils';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 
-const styles = theme => ({
+const styles = (theme: Theme) => createStyles({
   content: {
     overflowY: 'visible',
   },
@@ -37,15 +38,27 @@ const styles = theme => ({
   }
 });
 
-function Chooseaccount(props) {
+export interface ChooseaccountProps {
+  classes: {
+    content: string;
+    subHeader: string;
+    message: string;
+    accountList: string;
+    accountListItem: string;
+  };
+  // Supplied by the Route which renders this screen.
+  history: History;
+}
+
+function Chooseaccount(props: ChooseaccountProps) {
   const { classes, history } = props;
 
   const { t } = useTranslation();
 
-  const dispatch = useDispatch();
-  const hello = useSelector(state => state.common.hello);
-  const loading = useSelector(state => state.login.loading);
-  const errors = useSelector(state => state.login.errors);
+  const dispatch = useAppDispatch();
+  const hello = useAppSelector(state => state.common.hello);
+  const loading = useAppSelector(state => state.login.loading);
+  const errors = useAppSelector(state => state.login.errors);
 
   // This guard sends a visitor without a session back to the sign-in form, once,
   // on mount. Naming hello or history as dependencies would re-run it whenever
@@ -57,17 +70,22 @@ function Chooseaccount(props) {
     }
   }, []);
 
-  const handleLogon = (event) => {
+  // Both the form and the account entry reach this, so the event is only ever
+  // used to stop the default submission.
+  const handleLogon = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
-    dispatch(executeLogonIfFormValid(hello.username, '', true)).then((response) => {
+    // The mount guard sends a visitor without a session away, so a name is
+    // present by the time this can be reached. Validation reports an empty one
+    // rather than this throwing if that ever stops holding.
+    dispatch(executeLogonIfFormValid(hello?.username ?? '', '', true)).then((response) => {
       if (response.success) {
         dispatch(advanceLogonFlow(response.success, history));
       }
     });
   };
 
-  const handleLogoff = (event) => {
+  const handleLogoff = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
     history.push(withSearchAndHash('/identifier', history.location));
@@ -82,7 +100,7 @@ function Chooseaccount(props) {
 
   let username = '';
   if (hello?.state) {
-    username = hello.username;
+    username = hello.username ?? '';
   }
 
   return (
@@ -130,11 +148,5 @@ function Chooseaccount(props) {
     </DialogContent>
   );
 }
-
-Chooseaccount.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  history: PropTypes.object.isRequired
-};
 
 export default withStyles(styles)(Chooseaccount);

@@ -11,32 +11,37 @@ import { createMemoryHistory, type MemoryHistory } from 'history';
 import { applyMiddleware, createStore, type Store } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import i18n from 'i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import type { Mock } from 'vitest';
 
+import type { AppAction } from './actions/types';
 import rootReducer from './reducers';
+import type { RootState } from './reducers';
+import type { CommonState } from './reducers/common';
+import type { LoginState } from './reducers/login';
+import type { AppDispatch } from './store';
+
+/*
+ * The domain types live with the code that produces them. They are re-exported
+ * here because the tests reach for them alongside these helpers.
+ */
+export type {
+  Branding,
+  ClientDetails,
+  HelloResponse,
+  LogonResponse,
+  ScopeDefinition,
+  ScopesMeta,
+  Session,
+  StateResponse
+} from './models/api';
+export type { CommonState } from './reducers/common';
+export type { LoginState } from './reducers/login';
 
 /*
  * The common reducer reads the query string at module load, so its slice cannot
  * be influenced from a test by touching location. Tests preload it instead.
  */
-export interface CommonState {
-  hello: unknown;
-  branding: unknown;
-  error: unknown;
-  flow: string;
-  query: Record<string, string>;
-  pathPrefix: string;
-}
-
-export interface LoginState {
-  loading: string;
-  username: string;
-  password: string;
-  errors: Record<string, Error>;
-}
-
 export const defaultCommonState: CommonState = {
   hello: null,
   branding: null,
@@ -59,21 +64,24 @@ export interface PreloadedState {
 }
 
 /*
+ * The store a test drives. Dispatch has to accept the thunks the action
+ * creators return, which is what the thunk middleware below contributes.
+ */
+export type TestStore = Store<RootState, AppAction> & { dispatch: AppDispatch };
+
+/*
  * makeStore builds an isolated store. The application's own store is a module
  * level singleton, which would leak state between tests.
  */
-export function makeStore(preloaded: PreloadedState = {}): Store {
-  const preloadedState = {
+export function makeStore(preloaded: PreloadedState = {}): TestStore {
+  const preloadedState: RootState = {
     common: { ...defaultCommonState, ...preloaded.common },
     login: { ...defaultLoginState, ...preloaded.login }
   };
 
-  // The reducers are still JavaScript, so TypeScript infers their default
-  // state literally: hello, branding and error come out as null rather than as
-  // the payloads they later hold. The cast goes away with Phase 3.
   return createStore(
     rootReducer,
-    preloadedState as unknown as undefined,
+    preloadedState,
     applyMiddleware(thunkMiddleware)
   );
 }
@@ -82,10 +90,6 @@ export function makeStore(preloaded: PreloadedState = {}): Store {
  * An i18next instance with no resources. Every t() call in the application
  * passes an English default as its second argument, and i18next returns that
  * default for a missing key, so assertions can use the text a user would read.
- *
- * The language detector plugin is registered because LocaleSelect reaches into
- * it directly (LocaleSelect.jsx:37-41) to resolve the browser's best matching
- * locale. Without it that component throws rather than rendering.
  *
  * The default language is en-GB, not en, because that is what the application
  * ships in src/locales/locales.json and what it falls back to.
@@ -96,7 +100,6 @@ export function getTestI18n(): typeof i18n {
   if (!testI18n) {
     const instance = i18n.createInstance();
     instance
-      .use(LanguageDetector)
       .use(initReactI18next)
       .init({
         lng: 'en-GB',
@@ -191,63 +194,6 @@ export function newTestHistory(url = '/', action?: 'PUSH' | 'REPLACE' | 'POP'): 
     Object.defineProperty(h, 'action', { value: action, configurable: true, writable: true });
   }
   return h;
-}
-
-/*
- * Minimal shapes of the identifier API responses, per
- * docs/libregraph-connect-api-v1.yaml. Typing the fixtures is where the value
- * of TypeScript sits in this phase, since the components are still JavaScript.
- */
-export interface Branding {
-  bannerLogo?: string;
-  bannerLogoHeight?: string;
-  signinPageText?: string;
-  usernameHintText?: string;
-  signinPageLogoURI?: string;
-  locales?: string[];
-}
-
-export interface ClientDetails {
-  id: string;
-  display_name: string;
-  redirect_uri: string;
-  trusted: boolean;
-}
-
-export interface ScopeDefinition {
-  priority?: number;
-  description?: string;
-  id?: string;
-}
-
-export interface ScopesMeta {
-  mapping: Record<string, string>;
-  definitions: Record<string, ScopeDefinition>;
-}
-
-export interface HelloResponse {
-  state: string;
-  flow: string;
-  success: boolean;
-  username?: string;
-  displayName?: string;
-  next?: string;
-  continue_uri?: string;
-  scopes?: Record<string, boolean>;
-  client?: ClientDetails;
-  meta?: { scopes: ScopesMeta };
-  branding?: Branding;
-}
-
-export interface LogonResponse {
-  success: boolean;
-  state: string;
-  hello: HelloResponse | null;
-}
-
-export interface StateResponse {
-  success: boolean;
-  state: string;
 }
 
 /*

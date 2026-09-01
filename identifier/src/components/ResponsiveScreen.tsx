@@ -1,17 +1,21 @@
 
-import PropTypes from 'prop-types';
+import type React from 'react';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
+import type { Theme } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
+import type { GridProps } from '@material-ui/core/Grid';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
+import type { DialogProps as MuiDialogProps } from '@material-ui/core/Dialog';
 
 import ResponsiveDialog from './ResponsiveDialog';
 import Logo from '../images/app-icon.svg';
 import Loading from './Loading';
 import LocaleSelect from './LocaleSelect';
+import type { Branding } from '../models/api';
 
-const styles = theme => ({
+const styles = (theme: Theme) => createStyles({
   root: {
     display: 'flex',
     flex: 1,
@@ -45,7 +49,29 @@ const styles = theme => ({
   }
 });
 
-const ResponsiveScreen = (props) => {
+export interface ResponsiveScreenProps extends Omit<GridProps, 'classes' | 'className' | 'children'> {
+  classes: {
+    root: string;
+    content: string;
+    dialog: string;
+    logoSmall: string;
+    logoNormal: string;
+    logoBig: string;
+    actions: string;
+  };
+  withoutLogo?: boolean;
+  withoutPadding?: boolean;
+  loading?: boolean;
+  branding?: Branding | null;
+  // Absent while loading, which is the one case where this screen has nothing
+  // of its own to show.
+  children?: React.ReactNode;
+  className?: string;
+  PaperProps?: MuiDialogProps['PaperProps'];
+  DialogProps?: Partial<MuiDialogProps>;
+}
+
+const ResponsiveScreen = (props: ResponsiveScreenProps) => {
   const {
     classes,
     withoutLogo,
@@ -60,8 +86,8 @@ const ResponsiveScreen = (props) => {
   } = props;
 
   const bannerLogoSrc = branding?.bannerLogo ? branding.bannerLogo : Logo;
-  const logoSizeClassMap = { small: classes.logoSmall, normal: classes.logoNormal, big: classes.logoBig };
-  const logoClassName = logoSizeClassMap[branding?.bannerLogoHeight] || classes.logoNormal;
+  const logoSizeClassMap: Record<string, string> = { small: classes.logoSmall, normal: classes.logoNormal, big: classes.logoBig };
+  const logoClassName = (branding?.bannerLogoHeight && logoSizeClassMap[branding.bannerLogoHeight]) || classes.logoNormal;
   const logo = withoutLogo ? null :
     <DialogContent><img src={bannerLogoSrc} className={logoClassName} alt=""/></DialogContent>;
 
@@ -101,18 +127,6 @@ ResponsiveScreen.defaultProps = {
   withoutLogo: false,
   withoutPadding: false,
   loading: false
-};
-
-ResponsiveScreen.propTypes = {
-  classes: PropTypes.object.isRequired,
-  withoutLogo: PropTypes.bool,
-  withoutPadding: PropTypes.bool,
-  loading: PropTypes.bool,
-  branding: PropTypes.object,
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-  PaperProps: PropTypes.object,
-  DialogProps: PropTypes.object
 };
 
 export default withStyles(styles)(ResponsiveScreen);

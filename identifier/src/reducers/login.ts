@@ -1,3 +1,4 @@
+import type { AppAction } from '../actions/types';
 import {
   RECEIVE_VALIDATE_LOGON,
   REQUEST_LOGON,
@@ -8,13 +9,25 @@ import {
   RECEIVE_CONSENT,
   UPDATE_INPUT
 } from '../actions/types';
+import type { FieldErrors } from '../models/api';
 
-function loginReducer(state = {
+export interface LoginState {
+  // Empty when nothing is in flight, otherwise the action type which started
+  // it, so the button that was pressed is the one that shows progress.
+  loading: string;
+  username: string;
+  password: string;
+  errors: FieldErrors;
+}
+
+const defaultState: LoginState = {
   loading: '',
   username: '',
   password: '',
   errors: {}
-}, action) {
+};
+
+function loginReducer(state: LoginState = defaultState, action: AppAction): LoginState {
   switch (action.type) {
     case RECEIVE_VALIDATE_LOGON:
       return Object.assign({}, state, {

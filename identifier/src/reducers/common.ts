@@ -1,11 +1,20 @@
+import queryString from 'query-string';
+
+import type { AppAction } from '../actions/types';
 import {
   RECEIVE_ERROR,
   RESET_HELLO,
   RECEIVE_HELLO
 } from '../actions/types';
-import queryString from 'query-string';
+import type { Branding, Session } from '../models/api';
 
-const query = queryString.parse(document.location.search);
+/*
+ * query-string hands back an array when a parameter repeats. Every reader here
+ * treats these as single values, and the OIDC request parameters are single
+ * valued, so the map is named as strings rather than teaching each reader to
+ * unwrap one.
+ */
+const query = queryString.parse(document.location.search) as Record<string, string>;
 const flow = query.flow || '';
 delete query.flow;
 
@@ -19,7 +28,16 @@ const defaultPathPrefix = (() => {
   return pathPrefix;
 })();
 
-const defaultState = {
+export interface CommonState {
+  hello: Session | null;
+  branding: Branding | null;
+  error: Error | null;
+  flow: string;
+  query: Record<string, string>;
+  pathPrefix: string;
+}
+
+const defaultState: CommonState = {
   hello: null,
   branding: null,
   error: null,
@@ -28,7 +46,7 @@ const defaultState = {
   pathPrefix: defaultPathPrefix
 };
 
-function commonReducer(state = defaultState, action) {
+function commonReducer(state: CommonState = defaultState, action: AppAction): CommonState {
   switch (action.type) {
     case RECEIVE_ERROR:
       return Object.assign({}, state, {
