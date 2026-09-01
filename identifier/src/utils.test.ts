@@ -1,4 +1,4 @@
-import { withClientRequestState } from './utils';
+import { withClientRequestState, withSearchAndHash } from './utils';
 
 describe('withClientRequestState', () => {
   it('adds a non empty state nonce', () => {
@@ -43,5 +43,25 @@ describe('withClientRequestState', () => {
     const request = withClientRequestState({ state: 'stale' });
 
     expect(request.state).not.toBe('stale');
+  });
+});
+
+describe('withSearchAndHash', () => {
+  it('appends the query string and the fragment to the path', () => {
+    expect(withSearchAndHash('/consent', { search: '?client_id=demo', hash: '#anchor' }))
+      .toBe('/consent?client_id=demo#anchor');
+  });
+
+  it('leaves the path alone when the location carries neither', () => {
+    // Emitting a bare ? or # here would hand the router a path it has to
+    // normalise, and would show up in the address bar.
+    expect(withSearchAndHash('/identifier', { search: '', hash: '' })).toBe('/identifier');
+  });
+
+  it('keeps whichever of the two is present', () => {
+    expect(withSearchAndHash('/identifier', { search: '?flow=oidc', hash: '' }))
+      .toBe('/identifier?flow=oidc');
+    expect(withSearchAndHash('/identifier', { search: '', hash: '#frag' }))
+      .toBe('/identifier#frag');
   });
 });

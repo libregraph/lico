@@ -23,6 +23,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
+import { withSearchAndHash } from '../../utils';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment'
 import Visibility from '@material-ui/icons/Visibility';
@@ -131,7 +132,7 @@ function Login(props) {
         return;
       }
 
-      history.replace(`/chooseaccount${history.location.search}${history.location.hash}`);
+      history.replace(withSearchAndHash('/chooseaccount', history.location));
       return;
     }
 

@@ -18,6 +18,7 @@ import { ErrorMessage } from '../../errors';
 import { REQUEST_CONSENT_ALLOW } from '../../actions/types';
 import ClientDisplayName from '../../components/ClientDisplayName';
 import ScopesList from '../../components/ScopesList';
+import { withSearchAndHash } from '../../utils';
 
 const styles = theme => ({
   button: {
@@ -79,7 +80,7 @@ function Consent(props) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
     if ((!hello?.state || !client) && history.action !== 'PUSH') {
-      history.replace(`/identifier${history.location.search}${history.location.hash}`);
+      history.replace(withSearchAndHash('/identifier', history.location));
     }
 
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.

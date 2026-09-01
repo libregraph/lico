@@ -15,6 +15,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 
 import { executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
+import { withSearchAndHash } from '../../utils';
 
 const styles = theme => ({
   content: {
@@ -52,7 +53,7 @@ function Chooseaccount(props) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
     if ((!hello?.state) && history.action !== 'PUSH') {
-      history.replace(`/identifier${history.location.search}${history.location.hash}`);
+      history.replace(withSearchAndHash('/identifier', history.location));
     }
   }, []);
 
@@ -69,7 +70,7 @@ function Chooseaccount(props) {
   const handleLogoff = (event) => {
     event.preventDefault();
 
-    history.push(`/identifier${history.location.search}${history.location.hash}`);
+    history.push(withSearchAndHash('/identifier', history.location));
   };
 
   let errorMessage = null;

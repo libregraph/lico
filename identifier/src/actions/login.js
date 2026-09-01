@@ -1,7 +1,7 @@
 import queryString from 'query-string';
 
 import { newHelloRequest } from '../models/hello';
-import { withClientRequestState } from '../utils';
+import { withClientRequestState, withSearchAndHash } from '../utils';
 import {
   ExtendedError,
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
@@ -271,7 +271,7 @@ export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
         }
 
         if (!done && hello.details.next === 'consent') {
-          history.replace(`/consent${history.location.search}${history.location.hash}`);
+          history.replace(withSearchAndHash('/consent', history.location));
           return;
         }
         if (hello.details.continue_uri) {
@@ -293,7 +293,7 @@ export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
     // Default action.
     let target = '/welcome';
     if (history.action === 'REPLACE') {
-      target = target + history.location.search + history.location.hash;
+      target = withSearchAndHash(target, history.location);
     }
 
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.

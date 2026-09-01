@@ -1,6 +1,7 @@
 
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { MemoryHistory } from 'history';
 
 import Login from './Login';
 import { REQUEST_LOGON } from '../../actions/types';
@@ -277,6 +278,49 @@ describe('Login', () => {
       renderWithHint();
 
       expect(fieldOf('Username')).toHaveValue('');
+    });
+  });
+
+  describe('an existing session', () => {
+    /*
+     * The mount effect decides where a visitor who already has a session goes.
+     * With select_account in the prompt they pick an account rather than being
+     * advanced onwards, and the parameters of the flow live in the URL, so the
+     * query and the fragment have to survive that redirect.
+     */
+    const renderSignedIn = (history: MemoryHistory, prompt?: string) =>
+      renderWithProviders(<Subject history={history} />, {
+        history,
+        preloaded: {
+          common: {
+            hello: { state: true, username: 'u', displayName: 'D', details: {} },
+            branding: null,
+            query: prompt === undefined ? {} : { prompt }
+          },
+          login: { loading: '' }
+        }
+      });
+
+    it('sends the visitor to the account chooser when the request asks to select an account', () => {
+      const history = newTestHistory('/identifier?flow=oidc&client_id=abc#frag', 'POP');
+
+      renderSignedIn(history, 'select_account');
+
+      expect(history.location.pathname).toBe('/chooseaccount');
+      expect(history.location.search).toBe('?flow=oidc&client_id=abc');
+      expect(history.location.hash).toBe('#frag');
+      // It replaces rather than pushes, so going back cannot return here.
+      expect(history.length).toBe(1);
+    });
+
+    it('leaves the form alone when the visitor navigated here themselves', () => {
+      // A PUSH is a deliberate in-app navigation onto the form, so an existing
+      // session must not bounce the visitor straight back out of it.
+      const history = newTestHistory('/identifier?flow=oidc#frag', 'PUSH');
+
+      renderSignedIn(history, 'select_account');
+
+      expect(history.location.pathname).toBe('/identifier');
     });
   });
 
