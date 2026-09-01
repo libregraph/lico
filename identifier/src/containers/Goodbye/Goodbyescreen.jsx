@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -24,7 +24,9 @@ const styles = theme => ({
 });
 
 function Goodbyescreen(props) {
-  const { classes, t, history } = props;
+  const { classes, history } = props;
+
+  const { t } = useTranslation();
 
   const dispatch = useDispatch();
   const branding = useSelector(state => state.common.branding);
@@ -100,9 +102,8 @@ function Goodbyescreen(props) {
 
 Goodbyescreen.propTypes = {
   classes: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired,
 
   history: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(withTranslation()(Goodbyescreen));
+export default withStyles(styles)(Goodbyescreen);

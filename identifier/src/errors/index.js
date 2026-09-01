@@ -1,4 +1,4 @@
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 export const ERROR_LOGIN_VALIDATE_MISSINGUSERNAME = 'konnect.error.login.validate.missingUsername';
 export const ERROR_LOGIN_VALIDATE_MISSINGPASSWORD = 'konnect.error.login.validate.missingPassword';
@@ -21,8 +21,10 @@ export class ExtendedError extends Error {
 }
 
 // Component to translate error text with values.
-function ErrorMessageComponent(props) {
-  const { error, t, values } = props;
+export function ErrorMessage(props) {
+  const { error, values } = props;
+
+  const { t } = useTranslation();
 
   if (!error) {
     return null;
@@ -57,5 +59,3 @@ function ErrorMessageComponent(props) {
   const f = t;
   return f(messageDescriptor.defaultMessage, messageDescriptor.values);
 }
-
-export const ErrorMessage = withTranslation()(ErrorMessageComponent);

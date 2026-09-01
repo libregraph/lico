@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { withTranslation, Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -60,7 +60,9 @@ Tooltip.propTypes = {
 }
 
 function Consent(props) {
-  const { classes, t, history } = props;
+  const { classes, history } = props;
+
+  const { t } = useTranslation();
 
   const dispatch = useDispatch();
   const hello = useSelector(state => state.common.hello);
@@ -186,9 +188,8 @@ function Consent(props) {
 
 Consent.propTypes = {
   classes: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired,
 
   history: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(withTranslation()(Consent));
+export default withStyles(styles)(Consent);

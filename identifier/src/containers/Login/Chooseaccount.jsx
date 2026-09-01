@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
@@ -37,7 +37,9 @@ const styles = theme => ({
 });
 
 function Chooseaccount(props) {
-  const { classes, t, history } = props;
+  const { classes, history } = props;
+
+  const { t } = useTranslation();
 
   const dispatch = useDispatch();
   const hello = useSelector(state => state.common.hello);
@@ -130,9 +132,8 @@ function Chooseaccount(props) {
 
 Chooseaccount.propTypes = {
   classes: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired,
 
   history: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(withTranslation()(Chooseaccount));
+export default withStyles(styles)(Chooseaccount);
