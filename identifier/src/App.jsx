@@ -11,7 +11,7 @@ import Spinner from './components/Spinner';
 import * as version from './version';
 import theme from './theme';
 
-const LazyMain = lazy(() => import(/* webpackChunkName: "identifier-main" */ './Main'));
+const LazyMain = lazy(() => import('./Main'));
 
 console.info(`Kopano Identifier build version: ${version.build}`);
 

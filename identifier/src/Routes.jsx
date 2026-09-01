@@ -5,12 +5,9 @@ import { Route, Switch } from 'react-router-dom';
 
 import PrivateRoute from './components/PrivateRoute';
 
-const AsyncLogin = lazy(() =>
-  import(/* webpackChunkName: "containers-login" */ './containers/Login'));
-const AsyncWelcome = lazy(() =>
-  import(/* webpackChunkName: "containers-welcome" */ './containers/Welcome'));
-const AsyncGoodbye = lazy(() =>
-  import(/* webpackChunkName: "containers-goodbye" */ './containers/Goodbye'));
+const AsyncLogin = lazy(() => import('./containers/Login'));
+const AsyncWelcome = lazy(() => import('./containers/Welcome'));
+const AsyncGoodbye = lazy(() => import('./containers/Goodbye'));
 
 const Routes = ({ hello }) => (
   <Switch>
