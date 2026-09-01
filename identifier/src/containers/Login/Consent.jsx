@@ -1,6 +1,6 @@
-import React from 'react';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { withTranslation, Trans } from 'react-i18next';
 
@@ -59,19 +59,33 @@ Tooltip.propTypes = {
   children: PropTypes.node.isRequired,
 }
 
-class Consent extends React.PureComponent {
-  componentDidMount() {
-    const { dispatch, hello, history, client } = this.props;
+function Consent(props) {
+  const { classes, t, history } = props;
+
+  const dispatch = useDispatch();
+  const hello = useSelector(state => state.common.hello);
+  const loading = useSelector(state => state.login.loading);
+  const errors = useSelector(state => state.login.errors);
+
+  // No session means no client, and the mount guard tests for exactly that, so
+  // it must not be given an empty object which would read as one being present.
+  const client = hello?.details ? hello.details.client : undefined;
+
+  // The guard runs once, on mount. Naming hello or client as dependencies would
+  // re-run it whenever the session changes and could redirect the visitor away
+  // in the middle of deciding.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
+  useEffect(() => {
     if ((!hello?.state || !client) && history.action !== 'PUSH') {
       history.replace(`/identifier${history.location.search}${history.location.hash}`);
     }
 
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.
-  }
+  }, []);
 
   // No default for allow: the form passes it undefined to mean "decide nothing",
   // and a default would turn that into an explicit refusal.
-  action = (allow, scopes={}) => (event) => {
+  const action = (allow, scopes={}) => (event) => {
     event.preventDefault();
 
     if (allow === undefined) {
@@ -83,123 +97,98 @@ class Consent extends React.PureComponent {
       return !!scopes[scope];
     }).join(' ');
 
-    const { dispatch, history } = this.props;
     dispatch(executeConsent(allow, scope)).then((response) => {
       if (response.success) {
         dispatch(advanceLogonFlow(response.success, history, true, {konnect: response.state}));
       }
     });
+  };
+
+  // The mount guard sends the visitor away when there is nothing to consent
+  // to, but that only happens after this first render, and it deliberately
+  // stays put when the application itself navigated here.
+  if (!hello?.details || !client) {
+    return null;
   }
 
-  render() {
-    const { classes, loading, hello, errors, client, t } = this.props;
+  const scopes = hello.details.scopes || {};
+  const meta = hello.details.meta || {};
 
-    // The mount guard sends the visitor away when there is nothing to consent
-    // to, but that only happens after this first render, and it deliberately
-    // stays put when the application itself navigated here.
-    if (!hello?.details || !client) {
-      return null;
-    }
+  return (
+    <DialogContent>
+      <Typography variant="h5" component="h3">
+        {t("konnect.consent.headline", "Hi {{displayName}}", { displayName: hello.displayName })}
+      </Typography>
+      <Typography variant="subtitle1" className={classes.subHeader}>
+        {hello.username}
+      </Typography>
 
-    const scopes = hello.details.scopes || {};
-    const meta = hello.details.meta || {};
+      <Typography variant="subtitle1" gutterBottom>
+        <Trans t={t} i18nKey="konnect.consent.message">
+          <Tooltip
+            placement="bottom"
+            title={t("konnect.consent.tooltip.client", 'Clicking "Allow" will redirect you to: {{redirectURI}}', { redirectURI: client.redirect_uri })}
+          >
+            <em><ClientDisplayName client={client}/></em>
+          </Tooltip> wants to
+        </Trans>
+      </Typography>
+      <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta.scopes || {}}></ScopesList>
 
-    return (
-      <DialogContent>
-        <Typography variant="h5" component="h3">
-          {t("konnect.consent.headline", "Hi {{displayName}}", { displayName: hello.displayName })}
-        </Typography>
-        <Typography variant="subtitle1" className={classes.subHeader}>
-          {hello.username}
-        </Typography>
+      <Typography variant="subtitle1" gutterBottom>
+        <Trans t={t} i18nKey="konnect.consent.question">
+          Allow <em><ClientDisplayName client={client}/></em> to do this?
+        </Trans>
+      </Typography>
+      <Typography color="secondary">
+        {t("konnect.consent.consequence", "By clicking Allow, you allow this app to use your information.")}
+      </Typography>
 
-        <Typography variant="subtitle1" gutterBottom>
-          <Trans t={t} i18nKey="konnect.consent.message">
-            <Tooltip
-              placement="bottom"
-              title={t("konnect.consent.tooltip.client", 'Clicking "Allow" will redirect you to: {{redirectURI}}', { redirectURI: client.redirect_uri })}
+      <form action="" onSubmit={action(undefined, scopes)}>
+        <DialogActions>
+          <div className={classes.wrapper}>
+            <Button
+              color="secondary"
+              variant="outlined"
+              className={classes.button}
+              disabled={!!loading}
+              onClick={action(false, scopes)}
             >
-              <em><ClientDisplayName client={client}/></em>
-            </Tooltip> wants to
-          </Trans>
-        </Typography>
-        <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta.scopes || {}}></ScopesList>
+              {t("konnect.consent.cancelButton.label", "Cancel")}
+            </Button>
+            {(loading && loading !== REQUEST_CONSENT_ALLOW) &&
+              <CircularProgress size={24} className={classes.buttonProgress} />}
+          </div>
+          <div className={classes.wrapper}>
+            <Button
+              type="submit"
+              color="primary"
+              variant="contained"
+              className={classes.button}
+              disabled={!!loading}
+              onClick={action(true, scopes)}
+            >
+              {t("konnect.consent.allowButton.label", "Allow")}
+            </Button>
+            {loading === REQUEST_CONSENT_ALLOW && <CircularProgress size={24} className={classes.buttonProgress} />}
+          </div>
+        </DialogActions>
 
-        <Typography variant="subtitle1" gutterBottom>
-          <Trans t={t} i18nKey="konnect.consent.question">
-            Allow <em><ClientDisplayName client={client}/></em> to do this?
-          </Trans>
-        </Typography>
-        <Typography color="secondary">
-          {t("konnect.consent.consequence", "By clicking Allow, you allow this app to use your information.")}
-        </Typography>
-
-        <form action="" onSubmit={this.action(undefined, scopes)}>
-          <DialogActions>
-            <div className={classes.wrapper}>
-              <Button
-                color="secondary"
-                variant="outlined"
-                className={classes.button}
-                disabled={!!loading}
-                onClick={this.action(false, scopes)}
-              >
-                {t("konnect.consent.cancelButton.label", "Cancel")}
-              </Button>
-              {(loading && loading !== REQUEST_CONSENT_ALLOW) &&
-                <CircularProgress size={24} className={classes.buttonProgress} />}
-            </div>
-            <div className={classes.wrapper}>
-              <Button
-                type="submit"
-                color="primary"
-                variant="contained"
-                className={classes.button}
-                disabled={!!loading}
-                onClick={this.action(true, scopes)}
-              >
-                {t("konnect.consent.allowButton.label", "Allow")}
-              </Button>
-              {loading === REQUEST_CONSENT_ALLOW && <CircularProgress size={24} className={classes.buttonProgress} />}
-            </div>
-          </DialogActions>
-
-          {errors.http && (
-            <Typography variant="subtitle2" color="error" className={classes.message}>
-              <ErrorMessage error={errors.http}></ErrorMessage>
-            </Typography>
-          )}
-        </form>
-      </DialogContent>
-    );
-  }
+        {errors.http && (
+          <Typography variant="subtitle2" color="error" className={classes.message}>
+            <ErrorMessage error={errors.http}></ErrorMessage>
+          </Typography>
+        )}
+      </form>
+    </DialogContent>
+  );
 }
 
 Consent.propTypes = {
   classes: PropTypes.object.isRequired,
   t: PropTypes.func.isRequired,
 
-  loading: PropTypes.string.isRequired,
-  errors: PropTypes.object.isRequired,
-  hello: PropTypes.object,
-  client: PropTypes.object,
-
-  dispatch: PropTypes.func.isRequired,
   history: PropTypes.object.isRequired
 };
 
-const mapStateToProps = (state) => {
-  const { hello } = state.common;
-  const { loading, errors } = state.login;
-
-  // No session means no client, and the mount guard tests for exactly that, so
-  // it must not be given an empty object which would read as one being present.
-  return {
-    loading: loading,
-    errors,
-    hello,
-    client: hello?.details ? hello.details.client : undefined
-  };
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Consent)));
+export default withStyles(styles)(withTranslation()(Consent));

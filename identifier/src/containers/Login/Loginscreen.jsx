@@ -1,6 +1,5 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { Route, Switch } from 'react-router-dom';
 
@@ -17,44 +16,27 @@ import Consent from './Consent';
 const styles = () => ({
 });
 
-class Loginscreen extends React.PureComponent {
-  componentDidMount() {
-    this.props.dispatch(executeHello());
-  }
+function Loginscreen() {
+  const dispatch = useDispatch();
+  const branding = useSelector(state => state.common.branding);
+  const hello = useSelector(state => state.common.hello);
 
-  render() {
-    const { branding, hello } = this.props;
+  // dispatch is stable for the store's lifetime, so this runs once on mount.
+  useEffect(() => {
+    dispatch(executeHello());
+  }, [dispatch]);
 
-    const loading = hello === null;
-    return (
-      <ResponsiveScreen loading={loading} branding={branding} withoutPadding>
-        <Switch>
-          <Route path="/identifier" exact component={Login}></Route>
-          <Route path="/chooseaccount" exact component={Chooseaccount}></Route>
-          <Route path="/consent" exact component={Consent}></Route>
-          <RedirectWithQuery target="/identifier"/>
-        </Switch>
-      </ResponsiveScreen>
-    );
-  }
+  const loading = hello === null;
+  return (
+    <ResponsiveScreen loading={loading} branding={branding} withoutPadding>
+      <Switch>
+        <Route path="/identifier" exact component={Login}></Route>
+        <Route path="/chooseaccount" exact component={Chooseaccount}></Route>
+        <Route path="/consent" exact component={Consent}></Route>
+        <RedirectWithQuery target="/identifier"/>
+      </Switch>
+    </ResponsiveScreen>
+  );
 }
 
-Loginscreen.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  branding: PropTypes.object,
-  hello: PropTypes.object,
-
-  dispatch: PropTypes.func.isRequired
-};
-
-const mapStateToProps = (state) => {
-  const { branding, hello } = state.common;
-
-  return {
-    branding,
-    hello
-  };
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(Loginscreen));
+export default withStyles(styles)(Loginscreen);

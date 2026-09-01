@@ -1,6 +1,5 @@
-import React from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { withTranslation } from 'react-i18next';
 
@@ -22,75 +21,62 @@ const styles = theme => ({
   }
 });
 
-class Welcomescreen extends React.PureComponent {
-  render() {
-    const { classes, branding, hello, t } = this.props;
+function Welcomescreen(props) {
+  const { classes, t, history } = props;
 
-    // The children are built before ResponsiveScreen decides whether to show the
-    // loading state, so return early rather than dereference a session which
-    // signing out has already cleared.
-    if (hello === null) {
-      return <ResponsiveScreen loading branding={branding}/>;
-    }
+  const dispatch = useDispatch();
+  const branding = useSelector(state => state.common.branding);
+  const hello = useSelector(state => state.common.hello);
 
-    return (
-      <ResponsiveScreen branding={branding}>
-        <Typography variant="h5" component="h3">
-          {t("konnect.welcome.headline", "Welcome {{displayName}}", {displayName: hello.displayName})}
-        </Typography>
-        <Typography variant="subtitle1" className={classes.subHeader}>
-          {hello.username}
-        </Typography>
-
-        <Typography gutterBottom>
-          {t("konnect.welcome.message", "You are signed in - awesome!")}
-        </Typography>
-
-        <DialogActions>
-          <Button
-            color="secondary"
-            className={classes.button}
-            variant="contained"
-            onClick={(event) => this.logoff(event)}
-          >
-            {t("konnect.welcome.signoutButton.label", "Sign out")}
-          </Button>
-        </DialogActions>
-      </ResponsiveScreen>
-    );
-  }
-
-  logoff(event) {
+  const handleLogoff = (event) => {
     event.preventDefault();
 
-    this.props.dispatch(executeLogoff()).then((response) => {
-      const { history } = this.props;
-
+    dispatch(executeLogoff()).then((response) => {
       if (response.success) {
         history.push('/identifier');
       }
     });
+  };
+
+  // The children are built before ResponsiveScreen decides whether to show the
+  // loading state, so return early rather than dereference a session which
+  // signing out has already cleared.
+  if (hello === null) {
+    return <ResponsiveScreen loading branding={branding}/>;
   }
+
+  return (
+    <ResponsiveScreen branding={branding}>
+      <Typography variant="h5" component="h3">
+        {t("konnect.welcome.headline", "Welcome {{displayName}}", {displayName: hello.displayName})}
+      </Typography>
+      <Typography variant="subtitle1" className={classes.subHeader}>
+        {hello.username}
+      </Typography>
+
+      <Typography gutterBottom>
+        {t("konnect.welcome.message", "You are signed in - awesome!")}
+      </Typography>
+
+      <DialogActions>
+        <Button
+          color="secondary"
+          className={classes.button}
+          variant="contained"
+          onClick={handleLogoff}
+        >
+          {t("konnect.welcome.signoutButton.label", "Sign out")}
+        </Button>
+      </DialogActions>
+    </ResponsiveScreen>
+  );
 }
 
 Welcomescreen.propTypes = {
   classes: PropTypes.object.isRequired,
   t: PropTypes.func.isRequired,
 
-  branding: PropTypes.object,
-  hello: PropTypes.object,
-
-  dispatch: PropTypes.func.isRequired,
   history: PropTypes.object.isRequired
 };
 
-const mapStateToProps = (state) => {
-  const { branding, hello } = state.common;
-
-  return {
-    branding,
-    hello
-  };
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(withTranslation()(Welcomescreen)));
+export default withStyles(styles)(withTranslation()(Welcomescreen));

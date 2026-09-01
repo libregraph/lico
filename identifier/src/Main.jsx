@@ -1,6 +1,5 @@
-import { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import { BrowserRouter } from 'react-router-dom';
 
@@ -16,34 +15,23 @@ const styles = () => ({
   }
 });
 
-class Main extends PureComponent {
-  render() {
-    const { classes, hello, pathPrefix } = this.props;
+function Main(props) {
+  const { classes } = props;
 
-    return (
-      <div className={classes.root}>
-        <BrowserRouter basename={pathPrefix}>
-          <Routes hello={hello}/>
-        </BrowserRouter>
-      </div>
-    );
-  }
+  const hello = useSelector(state => state.common.hello);
+  const pathPrefix = useSelector(state => state.common.pathPrefix);
+
+  return (
+    <div className={classes.root}>
+      <BrowserRouter basename={pathPrefix}>
+        <Routes hello={hello}/>
+      </BrowserRouter>
+    </div>
+  );
 }
 
 Main.propTypes = {
   classes: PropTypes.object.isRequired,
-
-  hello: PropTypes.object,
-  pathPrefix: PropTypes.string.isRequired
 };
 
-const mapStateToProps = (state) => {
-  const { hello, pathPrefix } = state.common;
-
-  return {
-    hello,
-    pathPrefix
-  };
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(Main));
+export default withStyles(styles)(Main);
