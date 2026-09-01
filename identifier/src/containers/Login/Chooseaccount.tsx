@@ -3,55 +3,27 @@ import type { History } from 'history';
 
 import { useTranslation } from 'react-i18next';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import type { Theme } from '@material-ui/core/styles';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
-import Avatar from '@material-ui/core/Avatar';
-import Typography from '@material-ui/core/Typography';
-import DialogContent from '@material-ui/core/DialogContent';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
+import Typography from '@mui/material/Typography';
+import DialogContent from '@mui/material/DialogContent';
 
 import { executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
 import { withSearchAndHash } from '../../utils';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 
-const styles = (theme: Theme) => createStyles({
-  content: {
-    overflowY: 'visible',
-  },
-  subHeader: {
-    marginBottom: theme.spacing(2)
-  },
-  message: {
-    marginTop: theme.spacing(2)
-  },
-  accountList: {
-    marginLeft: theme.spacing(-5),
-    marginRight: theme.spacing(-5)
-  },
-  accountListItem: {
-    paddingLeft: theme.spacing(5),
-    paddingRight: theme.spacing(5)
-  }
-});
-
 export interface ChooseaccountProps {
-  classes: {
-    content: string;
-    subHeader: string;
-    message: string;
-    accountList: string;
-    accountListItem: string;
-  };
   // Supplied by the Route which renders this screen.
   history: History;
 }
 
 function Chooseaccount(props: ChooseaccountProps) {
-  const { classes, history } = props;
+  const { history } = props;
 
   const { t } = useTranslation();
 
@@ -93,7 +65,7 @@ function Chooseaccount(props: ChooseaccountProps) {
 
   let errorMessage = null;
   if (errors.http) {
-    errorMessage = <Typography color="error" className={classes.message}>
+    errorMessage = <Typography color="error" sx={{ mt: 2 }}>
       <ErrorMessage error={errors.http}></ErrorMessage>
     </Typography>;
   }
@@ -104,42 +76,42 @@ function Chooseaccount(props: ChooseaccountProps) {
   }
 
   return (
-    <DialogContent className={classes.content}>
+    <DialogContent sx={{ overflowY: 'visible' }}>
       <Typography variant="h5" component="h3">
         {t("konnect.chooseaccount.headline", "Choose an account")}
       </Typography>
-      <Typography variant="subtitle1" className={classes.subHeader}>
+      <Typography variant="subtitle1" sx={{ mb: 2 }}>
         {t("konnect.chooseaccount.subHeader", "to sign in")}
       </Typography>
 
       <form action="" onSubmit={handleLogon}>
-        <List disablePadding className={classes.accountList}>
-          <ListItem
-            button
-            disableGutters
-            className={classes.accountListItem}
-            disabled={!!loading}
-            onClick={handleLogon}
-          ><ListItemAvatar><Avatar>{username.slice(0, 1)}</Avatar></ListItemAvatar>
-            <ListItemText primary={username} />
+        <List disablePadding sx={{ ml: -5, mr: -5 }}>
+          <ListItem disableGutters disablePadding>
+            <ListItemButton
+              sx={{ pl: 5, pr: 5 }}
+              disabled={!!loading}
+              onClick={handleLogon}
+            ><ListItemAvatar><Avatar>{username.slice(0, 1)}</Avatar></ListItemAvatar>
+              <ListItemText primary={username} />
+            </ListItemButton>
           </ListItem>
-          <ListItem
-            button
-            disableGutters
-            className={classes.accountListItem}
-            disabled={!!loading}
-            onClick={handleLogoff}
-          >
-            <ListItemAvatar>
-              <Avatar>
-                {t("konnect.chooseaccount.useOther.persona.label", "?")}
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={
-                t("konnect.chooseaccount.useOther.label", "Use another account")
-              }
-            />
+          <ListItem disableGutters disablePadding>
+            <ListItemButton
+              sx={{ pl: 5, pr: 5 }}
+              disabled={!!loading}
+              onClick={handleLogoff}
+            >
+              <ListItemAvatar>
+                <Avatar>
+                  {t("konnect.chooseaccount.useOther.persona.label", "?")}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  t("konnect.chooseaccount.useOther.label", "Use another account")
+                }
+              />
+            </ListItemButton>
           </ListItem>
         </List>
 
@@ -149,4 +121,4 @@ function Chooseaccount(props: ChooseaccountProps) {
   );
 }
 
-export default withStyles(styles)(Chooseaccount);
+export default Chooseaccount;

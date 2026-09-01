@@ -2,34 +2,21 @@ import type { History } from 'history';
 
 import { useTranslation } from 'react-i18next';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import type { Theme } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
-import DialogActions from '@material-ui/core/DialogActions';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import DialogActions from '@mui/material/DialogActions';
 
 import ResponsiveScreen from '../../components/ResponsiveScreen';
 import { executeLogoff } from '../../actions/common';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 
-const styles = (theme: Theme) => createStyles({
-  button: {
-    margin: theme.spacing(1),
-    minWidth: 100
-  },
-  subHeader: {
-    marginBottom: theme.spacing(5)
-  }
-});
-
 export interface WelcomescreenProps {
-  classes: { button: string; subHeader: string };
   // Supplied by the Route which renders this screen.
   history: History;
 }
 
 function Welcomescreen(props: WelcomescreenProps) {
-  const { classes, history } = props;
+  const { history } = props;
 
   const { t } = useTranslation();
 
@@ -59,7 +46,7 @@ function Welcomescreen(props: WelcomescreenProps) {
       <Typography variant="h5" component="h3">
         {t("konnect.welcome.headline", "Welcome {{displayName}}", {displayName: hello.displayName})}
       </Typography>
-      <Typography variant="subtitle1" className={classes.subHeader}>
+      <Typography variant="subtitle1" sx={{ mb: 5 }}>
         {hello.username}
       </Typography>
 
@@ -70,7 +57,7 @@ function Welcomescreen(props: WelcomescreenProps) {
       <DialogActions>
         <Button
           color="secondary"
-          className={classes.button}
+          sx={{ m: 1, minWidth: 100 }}
           variant="contained"
           onClick={handleLogoff}
         >
@@ -81,4 +68,4 @@ function Welcomescreen(props: WelcomescreenProps) {
   );
 }
 
-export default withStyles(styles)(Welcomescreen);
+export default Welcomescreen;

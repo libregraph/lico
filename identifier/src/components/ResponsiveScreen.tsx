@@ -1,13 +1,11 @@
-
 import type React from 'react';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import type { Theme } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
-import type { GridProps } from '@material-ui/core/Grid';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import type { DialogProps as MuiDialogProps } from '@material-ui/core/Dialog';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import type { GridProps } from '@mui/material/Grid';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import type { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 
 import ResponsiveDialog from './ResponsiveDialog';
 import Logo from '../images/app-icon.svg';
@@ -15,50 +13,17 @@ import Loading from './Loading';
 import LocaleSelect from './LocaleSelect';
 import type { Branding } from '../models/api';
 
-const styles = (theme: Theme) => createStyles({
-  root: {
-    display: 'flex',
-    flex: 1,
-  },
-  content: {
-    paddingTop: 24,
-    paddingBottom: 12,
-    minHeight: 350,
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-    position: 'relative'
-  },
-  dialog: {
-    maxWidth: 440,
-  },
-  logoSmall: {
-    height: 12,
-  },
-  logoNormal: {
-    height: 24,
-  },
-  logoBig: {
-    height: 48,
-  },
-  actions: {
-    marginTop: -40,
-    minHeight: 45,
-    justifyContent: 'flex-start',
-    paddingLeft: theme.spacing(3),
-    paddingRight: theme.spacing(3)
-  }
-});
+/*
+ * The three logo heights the branding may ask for, in pixels. These are not
+ * spacing units, so they are handed to sx unscaled.
+ */
+const logoHeights: Record<string, number> = {
+  small: 12,
+  normal: 24,
+  big: 48
+};
 
 export interface ResponsiveScreenProps extends Omit<GridProps, 'classes' | 'className' | 'children'> {
-  classes: {
-    root: string;
-    content: string;
-    dialog: string;
-    logoSmall: string;
-    logoNormal: string;
-    logoBig: string;
-    actions: string;
-  };
   withoutLogo?: boolean;
   withoutPadding?: boolean;
   loading?: boolean;
@@ -67,13 +32,11 @@ export interface ResponsiveScreenProps extends Omit<GridProps, 'classes' | 'clas
   // of its own to show.
   children?: React.ReactNode;
   className?: string;
-  PaperProps?: MuiDialogProps['PaperProps'];
   DialogProps?: Partial<MuiDialogProps>;
 }
 
 const ResponsiveScreen = (props: ResponsiveScreenProps) => {
   const {
-    classes,
     withoutLogo = false,
     withoutPadding = false,
     loading = false,
@@ -81,29 +44,36 @@ const ResponsiveScreen = (props: ResponsiveScreenProps) => {
     children,
     className,
     DialogProps,
-    PaperProps,
     ...other
   } = props;
 
   const bannerLogoSrc = branding?.bannerLogo ? branding.bannerLogo : Logo;
-  const logoSizeClassMap: Record<string, string> = { small: classes.logoSmall, normal: classes.logoNormal, big: classes.logoBig };
-  const logoClassName = (branding?.bannerLogoHeight && logoSizeClassMap[branding.bannerLogoHeight]) || classes.logoNormal;
+  const logoHeight = (branding?.bannerLogoHeight && logoHeights[branding.bannerLogoHeight])
+    || logoHeights.normal;
   const logo = withoutLogo ? null :
-    <DialogContent><img src={bannerLogoSrc} className={logoClassName} alt=""/></DialogContent>;
+    <DialogContent>
+      <Box component="img" src={bannerLogoSrc} sx={{ height: logoHeight }} alt=""/>
+    </DialogContent>;
 
   const content = loading ? <Loading/> : (withoutPadding ? children : <DialogContent>{children}</DialogContent>);
 
   return (
-    <Grid container justifyContent="center" alignItems="center" spacing={0}
-      className={[classes.root, className].filter(Boolean).join(' ')} {...other}>
-      <ResponsiveDialog open fullWidth maxWidth="sm" disableEscapeKeyDown hideBackdrop
+    <Grid container spacing={0}
+      sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}
+      className={className} {...other}>
+      {/*
+        * v4's disableEscapeKeyDown is gone and needs no replacement: this dialog
+        * is given no onClose, and a Modal never closes itself, so escape had
+        * nothing to call even before the prop was removed.
+        */}
+      <ResponsiveDialog open fullWidth maxWidth="sm" hideBackdrop
         {...DialogProps}
-        PaperProps={{elevation: 4, ...PaperProps}}
-        classes={{
-          paperWidthSm: classes.dialog,
+        slotProps={{
+          // v4 reached the same width by overriding the paperWidthSm class.
+          paper: { elevation: 4, sx: { maxWidth: 440 } }
         }}
       >
-        <div className={classes.content}>
+        <Box sx={{ pt: 3, pb: 1.5, minHeight: 350, px: 2, position: 'relative' }}>
           {branding?.signinPageLogoURI ? (
             <a
               href={branding.signinPageLogoURI}
@@ -116,11 +86,24 @@ const ResponsiveScreen = (props: ResponsiveScreenProps) => {
             logo
           )}
           {content}
-        </div>
-        {!loading && <DialogActions className={classes.actions} disableSpacing><LocaleSelect disableUnderline locales={branding?.locales}/></DialogActions>}
+        </Box>
+        {!loading && (
+          <DialogActions
+            sx={{ mt: -5, minHeight: 45, justifyContent: 'flex-start', px: 3 }}
+            disableSpacing
+          >
+            {/*
+              * variant is named because MUI's default changed to outlined, which
+              * would put a box around the locale name and make it taller. This
+              * is the borderless standard variant v4 used, which is also what
+              * disableUnderline applies to.
+              */}
+            <LocaleSelect variant="standard" disableUnderline locales={branding?.locales}/>
+          </DialogActions>
+        )}
       </ResponsiveDialog>
     </Grid>
   );
 };
 
-export default withStyles(styles)(ResponsiveScreen);
+export default ResponsiveScreen;

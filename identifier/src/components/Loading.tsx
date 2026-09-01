@@ -2,34 +2,14 @@ import type React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import type { Theme } from '@material-ui/core/styles';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import Grid from '@material-ui/core/Grid';
-import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
+import LinearProgress from '@mui/material/LinearProgress';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 
 import { retryHello } from '../actions/common';
 import { ErrorMessage } from '../errors';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-
-const styles = (theme: Theme) => createStyles({
-  root: {
-    flexGrow: 1,
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0
-  },
-  progress: {
-    height: '4px',
-    width: '100px'
-  },
-  button: {
-    marginTop: theme.spacing(5)
-  }
-});
 
 /*
  * Grid's root is a div, and React's div typings dropped the deprecated align
@@ -37,17 +17,7 @@ const styles = (theme: Theme) => createStyles({
  */
 const legacyAlign = { align: 'center' };
 
-export interface LoadingProps {
-  classes: {
-    root: string;
-    progress: string;
-    button: string;
-  };
-}
-
-function Loading(props: LoadingProps) {
-  const { classes } = props;
-
+function Loading() {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
@@ -60,10 +30,24 @@ function Loading(props: LoadingProps) {
   };
 
   return (
-    <Grid container direction="column" alignItems="center" justifyContent="center" spacing={0} className={classes.root}>
-      <Grid item {...legacyAlign}>
+    <Grid
+      container
+      spacing={0}
+      sx={{
+        flexGrow: 1,
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <Grid {...legacyAlign}>
         {error === null ? (
-          <LinearProgress className={classes.progress} />
+          <LinearProgress sx={{ height: '4px', width: '100px' }} />
         ) : (
           <div>
             <Typography variant="h5" gutterBottom align="center">
@@ -76,7 +60,7 @@ function Loading(props: LoadingProps) {
               autoFocus
               color="primary"
               variant="outlined"
-              className={classes.button}
+              sx={{ mt: 5 }}
               onClick={handleRetry}
             >
               {t("konnect.login.retryButton.label", "Retry")}
@@ -88,4 +72,4 @@ function Loading(props: LoadingProps) {
   );
 }
 
-export default withStyles(styles)(Loading);
+export default Loading;

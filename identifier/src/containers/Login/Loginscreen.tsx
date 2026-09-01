@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 
 import { Route, Switch } from 'react-router-dom';
 
-import { withStyles } from '@material-ui/core/styles';
-
 import ResponsiveScreen from '../../components/ResponsiveScreen';
 import RedirectWithQuery from '../../components/RedirectWithQuery';
 import { executeHello } from '../../actions/common';
@@ -12,9 +10,6 @@ import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import Login from './Login';
 import Chooseaccount from './Chooseaccount';
 import Consent from './Consent';
-
-const styles = () => ({
-});
 
 function Loginscreen() {
   const dispatch = useAppDispatch();
@@ -39,4 +34,4 @@ function Loginscreen() {
   );
 }
 
-export default withStyles(styles)(Loginscreen);
+export default Loginscreen;

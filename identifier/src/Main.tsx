@@ -1,35 +1,21 @@
 import { BrowserRouter } from 'react-router-dom';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
+import Box from '@mui/material/Box';
 
 import Routes from './Routes';
 import { useAppSelector } from './hooks/redux';
 
-const styles = () => createStyles({
-  root: {
-    position: 'relative',
-    display: 'flex',
-    flex: 1
-  }
-});
-
-export interface MainProps {
-  classes: { root: string };
-}
-
-function Main(props: MainProps) {
-  const { classes } = props;
-
+function Main() {
   const hello = useAppSelector(state => state.common.hello);
   const pathPrefix = useAppSelector(state => state.common.pathPrefix);
 
   return (
-    <div className={classes.root}>
+    <Box sx={{ position: 'relative', display: 'flex', flex: 1 }}>
       <BrowserRouter basename={pathPrefix}>
         <Routes hello={hello}/>
       </BrowserRouter>
-    </div>
+    </Box>
   );
 }
 
-export default withStyles(styles)(Main);
+export default Main;

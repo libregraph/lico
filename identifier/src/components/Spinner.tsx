@@ -1,23 +1,9 @@
-
-import {
-  Fade,
-  CircularProgress,
- } from '@material-ui/core';
- import { createStyles, makeStyles } from '@material-ui/core/styles';
-
- const useStyles = makeStyles(() => createStyles({
-  root: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-  },
- }));
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Fade from '@mui/material/Fade';
 
 const Spinner = () => {
-  const classes = useStyles();
-
-  return <div className={classes.root}>
+  return <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
     <Fade
       in
       style={{
@@ -27,7 +13,7 @@ const Spinner = () => {
     >
       <CircularProgress size={70} thickness={1}/>
     </Fade>
-  </div>;
+  </Box>;
 }
 
 export default Spinner;

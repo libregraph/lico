@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useEffect } from 'react';
-import type React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
-import type { SelectProps } from '@material-ui/core/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import type { SelectChangeEvent, SelectProps } from '@mui/material/Select';
 
 import allLocales from '../locales';
 
@@ -50,7 +49,7 @@ function browserLanguages(): readonly string[] {
   return language ? [language] : [];
 }
 
-export interface LocaleSelectProps extends Omit<SelectProps, 'value' | 'onChange'> {
+export interface LocaleSelectProps extends Omit<SelectProps<string>, 'value' | 'onChange'> {
   // The locale codes the branding enables. Every shipped locale is offered when
   // this is absent.
   locales?: string[];
@@ -59,9 +58,10 @@ export interface LocaleSelectProps extends Omit<SelectProps, 'value' | 'onChange
 function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
-    // Every menu item below carries a locale code as its value.
-    i18n.changeLanguage(event.target.value as string);
+  const handleChange = useCallback((event: SelectChangeEvent<string>) => {
+    // Every menu item below carries a locale code as its value, which the
+    // generic above names, so the value needs no narrowing.
+    i18n.changeLanguage(event.target.value);
   }, [ i18n ])
 
   const locales = useMemo(() => {
@@ -97,7 +97,8 @@ function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}
     return null;
   }
 
-  return <Select
+  // Named over string so the change handler's event carries a string value.
+  return <Select<string>
     value={i18n.language}
     onChange={handleChange}
     {...other}

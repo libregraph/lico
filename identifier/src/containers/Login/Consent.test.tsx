@@ -151,8 +151,10 @@ describe('Consent', () => {
   it('shows where allowing will send the browser', () => {
     renderConsent();
 
+    // The tooltip publishes its text as the child's accessible label rather
+    // than as a title attribute, so that is what identifies it here.
     expect(
-      screen.getByTitle('Clicking "Allow" will redirect you to: https://example.test/')
+      screen.getByLabelText('Clicking "Allow" will redirect you to: https://example.test/')
     ).toBeInTheDocument();
   });
 

@@ -3,54 +3,43 @@ import type { History } from 'history';
 
 import { Trans, useTranslation } from 'react-i18next';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import type { Theme } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import BaseTooltip from '@material-ui/core/Tooltip';
-import type { TooltipProps as BaseTooltipProps } from '@material-ui/core/Tooltip';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import green from '@material-ui/core/colors/green';
-import Typography from '@material-ui/core/Typography';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-
+import type { SxProps, Theme } from '@mui/material/styles';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import BaseTooltip from '@mui/material/Tooltip';
+import type { TooltipProps as BaseTooltipProps } from '@mui/material/Tooltip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import { executeConsent, advanceLogonFlow, receiveValidateLogon } from '../../actions/login';
+
 import { ErrorMessage } from '../../errors';
 import { REQUEST_CONSENT_ALLOW } from '../../actions/types';
 import ClientDisplayName from '../../components/ClientDisplayName';
 import ScopesList from '../../components/ScopesList';
 import { withSearchAndHash } from '../../utils';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
+import { green } from '@mui/material/colors';
 
-const styles = (theme: Theme) => createStyles({
-  button: {
-    margin: theme.spacing(1),
-    minWidth: 100
-  },
-  buttonProgress: {
-    color: green[500],
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -12,
-    marginLeft: -12
-  },
-  subHeader: {
-    marginBottom: theme.spacing(2)
-  },
-  scopesList: {
-    marginBottom: theme.spacing(2)
-  },
-  wrapper: {
-    marginTop: theme.spacing(2),
-    position: 'relative',
-    display: 'inline-block'
-  },
-  message: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2)
-  }
-});
+// Both action buttons share the same wrapper, which positions the progress
+// indicator over them.
+const wrapperSx: SxProps<Theme> = {
+  mt: 2,
+  position: 'relative',
+  display: 'inline-block'
+};
+
+// The negative offsets centre the 24px indicator on the button. In spacing
+// units -1.5 is the former -12px.
+const buttonProgressSx: SxProps<Theme> = {
+  color: green[500],
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  mt: -1.5,
+  ml: -1.5
+};
 
 /*
  * The base tooltip takes a single element, which is exactly what this wrapper
@@ -68,20 +57,12 @@ const Tooltip = ({ children, ...other }: TooltipProps) => {
 }
 
 export interface ConsentProps {
-  classes: {
-    button: string;
-    buttonProgress: string;
-    subHeader: string;
-    scopesList: string;
-    wrapper: string;
-    message: string;
-  };
   // Supplied by the Route which renders this screen.
   history: History;
 }
 
 function Consent(props: ConsentProps) {
-  const { classes, history } = props;
+  const { history } = props;
 
   const { t } = useTranslation();
 
@@ -146,7 +127,7 @@ function Consent(props: ConsentProps) {
       <Typography variant="h5" component="h3">
         {t("konnect.consent.headline", "Hi {{displayName}}", { displayName: hello.displayName })}
       </Typography>
-      <Typography variant="subtitle1" className={classes.subHeader}>
+      <Typography variant="subtitle1" sx={{ mb: 2 }}>
         {hello.username}
       </Typography>
 
@@ -160,7 +141,7 @@ function Consent(props: ConsentProps) {
           </Tooltip> wants to
         </Trans>
       </Typography>
-      <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta}></ScopesList>
+      <ScopesList dense disablePadding sx={{ mb: 2 }} scopes={scopes} meta={meta}></ScopesList>
 
       <Typography variant="subtitle1" gutterBottom>
         <Trans t={t} i18nKey="konnect.consent.question">
@@ -173,36 +154,36 @@ function Consent(props: ConsentProps) {
 
       <form action="" onSubmit={action(undefined, scopes)}>
         <DialogActions>
-          <div className={classes.wrapper}>
+          <Box sx={wrapperSx}>
             <Button
               color="secondary"
               variant="outlined"
-              className={classes.button}
+              sx={{ m: 1, minWidth: 100 }}
               disabled={!!loading}
               onClick={action(false, scopes)}
             >
               {t("konnect.consent.cancelButton.label", "Cancel")}
             </Button>
             {(loading && loading !== REQUEST_CONSENT_ALLOW) &&
-              <CircularProgress size={24} className={classes.buttonProgress} />}
-          </div>
-          <div className={classes.wrapper}>
+              <CircularProgress size={24} sx={buttonProgressSx} />}
+          </Box>
+          <Box sx={wrapperSx}>
             <Button
               type="submit"
               color="primary"
               variant="contained"
-              className={classes.button}
+              sx={{ m: 1, minWidth: 100 }}
               disabled={!!loading}
               onClick={action(true, scopes)}
             >
               {t("konnect.consent.allowButton.label", "Allow")}
             </Button>
-            {loading === REQUEST_CONSENT_ALLOW && <CircularProgress size={24} className={classes.buttonProgress} />}
-          </div>
+            {loading === REQUEST_CONSENT_ALLOW && <CircularProgress size={24} sx={buttonProgressSx} />}
+          </Box>
         </DialogActions>
 
         {errors.http && (
-          <Typography variant="subtitle2" color="error" className={classes.message}>
+          <Typography variant="subtitle2" color="error" sx={{ mt: 2, mb: 2 }}>
             <ErrorMessage error={errors.http}></ErrorMessage>
           </Typography>
         )}
@@ -211,4 +192,4 @@ function Consent(props: ConsentProps) {
   );
 }
 
-export default withStyles(styles)(Consent);
+export default Consent;
