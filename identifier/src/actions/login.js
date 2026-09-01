@@ -216,39 +216,40 @@ export function executeConsent(allow=false, scope='', options={}) {
   };
 }
 
+// Validation reads the two fields and nothing else, so it is synchronous and
+// returns what it found: an empty object when the form is complete. An
+// incomplete form is an ordinary outcome rather than a failure, and expressing
+// it as a rejected promise carrying domain data forced callers to treat it as
+// one.
 export function validateUsernamePassword(username, password, isSignedIn) {
-  return (dispatch) => new Promise((resolve, reject) => {
-      const errors = {};
+  return (dispatch) => {
+    const errors = {};
 
-      if (!username) {
-        errors.username = new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
-      }
-      if (!password && !isSignedIn) {
-        errors.password = new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD);
-      }
+    if (!username) {
+      errors.username = new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
+    }
+    if (!password && !isSignedIn) {
+      errors.password = new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD);
+    }
 
-      dispatch(receiveValidateLogon(errors));
-      if (Object.keys(errors).length === 0) {
-        resolve(errors);
-      } else {
-        reject(errors);
-      }
-    });
+    dispatch(receiveValidateLogon(errors));
+
+    return errors;
+  };
 }
 
 export function executeLogonIfFormValid(username, password, isSignedIn, options={}) {
   return (dispatch) => {
-    return dispatch(
-      validateUsernamePassword(username, password, isSignedIn)
-    ).then(() => {
-      const mode = isSignedIn ? ModeLogonUsernameEmptyPasswordCookie : ModeLogonUsernamePassword;
-      return dispatch(executeLogon(username, password, mode, options));
-    }).catch((errors) => {
-      return {
+    const errors = dispatch(validateUsernamePassword(username, password, isSignedIn));
+    if (Object.keys(errors).length > 0) {
+      return Promise.resolve({
         success: false,
         errors: errors
-      };
-    });
+      });
+    }
+
+    const mode = isSignedIn ? ModeLogonUsernameEmptyPasswordCookie : ModeLogonUsernamePassword;
+    return dispatch(executeLogon(username, password, mode, options));
   };
 }
 

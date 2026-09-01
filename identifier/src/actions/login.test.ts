@@ -469,22 +469,20 @@ describe('executeConsent', () => {
 });
 
 describe('validateUsernamePassword', () => {
-  it('resolves with no errors when both are given', async () => {
+  it('reports no errors when both are given', () => {
     const { store, actions } = newHarness();
 
-    await expect(
-      store.dispatch(validateUsernamePassword('user1', 'secret', false))
-    ).resolves.toEqual({});
+    expect(store.dispatch(validateUsernamePassword('user1', 'secret', false))).toEqual({});
 
     expect(actions).toEqual([{ type: types.RECEIVE_VALIDATE_LOGON, errors: {} }]);
   });
 
-  it('rejects when the username is missing', async () => {
+  it('reports a missing username', () => {
     const { store, actions } = newHarness();
 
-    await expect(
-      store.dispatch(validateUsernamePassword('', 'secret', false))
-    ).rejects.toEqual({ username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME) });
+    expect(store.dispatch(validateUsernamePassword('', 'secret', false))).toEqual({
+      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME)
+    });
 
     expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_VALIDATE_LOGON]);
     expect(store.getState().login.errors.username.message).toBe(
@@ -492,41 +490,45 @@ describe('validateUsernamePassword', () => {
     );
   });
 
-  it('rejects when the password is missing', async () => {
+  it('reports a missing password', () => {
     const { store } = newHarness();
 
-    await expect(
-      store.dispatch(validateUsernamePassword('user1', '', false))
-    ).rejects.toEqual({ password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD) });
+    expect(store.dispatch(validateUsernamePassword('user1', '', false))).toEqual({
+      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD)
+    });
   });
 
-  it('rejects with both errors when nothing was entered', async () => {
+  it('reports both errors when nothing was entered', () => {
     const { store } = newHarness();
 
-    await expect(
-      store.dispatch(validateUsernamePassword('', '', false))
-    ).rejects.toEqual({
+    expect(store.dispatch(validateUsernamePassword('', '', false))).toEqual({
       username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
       password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD)
     });
   });
 
-  it('accepts a missing password when the user is already signed in', async () => {
+  it('accepts a missing password when the user is already signed in', () => {
     // The signed in form has no password field, so demanding one would make it
     // impossible to submit.
     const { store } = newHarness();
 
-    await expect(
-      store.dispatch(validateUsernamePassword('user1', '', true))
-    ).resolves.toEqual({});
+    expect(store.dispatch(validateUsernamePassword('user1', '', true))).toEqual({});
   });
 
-  it('still demands a username when the user is already signed in', async () => {
+  it('still demands a username when the user is already signed in', () => {
     const { store } = newHarness();
 
-    await expect(
-      store.dispatch(validateUsernamePassword('', '', true))
-    ).rejects.toEqual({ username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME) });
+    expect(store.dispatch(validateUsernamePassword('', '', true))).toEqual({
+      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME)
+    });
+  });
+
+  it('hands back a plain value rather than a promise', () => {
+    // Callers branch on the result directly. A promise here would put an
+    // incomplete form back behind a then or a catch clause.
+    const { store } = newHarness();
+
+    expect(store.dispatch(validateUsernamePassword('', '', false))).not.toBeInstanceOf(Promise);
   });
 });
 
