@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 import { withStyles } from '@material-ui/core/styles';
 import LinearProgress from '@material-ui/core/LinearProgress';
@@ -31,7 +31,9 @@ const styles = theme => ({
 });
 
 function Loading(props) {
-  const { classes, t } = props;
+  const { classes } = props;
+
+  const { t } = useTranslation();
 
   const dispatch = useDispatch();
   const error = useSelector(state => state.common.error);
@@ -73,7 +75,6 @@ function Loading(props) {
 
 Loading.propTypes = {
   classes: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired,
 };
 
-export default withTranslation()(withStyles(styles)(Loading));
+export default withStyles(styles)(Loading);
