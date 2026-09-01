@@ -9,6 +9,7 @@ import {
 } from '../actions/login';
 import { receiveLogoff } from '../actions/common';
 import {
+  type AppAction,
   RECEIVE_CONSENT,
   RECEIVE_LOGON,
   REQUEST_CONSENT_ALLOW,
@@ -23,7 +24,18 @@ import {
 } from '../errors';
 import type { LoginState, StateResponse } from '../test-utils';
 
-const initial = (): LoginState => loginReducer(undefined, { type: '@@INIT' });
+/*
+ * Redux dispatches an initialisation action of its own, and a reducer has to
+ * survive any action it does not recognise. AppAction is closed over what this
+ * application declares, so no member of it can name a foreign type. The cast is
+ * the honest way to say that: such actions really do arrive at runtime, and the
+ * union is deliberately not widened to admit them.
+ */
+function foreignAction(type: string): AppAction {
+  return { type } as AppAction;
+}
+
+const initial = (): LoginState => loginReducer(undefined, foreignAction('@@INIT'));
 
 // The reducer is driven with the real action creators so that a rename or a
 // changed payload shape on either side breaks the test.
@@ -153,7 +165,9 @@ describe('loginReducer', () => {
     );
     const response: StateResponse = { success: true, state: 'nonce' };
 
-    const state = loginReducer(typed, receiveLogoff(response));
+    // receiveLogoff carries the flag the thunk lifts out of the reply, not the
+    // reply itself.
+    const state = loginReducer(typed, receiveLogoff(response.success));
 
     expect(state.username).toBe('');
     expect(state.password).toBe('');
@@ -203,6 +217,6 @@ describe('loginReducer', () => {
   it('returns the same state object for an unrelated action', () => {
     const before = initial();
 
-    expect(loginReducer(before, { type: 'SOMETHING_ELSE' })).toBe(before);
+    expect(loginReducer(before, foreignAction('SOMETHING_ELSE'))).toBe(before);
   });
 });

@@ -1,25 +1,42 @@
 import queryString from 'query-string';
+import type { History } from 'history';
 
 import { newHelloRequest } from '../models/hello';
+import type { AttemptResult, FieldErrors, HelloResponse } from '../models/api';
 import { withClientRequestState, withSearchAndHash } from '../utils';
 import {
   ExtendedError,
+  asError,
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
   ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
   ERROR_LOGIN_FAILED,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE
 } from '../errors';
+import type { AppThunk } from '../store';
 
 import * as types from './types';
+import type {
+  ReceiveConsentAction,
+  ReceiveLogonAction,
+  ReceiveValidateLogonAction,
+  RequestConsentAction,
+  RequestLogonAction,
+  UpdateInputAction
+} from './types';
 import { receiveHello } from './common';
 import { postJSON, isAbortError } from './utils';
+import type { PostJSONOptions } from './utils';
 
 // Modes for logon.
 export const ModeLogonUsernameEmptyPasswordCookie = '0';
 export const ModeLogonUsernamePassword = '1';
 
-export function updateInput(name, value) {
+export type LogonMode =
+  | typeof ModeLogonUsernameEmptyPasswordCookie
+  | typeof ModeLogonUsernamePassword;
+
+export function updateInput(name: string, value: string): UpdateInputAction {
   return {
     type: types.UPDATE_INPUT,
     name,
@@ -27,14 +44,14 @@ export function updateInput(name, value) {
   };
 }
 
-export function receiveValidateLogon(errors) {
+export function receiveValidateLogon(errors: FieldErrors): ReceiveValidateLogonAction {
   return {
     type: types.RECEIVE_VALIDATE_LOGON,
     errors
   };
 }
 
-export function requestLogon(username, password) {
+export function requestLogon(username: string, password: string): RequestLogonAction {
   return {
     type: types.REQUEST_LOGON,
     username,
@@ -42,7 +59,7 @@ export function requestLogon(username, password) {
   };
 }
 
-export function receiveLogon(logon) {
+export function receiveLogon(logon: AttemptResult): ReceiveLogonAction {
   const { success, errors } = logon;
 
   return {
@@ -52,13 +69,13 @@ export function receiveLogon(logon) {
   };
 }
 
-export function requestConsent(allow=false) {
+export function requestConsent(allow = false): RequestConsentAction {
   return {
     type: allow ? types.REQUEST_CONSENT_ALLOW : types.REQUEST_CONSENT_CANCEL
   };
 }
 
-export function receiveConsent(logon) {
+export function receiveConsent(logon: AttemptResult): ReceiveConsentAction {
   const { success, errors } = logon;
 
   return {
@@ -68,8 +85,13 @@ export function receiveConsent(logon) {
   };
 }
 
-export function executeLogon(username, password, mode=ModeLogonUsernamePassword, options={}) {
-  return async (dispatch, getState) => {
+export function executeLogon(
+  username: string,
+  password: string,
+  mode: LogonMode = ModeLogonUsernamePassword,
+  options: PostJSONOptions = {}
+): AppThunk<Promise<AttemptResult>> {
+  return async (dispatch, getState): Promise<AttemptResult> => {
     dispatch(requestLogon(username, password));
     dispatch(receiveHello({
       username
@@ -78,7 +100,7 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword,
     const { flow, query } = getState().common;
 
     // Prepare params based on mode.
-    const params = [];
+    const params: string[] = [];
     switch (mode) {
       case ModeLogonUsernamePassword:
         // Username with password.
@@ -100,11 +122,11 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword,
     try {
       const { status, headers, data } = await postJSON('./identifier/_/logon', r, options);
 
-      let response;
+      let response: AttemptResult;
       switch (status) {
         case 200:
           // success.
-          response = data;
+          response = data as AttemptResult;
           break;
         case 204:
           // login failed. The state travels in a header, because there is no
@@ -125,13 +147,13 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword,
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: response.state });
       }
 
-      let { hello } = response;
-      if (!hello) {
-        hello = {
-          success: response.success,
-          username
-        };
-      }
+      // A reply without a hello of its own still has to leave a session behind,
+      // so the outcome and the name that was tried stand in for one.
+      const hello: Partial<HelloResponse> = response.hello ?? {
+        success: response.success,
+        username
+      };
+
       dispatch(receiveHello(hello));
       dispatch(receiveLogon(response));
       return response;
@@ -142,8 +164,8 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword,
         return { success: false, errors: {} };
       }
 
-      const errors = {
-        http: error
+      const errors: FieldErrors = {
+        http: asError(error)
       };
 
       dispatch(receiveValidateLogon(errors));
@@ -155,8 +177,12 @@ export function executeLogon(username, password, mode=ModeLogonUsernamePassword,
   };
 }
 
-export function executeConsent(allow=false, scope='', options={}) {
-  return async (dispatch, getState) => {
+export function executeConsent(
+  allow = false,
+  scope = '',
+  options: PostJSONOptions = {}
+): AppThunk<Promise<AttemptResult>> {
+  return async (dispatch, getState): Promise<AttemptResult> => {
     dispatch(requestConsent(allow));
 
     const { query } = getState().common;
@@ -172,11 +198,11 @@ export function executeConsent(allow=false, scope='', options={}) {
     try {
       const { status, headers, data } = await postJSON('./identifier/_/consent', r, options);
 
-      let response;
+      let response: AttemptResult;
       switch (status) {
         case 200:
           // success.
-          response = data;
+          response = data as AttemptResult;
           break;
         case 204:
           // cancel reply. The state travels in a header, because there is no
@@ -203,8 +229,8 @@ export function executeConsent(allow=false, scope='', options={}) {
         return { success: false, errors: {} };
       }
 
-      const errors = {
-        http: error
+      const errors: FieldErrors = {
+        http: asError(error)
       };
 
       dispatch(receiveValidateLogon(errors));
@@ -221,9 +247,13 @@ export function executeConsent(allow=false, scope='', options={}) {
 // incomplete form is an ordinary outcome rather than a failure, and expressing
 // it as a rejected promise carrying domain data forced callers to treat it as
 // one.
-export function validateUsernamePassword(username, password, isSignedIn) {
+export function validateUsernamePassword(
+  username: string,
+  password: string,
+  isSignedIn: boolean
+): AppThunk<FieldErrors> {
   return (dispatch) => {
-    const errors = {};
+    const errors: FieldErrors = {};
 
     if (!username) {
       errors.username = new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
@@ -238,7 +268,12 @@ export function validateUsernamePassword(username, password, isSignedIn) {
   };
 }
 
-export function executeLogonIfFormValid(username, password, isSignedIn, options={}) {
+export function executeLogonIfFormValid(
+  username: string,
+  password: string,
+  isSignedIn: boolean,
+  options: PostJSONOptions = {}
+): AppThunk<Promise<AttemptResult>> {
   return (dispatch) => {
     const errors = dispatch(validateUsernamePassword(username, password, isSignedIn));
     if (Object.keys(errors).length > 0) {
@@ -253,20 +288,25 @@ export function executeLogonIfFormValid(username, password, isSignedIn, options=
   };
 }
 
-export function advanceLogonFlow(success, history, done=false, extraQuery={}) {
+export function advanceLogonFlow(
+  success: boolean,
+  history: History,
+  done = false,
+  extraQuery: Record<string, string | null | undefined> = {}
+): AppThunk {
   return (dispatch, getState) => {
     if (!success) {
       return;
     }
 
     const { flow, query, hello } = getState().common;
-    const q = Object.assign({}, query, extraQuery);
+    const q: Record<string, string | null | undefined> = Object.assign({}, query, extraQuery);
 
     switch (flow) {
       case 'oauth':
       case 'consent':
       case 'oidc':
-        if (hello.details.flow !== flow) {
+        if (hello?.details.flow !== flow) {
           // Ignore requested flow if hello flow does not match.
           break;
         }

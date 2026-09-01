@@ -1,4 +1,3 @@
-import type React from 'react';
 import { Suspense } from 'react';
 import { screen } from '@testing-library/react';
 
@@ -7,7 +6,7 @@ import {
   renderWithProviders,
   replyEchoingState,
   stubFetch,
-  type HelloResponse,
+  type Session,
   type RenderWithProvidersOptions
 } from './test-utils';
 import Routes from './Routes';
@@ -22,22 +21,18 @@ const signedIn = {
   state: true,
   username: 'user1@example.com',
   displayName: 'Lala 123 abc',
-  details: {} as HelloResponse
+  details: {}
 };
 
 const signedOut = {
   state: false,
   username: undefined,
   displayName: undefined,
-  details: {} as HelloResponse
+  details: {}
 };
 
-// withRouter erases the wrapped component's own props while RedirectWithQuery is
-// still JavaScript, so target has to be reintroduced here. Goes away in Phase 3.
-const Redirector = RedirectWithQuery as unknown as React.ComponentType<{ target: string }>;
-
 /* The lazily loaded route targets need a boundary; App supplies one in production. */
-function renderRoutes(hello: object | null, options: RenderWithProvidersOptions) {
+function renderRoutes(hello: Session | null, options: RenderWithProvidersOptions) {
   return renderWithProviders(
     <Suspense fallback={<div>loading</div>}>
       <Routes hello={hello} />
@@ -124,7 +119,7 @@ describe('RedirectWithQuery', () => {
   it('redirects to the target while keeping the query string and the hash', () => {
     const history = newTestHistory('/welcome?client_id=demo&scope=openid#section');
 
-    renderWithProviders(<Redirector target="/identifier" />, { history });
+    renderWithProviders(<RedirectWithQuery target="/identifier" />, { history });
 
     expect(history.location.pathname).toBe('/identifier');
     expect(history.location.search).toBe('?client_id=demo&scope=openid');
@@ -134,7 +129,7 @@ describe('RedirectWithQuery', () => {
   it('redirects with an empty query string and hash when the source had none', () => {
     const history = newTestHistory('/welcome');
 
-    renderWithProviders(<Redirector target="/identifier" />, { history });
+    renderWithProviders(<RedirectWithQuery target="/identifier" />, { history });
 
     expect(history.location.pathname).toBe('/identifier');
     expect(history.location.search).toBe('');
@@ -145,7 +140,7 @@ describe('RedirectWithQuery', () => {
     const history = newTestHistory('/welcome');
     const before = history.length;
 
-    renderWithProviders(<Redirector target="/identifier" />, { history });
+    renderWithProviders(<RedirectWithQuery target="/identifier" />, { history });
 
     // A guard redirect must not leave the guarded path in the back history.
     expect(history.length).toBe(before);

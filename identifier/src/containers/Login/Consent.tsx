@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { useDispatch, useSelector } from 'react-redux';
+import type { History } from 'history';
 
 import { Trans, useTranslation } from 'react-i18next';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
+import type { Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import BaseTooltip from '@material-ui/core/Tooltip';
+import type { TooltipProps as BaseTooltipProps } from '@material-ui/core/Tooltip';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import green from '@material-ui/core/colors/green';
 import Typography from '@material-ui/core/Typography';
@@ -19,8 +20,9 @@ import { REQUEST_CONSENT_ALLOW } from '../../actions/types';
 import ClientDisplayName from '../../components/ClientDisplayName';
 import ScopesList from '../../components/ScopesList';
 import { withSearchAndHash } from '../../utils';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 
-const styles = theme => ({
+const styles = (theme: Theme) => createStyles({
   button: {
     margin: theme.spacing(1),
     minWidth: 100
@@ -50,25 +52,43 @@ const styles = theme => ({
   }
 });
 
-const Tooltip = ({children, ...other } = {}) => {
+/*
+ * The base tooltip takes a single element, which is exactly what this wrapper
+ * guarantees. Its own children are widened to any node so the Trans component
+ * can hand it whatever the translation interpolates.
+ */
+interface TooltipProps extends Omit<BaseTooltipProps, 'children'> {
+  children: React.ReactNode;
+}
+
+const Tooltip = ({ children, ...other }: TooltipProps) => {
   // Ensures that there is only a single child for the tooltip element to
   // make it compatible with the Trans component.
   return <BaseTooltip {...other}><span>{children}</span></BaseTooltip>;
 }
 
-Tooltip.propTypes = {
-  children: PropTypes.node.isRequired,
+export interface ConsentProps {
+  classes: {
+    button: string;
+    buttonProgress: string;
+    subHeader: string;
+    scopesList: string;
+    wrapper: string;
+    message: string;
+  };
+  // Supplied by the Route which renders this screen.
+  history: History;
 }
 
-function Consent(props) {
+function Consent(props: ConsentProps) {
   const { classes, history } = props;
 
   const { t } = useTranslation();
 
-  const dispatch = useDispatch();
-  const hello = useSelector(state => state.common.hello);
-  const loading = useSelector(state => state.login.loading);
-  const errors = useSelector(state => state.login.errors);
+  const dispatch = useAppDispatch();
+  const hello = useAppSelector(state => state.common.hello);
+  const loading = useAppSelector(state => state.login.loading);
+  const errors = useAppSelector(state => state.login.errors);
 
   // No session means no client, and the mount guard tests for exactly that, so
   // it must not be given an empty object which would read as one being present.
@@ -88,24 +108,25 @@ function Consent(props) {
 
   // No default for allow: the form passes it undefined to mean "decide nothing",
   // and a default would turn that into an explicit refusal.
-  const action = (allow, scopes={}) => (event) => {
-    event.preventDefault();
+  const action = (allow: boolean | undefined, scopes: Record<string, boolean> = {}) =>
+    (event: React.SyntheticEvent) => {
+      event.preventDefault();
 
-    if (allow === undefined) {
-      return;
-    }
-
-    // Convert all scopes which are true to a scope value.
-    const scope = Object.keys(scopes).filter(scope => {
-      return !!scopes[scope];
-    }).join(' ');
-
-    dispatch(executeConsent(allow, scope)).then((response) => {
-      if (response.success) {
-        dispatch(advanceLogonFlow(response.success, history, true, {konnect: response.state}));
+      if (allow === undefined) {
+        return;
       }
-    });
-  };
+
+      // Convert all scopes which are true to a scope value.
+      const scope = Object.keys(scopes).filter(scope => {
+        return !!scopes[scope];
+      }).join(' ');
+
+      dispatch(executeConsent(allow, scope)).then((response) => {
+        if (response.success) {
+          dispatch(advanceLogonFlow(response.success, history, true, {konnect: response.state}));
+        }
+      });
+    };
 
   // The mount guard sends the visitor away when there is nothing to consent
   // to, but that only happens after this first render, and it deliberately
@@ -115,7 +136,10 @@ function Consent(props) {
   }
 
   const scopes = hello.details.scopes || {};
-  const meta = hello.details.meta || {};
+
+  // A reply always describes its scopes. An empty description still has to name
+  // both members, because the list looks up every scope in the mapping.
+  const meta = hello.details.meta?.scopes ?? { mapping: {}, definitions: {} };
 
   return (
     <DialogContent>
@@ -136,7 +160,7 @@ function Consent(props) {
           </Tooltip> wants to
         </Trans>
       </Typography>
-      <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta.scopes || {}}></ScopesList>
+      <ScopesList dense disablePadding className={classes.scopesList} scopes={scopes} meta={meta}></ScopesList>
 
       <Typography variant="subtitle1" gutterBottom>
         <Trans t={t} i18nKey="konnect.consent.question">
@@ -186,11 +210,5 @@ function Consent(props) {
     </DialogContent>
   );
 }
-
-Consent.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  history: PropTypes.object.isRequired
-};
 
 export default withStyles(styles)(Consent);

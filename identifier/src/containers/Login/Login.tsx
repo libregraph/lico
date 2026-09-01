@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { History } from 'history';
 
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +11,8 @@ import { useTranslation } from 'react-i18next';
 // ESM build does not help, because that object literal is still what it exports.
 import isEmail from 'validator/es/lib/isEmail';
 
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
+import type { Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import green from '@material-ui/core/colors/green';
@@ -24,6 +24,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
 import { ErrorMessage } from '../../errors';
 import { withSearchAndHash } from '../../utils';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import IconButton from '@material-ui/core/IconButton';
 import InputAdornment from '@material-ui/core/InputAdornment'
 import Visibility from '@material-ui/icons/Visibility';
@@ -36,7 +37,7 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
  * A hint may be a whole address or just the local part of one, so the local part
  * is recognised by testing it against a placeholder domain.
  */
-function looksLikeIdentity(hint) {
+function looksLikeIdentity(hint: string): boolean {
   return isEmail(hint) || isEmail(`${hint}@example.com`);
 }
 
@@ -52,7 +53,7 @@ function looksLikeIdentity(hint) {
  * The split has to come first: new URL('http://user@host') would read the whole
  * thing as userinfo plus host and hand back only the host.
  */
-function withAsciiDomain(username) {
+function withAsciiDomain(username: string): string {
   const at = username.lastIndexOf('@');
   if (at === -1) {
     return username;
@@ -69,7 +70,7 @@ function withAsciiDomain(username) {
   }
 }
 
-const styles = theme => ({
+const styles = (theme: Theme) => createStyles({
   button: {
     margin: theme.spacing(1),
     minWidth: 100
@@ -102,23 +103,37 @@ const styles = theme => ({
   },
 });
 
-function Login(props) {
+export interface LoginProps {
+  classes: {
+    button: string;
+    buttonProgress: string;
+    subHeader: string;
+    wrapper: string;
+    slideContainer: string;
+    message: string;
+    usernameInputField: string;
+  };
+  // Supplied by the Route which renders this screen.
+  history: History;
+}
+
+function Login(props: LoginProps) {
   const { history, classes } = props;
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const hello = useSelector(state => state.common.hello);
-  const branding = useSelector(state => state.common.branding);
-  const query = useSelector(state => state.common.query);
-  const loading = useSelector(state => state.login.loading);
-  const errors = useSelector(state => state.login.errors);
-  const username = useSelector(state => state.login.username);
-  const password = useSelector(state => state.login.password);
+  const hello = useAppSelector(state => state.common.hello);
+  const branding = useAppSelector(state => state.common.branding);
+  const query = useAppSelector(state => state.common.query);
+  const loading = useAppSelector(state => state.login.loading);
+  const errors = useAppSelector(state => state.login.errors);
+  const username = useAppSelector(state => state.login.username);
+  const password = useAppSelector(state => state.login.password);
 
   const { t } = useTranslation();
 
-  const [showPassword, setShowPassword] = React.useState(false);
-  const passwordInputRef = useRef();
+  const [showPassword, setShowPassword] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // This effect decides once, on mount, whether an already signed-in visitor
   // should be redirected onwards and whether login_hint should prefill the
@@ -151,11 +166,12 @@ function Login(props) {
     }
   }, []);
 
-  const handleChange = (name) => (event) => {
-    dispatch(updateInput(name, event.target.value));
-  };
+  const handleChange = (name: string) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      dispatch(updateInput(name, event.target.value));
+    };
 
-  const handleNextClick = (event) => {
+  const handleNextClick = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
     dispatch(executeLogonIfFormValid(withAsciiDomain(username), password, false)).then((response) => {
@@ -257,11 +273,5 @@ function Login(props) {
     </DialogContent>
   );
 }
-
-Login.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  history: PropTypes.object.isRequired
-};
 
 export default withStyles(styles)(Login);

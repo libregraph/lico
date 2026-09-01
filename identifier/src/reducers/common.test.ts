@@ -1,8 +1,20 @@
 import commonReducer from './common';
 import { receiveError, receiveHello, resetHello } from '../actions/common';
+import type { AppAction } from '../actions/types';
 import type { Branding, HelloResponse } from '../test-utils';
 
-const initial = () => commonReducer(undefined, { type: '@@INIT' });
+/*
+ * Redux dispatches an initialisation action of its own, and a reducer has to
+ * survive any action it does not recognise. AppAction is closed over what this
+ * application declares, so no member of it can name a foreign type. The cast is
+ * the honest way to say that: such actions really do arrive at runtime, and the
+ * union is deliberately not widened to admit them.
+ */
+function foreignAction(type: string): AppAction {
+  return { type } as AppAction;
+}
+
+const initial = () => commonReducer(undefined, foreignAction('@@INIT'));
 
 describe('commonReducer', () => {
   it('starts with no session and no branding', () => {
@@ -110,6 +122,6 @@ describe('commonReducer', () => {
   it('returns the same state object for an unrelated action', () => {
     const before = initial();
 
-    expect(commonReducer(before, { type: 'SOMETHING_ELSE' })).toBe(before);
+    expect(commonReducer(before, foreignAction('SOMETHING_ELSE'))).toBe(before);
   });
 });

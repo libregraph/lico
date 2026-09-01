@@ -1,12 +1,30 @@
-export function newHelloRequest(flow, query) {
-  const r = {};
+/*
+ * What the hello endpoint is asked. Only the three flows below carry the OIDC
+ * request parameters; any other flow is dropped rather than sent on, so the
+ * server is never handed a flow it did not offer.
+ */
+export interface HelloRequest {
+  flow?: string;
+  prompt?: string;
+  scope?: string;
+  client_id?: string;
+  redirect_uri?: string;
+  id_token_hint?: string;
+  max_age?: string;
+}
+
+export function newHelloRequest(
+  flow: string | null | undefined,
+  query: Record<string, string>
+): HelloRequest {
+  const r: HelloRequest = {};
 
   if (query.prompt) {
     // TODO(longsleep): Validate prompt values?
     r.prompt = query.prompt;
   }
 
-  let selectedFlow = flow;
+  let selectedFlow: string | null | undefined = flow;
   switch (flow) {
     case 'oauth':
     case 'consent':

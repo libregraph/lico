@@ -1,27 +1,41 @@
 
+import type React from 'react';
+
 import List from '@material-ui/core/List';
+import type { ListProps } from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
-import { withStyles } from '@material-ui/core/styles';
-import PropTypes from 'prop-types';
+import { createStyles, withStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 
 import { useTranslation } from 'react-i18next';
 
-const styles = () => ({
+import type { ScopesMeta } from '../models/api';
+
+const styles = () => createStyles({
   row: {
     paddingTop: 0,
     paddingBottom: 0
   }
 });
 
-const ScopesList = ({scopes, meta, classes, ...rest}) => {
+export interface ScopesListProps extends Omit<ListProps, 'classes'> {
+  classes: {
+    row: string;
+  };
+
+  // The granted flags of a hello response, keyed by OIDC scope name.
+  scopes: Record<string, boolean>;
+  meta: ScopesMeta;
+}
+
+const ScopesList = ({scopes, meta, classes, ...rest}: ScopesListProps) => {
   const { mapping, definitions } = meta;
 
   const { t } = useTranslation();
 
-  const rows = [];
-  const known = {};
+  const rows: React.ReactElement[] = [];
+  const known: Record<string, boolean> = {};
 
   // TODO(longsleep): Sort scopes according to priority.
   for (const scope in scopes) {
@@ -38,7 +52,7 @@ const ScopesList = ({scopes, meta, classes, ...rest}) => {
       id = scope;
     }
     const definition = definitions[id];
-    let label;
+    let label: string | undefined;
     if (definition) {
       switch (definition.id) {
         case 'scope_alias_basic':
@@ -78,13 +92,6 @@ const ScopesList = ({scopes, meta, classes, ...rest}) => {
       {rows}
     </List>
   );
-};
-
-ScopesList.propTypes = {
-  classes: PropTypes.object.isRequired,
-
-  scopes: PropTypes.object.isRequired,
-  meta: PropTypes.object.isRequired
 };
 
 export default withStyles(styles)(ScopesList);

@@ -1,13 +1,20 @@
 
-import PropTypes from 'prop-types';
+import type React from 'react';
 import { Route } from 'react-router-dom';
+import type { RouteComponentProps, RouteProps } from 'react-router-dom';
 
 import RedirectWithQuery from './RedirectWithQuery';
+import type { Session } from '../models/api';
+
+export interface PrivateRouteProps extends Omit<RouteProps, 'component' | 'render' | 'children'> {
+  component: React.ComponentType<RouteComponentProps>;
+  hello?: Session | null;
+}
 
 // The hello state is an object as soon as the server has answered, whether or
 // not anyone is signed in, so its presence alone says nothing. Only its state
 // flag does.
-const PrivateRoute = ({ component: Target, hello, ...rest }) => (
+const PrivateRoute = ({ component: Target, hello, ...rest }: PrivateRouteProps) => (
   <Route {...rest} render={props => (
     hello?.state ? (
       <Target {...props}/>
@@ -16,10 +23,5 @@ const PrivateRoute = ({ component: Target, hello, ...rest }) => (
     )
   )}/>
 );
-
-PrivateRoute.propTypes = {
-  component: PropTypes.elementType.isRequired,
-  hello: PropTypes.object
-};
 
 export default PrivateRoute;
