@@ -10,6 +10,12 @@ import { setTestLanguages } from '../test-utils';
 import LocaleSelect from './LocaleSelect';
 
 /*
+ * The closed select is queried as a combobox, not a button. MUI reports the
+ * role a select actually has, which is what a reader of these queries should
+ * expect rather than the button the v4 markup used to claim.
+ */
+
+/*
  * These tests build their own i18next instance rather than using the shared one,
  * so that supportedLngs and fallbackLng match what src/i18n.ts configures in
  * production. The locale the component settles on has to be right against that
@@ -58,7 +64,7 @@ describe('LocaleSelect', () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance, deAndFr);
-    await userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('combobox'));
 
     expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([
       'Deutsch',
@@ -70,7 +76,7 @@ describe('LocaleSelect', () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance, ['de', 'fr', 'kl']);
-    await userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('combobox'));
 
     expect(screen.getAllByRole('option')).toHaveLength(2);
   });
@@ -87,7 +93,7 @@ describe('LocaleSelect', () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance);
-    await userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('combobox'));
 
     expect(screen.getAllByRole('option')).toHaveLength(allLocales.length);
   });
@@ -103,7 +109,7 @@ describe('LocaleSelect', () => {
 
     await waitFor(() => expect(instance.language).toBe('fr'));
     expect(instance.language).not.toBe('de');
-    expect(screen.getByRole('button')).toHaveTextContent('Français');
+    expect(screen.getByRole('combobox')).toHaveTextContent('Français');
   });
 
   it('falls back to the first enabled locale when no browser language matches', async () => {
@@ -113,7 +119,7 @@ describe('LocaleSelect', () => {
     renderSelect(instance, deAndFr);
 
     await waitFor(() => expect(instance.language).toBe('de'));
-    expect(screen.getByRole('button')).toHaveTextContent('Deutsch');
+    expect(screen.getByRole('combobox')).toHaveTextContent('Deutsch');
   });
 
   it('does not adopt a locale the branding disabled, even one the app ships', async () => {
@@ -126,7 +132,7 @@ describe('LocaleSelect', () => {
 
     await waitFor(() => expect(instance.language).toBe('de'));
     expect(instance.language).not.toBe('it');
-    expect(screen.getByRole('button')).toHaveTextContent('Deutsch');
+    expect(screen.getByRole('combobox')).toHaveTextContent('Deutsch');
   });
 
   it('renders nothing and keeps the language when no enabled locale is shipped', async () => {
@@ -149,7 +155,7 @@ describe('LocaleSelect', () => {
 
     // The browser prefers French, but German is already active and enabled, so
     // an earlier explicit choice must not be overridden.
-    await waitFor(() => expect(screen.getByRole('button')).toHaveTextContent('Deutsch'));
+    await waitFor(() => expect(screen.getByRole('combobox')).toHaveTextContent('Deutsch'));
     expect(instance.language).toBe('de');
   });
 
@@ -157,10 +163,10 @@ describe('LocaleSelect', () => {
     const instance = newProductionLikeI18n('de');
 
     renderSelect(instance, deAndFr);
-    await userEvent.click(screen.getByRole('button'));
+    await userEvent.click(screen.getByRole('combobox'));
     await userEvent.click(screen.getByRole('option', { name: 'Français' }));
 
     await waitFor(() => expect(instance.language).toBe('fr'));
-    expect(screen.getByRole('button')).toHaveTextContent('Français');
+    expect(screen.getByRole('combobox')).toHaveTextContent('Français');
   });
 });

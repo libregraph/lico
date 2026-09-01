@@ -1,16 +1,18 @@
-import { unstable_createMuiStrictModeTheme as createMuiTheme } from '@material-ui/core';
+import { createTheme } from '@mui/material/styles';
 
-import blueGrey from '@material-ui/core/colors/blueGrey';
-import blue from '@material-ui/core/colors/blue';
-import red from '@material-ui/core/colors/red';
+import { blue, blueGrey, red } from '@mui/material/colors';
 
 const primaryColor = blue;
 const secondaryColor = blueGrey;
 const errorColor = red;
 
-// All the following keys are optional.
-// We try our best to provide a great default value.
-const theme = createMuiTheme({
+/*
+ * createTheme is used directly rather than through adaptV4Theme: every option
+ * below is still a current one. The v4 strict mode variant this replaces existed
+ * because that version's theme misbehaved under StrictMode, which is no longer
+ * the case.
+ */
+const theme = createTheme({
   palette: {
     primary: primaryColor,
     secondary: secondaryColor,

@@ -11,24 +11,23 @@ import { useTranslation } from 'react-i18next';
 // ESM build does not help, because that object literal is still what it exports.
 import isEmail from 'validator/es/lib/isEmail';
 
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import type { Theme } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import green from '@material-ui/core/colors/green';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
+
 import { ErrorMessage } from '../../errors';
 import { withSearchAndHash } from '../../utils';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import IconButton from '@material-ui/core/IconButton';
-import InputAdornment from '@material-ui/core/InputAdornment'
-import Visibility from '@material-ui/icons/Visibility';
-import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment'
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { green } from '@mui/material/colors';
 
 /*
  * login_hint decides only whether the username field is prefilled. The server
@@ -70,55 +69,32 @@ function withAsciiDomain(username: string): string {
   }
 }
 
-const styles = (theme: Theme) => createStyles({
-  button: {
-    margin: theme.spacing(1),
-    minWidth: 100
-  },
-  buttonProgress: {
-    color: green[500],
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -12,
-    marginLeft: -12
-  },
-  subHeader: {
-    marginBottom: theme.spacing(3)
-  },
-  wrapper: {
-    position: 'relative',
-    display: 'inline-block'
-  },
-  slideContainer: {
-    overflowX: 'hidden',
-  },
-  message: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2)
-  },
-  usernameInputField: {
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1.5),
-  },
-});
+/*
+ * The progress ring sits centred on top of the button that started the request.
+ * The offsets are half its 24px size, so they are pixel values divided by the
+ * 8px spacing unit rather than spacing steps of their own.
+ */
+const buttonProgressSx = {
+  color: green[500],
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  mt: -1.5,
+  ml: -1.5
+} as const;
+
+const wrapperSx = {
+  position: 'relative',
+  display: 'inline-block'
+} as const;
 
 export interface LoginProps {
-  classes: {
-    button: string;
-    buttonProgress: string;
-    subHeader: string;
-    wrapper: string;
-    slideContainer: string;
-    message: string;
-    usernameInputField: string;
-  };
   // Supplied by the Route which renders this screen.
   history: History;
 }
 
 function Login(props: LoginProps) {
-  const { history, classes } = props;
+  const { history } = props;
 
   const dispatch = useAppDispatch();
 
@@ -211,15 +187,17 @@ function Login(props: LoginProps) {
           helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}}></ErrorMessage>}
           fullWidth
           autoFocus
-          inputProps={{
-            autoCapitalize: 'off',
-            spellCheck: 'false'
+          slotProps={{
+            htmlInput: {
+              autoCapitalize: 'off',
+              spellCheck: 'false'
+            }
           }}
           value={username}
           onChange={handleChange('username')}
           autoComplete="kopano-account username"
           variant="outlined"
-          className={classes.usernameInputField}
+          sx={{ mt: 1, mb: 1.5 }}
         />
         <TextField
           inputRef={passwordInputRef}
@@ -231,39 +209,41 @@ function Login(props: LoginProps) {
           onChange={handleChange('password')}
           autoComplete="kopano-account current-password"
           variant="outlined"
-          InputProps={{      // End-adornment icon to show/hide password on visibility button click.
-            endAdornment: <InputAdornment position="end">
-              <IconButton
-                aria-label="toggle password visibility"
-                onClick={() => setShowPassword((show) => !show)}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                }}
-                edge="end"
-              >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
+          slotProps={{
+            input: {      // End-adornment icon to show/hide password on visibility button click.
+              endAdornment: <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={() => setShowPassword((show) => !show)}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+                  edge="end"
+                  size="large">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            }
           }}
         />
         <DialogActions>
-          <div className={classes.wrapper}>
+          <Box sx={wrapperSx}>
             <Button
               type="submit"
               color="primary"
               variant="contained"
-              className={classes.button}
+              sx={{ m: 1, minWidth: 100 }}
               disabled={!!loading}
               onClick={handleNextClick}
             >
               {t("konnect.login.nextButton.label", "Next")}
             </Button>
-            {loading && <CircularProgress size={24} className={classes.buttonProgress} />}
-          </div>
+            {loading && <CircularProgress size={24} sx={buttonProgressSx} />}
+          </Box>
         </DialogActions>
 
         {errors.http && (
-          <Typography variant="subtitle2" color="error" className={classes.message}>
+          <Typography variant="subtitle2" color="error" sx={{ mt: 2, mb: 2 }}>
             <ErrorMessage error={errors.http}></ErrorMessage>
           </Typography>
         )}
@@ -274,4 +254,4 @@ function Login(props: LoginProps) {
   );
 }
 
-export default withStyles(styles)(Login);
+export default Login;

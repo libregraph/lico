@@ -1,35 +1,25 @@
 
 import type React from 'react';
 
-import List from '@material-ui/core/List';
-import type { ListProps } from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import { createStyles, withStyles } from '@material-ui/core/styles';
-import Checkbox from '@material-ui/core/Checkbox';
+import List from '@mui/material/List';
+import type { ListProps } from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Checkbox from '@mui/material/Checkbox';
 
 import { useTranslation } from 'react-i18next';
 
 import type { ScopesMeta } from '../models/api';
 
-const styles = () => createStyles({
-  row: {
-    paddingTop: 0,
-    paddingBottom: 0
-  }
-});
+const rowSx = { pt: 0, pb: 0 };
 
-export interface ScopesListProps extends Omit<ListProps, 'classes'> {
-  classes: {
-    row: string;
-  };
-
+export interface ScopesListProps extends ListProps {
   // The granted flags of a hello response, keyed by OIDC scope name.
   scopes: Record<string, boolean>;
   meta: ScopesMeta;
 }
 
-const ScopesList = ({scopes, meta, classes, ...rest}: ScopesListProps) => {
+const ScopesList = ({scopes, meta, ...rest}: ScopesListProps) => {
   const { mapping, definitions } = meta;
 
   const { t } = useTranslation();
@@ -76,7 +66,7 @@ const ScopesList = ({scopes, meta, classes, ...rest}: ScopesListProps) => {
         disableGutters
         dense
         key={id}
-        className={classes.row}
+        sx={rowSx}
       ><Checkbox
           checked
           disableRipple
@@ -94,4 +84,4 @@ const ScopesList = ({scopes, meta, classes, ...rest}: ScopesListProps) => {
   );
 };
 
-export default withStyles(styles)(ScopesList);
+export default ScopesList;
