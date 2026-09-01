@@ -74,9 +74,9 @@ export interface ResponsiveScreenProps extends Omit<GridProps, 'classes' | 'clas
 const ResponsiveScreen = (props: ResponsiveScreenProps) => {
   const {
     classes,
-    withoutLogo,
-    withoutPadding,
-    loading,
+    withoutLogo = false,
+    withoutPadding = false,
+    loading = false,
     branding,
     children,
     className,
@@ -121,12 +121,6 @@ const ResponsiveScreen = (props: ResponsiveScreenProps) => {
       </ResponsiveDialog>
     </Grid>
   );
-};
-
-ResponsiveScreen.defaultProps = {
-  withoutLogo: false,
-  withoutPadding: false,
-  loading: false
 };
 
 export default withStyles(styles)(ResponsiveScreen);
