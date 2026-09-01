@@ -38,7 +38,24 @@ lint: vendor ; $(info running biome ...)	@
 .PHONY: lint-checkstyle
 lint-checkstyle: vendor ; $(info running biome checkstyle ...)	@
 	@mkdir -p ../test
-	$(BUNX) biome lint --error-on-warnings --reporter=checkstyle --reporter-file=../test/tests.biome.xml . || true
+	$(BUNX) biome lint --error-on-warnings --reporter=checkstyle --reporter-file=../test/tests.biome.xml .
+
+# The generated locale JSON is what makes i18n a prerequisite here: both the
+# typecheck and the suite import it, and without it they fail with missing
+# modules rather than anything meaningful. Linting does not read it.
+.PHONY: typecheck
+typecheck: vendor | i18n ; $(info running tsc ...)	@
+	@$(BUNX) tsc -p tsconfig.json --noEmit && echo "tsc: no type errors"
+
+.PHONY: test
+test: vendor | i18n ; $(info running vitest ...)	@
+	@$(BUN) --bun run test --run
+
+# Cheapest gate first, so a lint slip fails in a tenth of a second instead of
+# after the suite. Deliberately no production build: this stays quick enough to
+# run constantly, and `make build` is there when the output itself matters.
+.PHONY: check
+check: lint typecheck test
 
 # Bun
 
