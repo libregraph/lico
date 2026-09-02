@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 
 import createCache from "@emotion/cache";
@@ -41,7 +41,14 @@ const cache = createCache({
   prepend: true,
 });
 
-ReactDOM.render(
+const container = document.getElementById("root");
+if (!container) {
+  // The server writes this element, so its absence means the document the
+  // webapp was served with is not the one it was built against.
+  throw new Error("no #root element to render into");
+}
+
+createRoot(container).render(
   <React.StrictMode>
     <CacheProvider value={cache}>
       <Provider store={store}>
@@ -49,5 +56,4 @@ ReactDOM.render(
       </Provider>
     </CacheProvider>
   </React.StrictMode>,
-  document.getElementById("root"),
 );
