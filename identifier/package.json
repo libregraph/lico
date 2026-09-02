@@ -29,6 +29,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "test": "vitest",
+    "typecheck": "tsc --noEmit",
     "lint": "biome lint --error-on-warnings .",
     "licenses": "bun ../scripts/js-license-ranger.cjs"
   },
@@ -46,18 +47,18 @@
     "@types/react-router": "5.1.20",
     "@types/react-router-dom": "5.3.3",
     "@types/validator": "^13",
-    "@vitejs/plugin-legacy": "^4.0.0",
-    "@vitejs/plugin-react": "^4.1.1",
+    "@vitejs/plugin-legacy": "^8.2.3",
+    "@vitejs/plugin-react": "^6.1.1",
     "cldr": "^7.4.0",
     "gettext-parser": "^5.1.2",
     "i18next-conv": "^12.1.1",
     "i18next-parser": "^5.4.0",
-    "jsdom": "^22.1.0",
+    "jsdom": "^30.0.1",
     "terser": "^5.30.4",
     "typescript": "^7.0.2",
-    "vite": "^4.5.13",
-    "vite-plugin-checker": "^0.6.2",
-    "vitest": "^0.34.6"
+    "vite": "^8.2.2",
+    "vite-plugin-checker": "^0.14.5",
+    "vitest": "^4.1.11"
   },
   "resolutions": {
     "@types/react": "^17.0.70"
