@@ -1,8 +1,6 @@
 import { useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
-import type { History } from "history";
-
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -18,6 +16,7 @@ import { advanceLogonFlow, executeConsent } from "../../actions/login";
 import ClientDisplayName from "../../components/ClientDisplayName";
 import ScopesList from "../../components/ScopesList";
 import { ErrorMessage } from "../../errors";
+import { useFlowNavigation } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectHello } from "../../reducers/common";
 import { receiveValidateLogon, requestConsentAllow, selectErrors, selectLoading } from "../../reducers/login";
@@ -61,17 +60,11 @@ const Tooltip = ({ children, ...other }: TooltipProps) => {
   );
 };
 
-export interface ConsentProps {
-  // Supplied by the Route which renders this screen.
-  history: History;
-}
-
-function Consent(props: ConsentProps) {
-  const { history } = props;
-
+function Consent() {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
+  const nav = useFlowNavigation();
   const hello = useAppSelector(selectHello);
   const loading = useAppSelector(selectLoading);
   const errors = useAppSelector(selectErrors);
@@ -85,8 +78,8 @@ function Consent(props: ConsentProps) {
   // in the middle of deciding.
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if ((!hello?.state || !client) && history.action !== "PUSH") {
-      history.replace(withSearchAndHash("/identifier", history.location));
+    if ((!hello?.state || !client) && nav.navigationType !== "PUSH") {
+      nav.navigate(withSearchAndHash("/identifier", nav.location), { replace: true });
     }
 
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.
@@ -112,7 +105,7 @@ function Consent(props: ConsentProps) {
 
       dispatch(executeConsent(allow, scope)).then((response) => {
         if (response.success) {
-          dispatch(advanceLogonFlow(response.success, history, true, { konnect: response.state }));
+          dispatch(advanceLogonFlow(response.success, nav, true, { konnect: response.state }));
         }
       });
     };

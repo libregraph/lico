@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Route, Switch } from "react-router-dom";
+import { Route, Routes } from "react-router";
 
 import { executeHello } from "../../actions/common";
 import RedirectWithQuery from "../../components/RedirectWithQuery";
@@ -23,12 +23,12 @@ function Loginscreen() {
   const loading = hello === null;
   return (
     <ResponsiveScreen loading={loading} branding={branding} withoutPadding>
-      <Switch>
-        <Route path="/identifier" exact component={Login}></Route>
-        <Route path="/chooseaccount" exact component={Chooseaccount}></Route>
-        <Route path="/consent" exact component={Consent}></Route>
-        <RedirectWithQuery target="/identifier" />
-      </Switch>
+      <Routes>
+        <Route path="/identifier" element={<Login />} />
+        <Route path="/chooseaccount" element={<Chooseaccount />} />
+        <Route path="/consent" element={<Consent />} />
+        <Route path="*" element={<RedirectWithQuery target="/identifier" />} />
+      </Routes>
     </ResponsiveScreen>
   );
 }

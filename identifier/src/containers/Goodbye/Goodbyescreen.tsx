@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-
-import type { History } from "history";
+import { useNavigate } from "react-router";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -13,17 +12,11 @@ import ResponsiveScreen from "../../components/ResponsiveScreen";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectBranding, selectHello } from "../../reducers/common";
 
-export interface GoodbyescreenProps {
-  // Supplied by the Route which renders this screen.
-  history: History;
-}
-
-function Goodbyescreen(props: GoodbyescreenProps) {
-  const { history } = props;
-
+function Goodbyescreen() {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const branding = useAppSelector(selectBranding);
   const hello = useAppSelector(selectHello);
 
@@ -43,7 +36,7 @@ function Goodbyescreen(props: GoodbyescreenProps) {
       dispatch(executeHello());
 
       if (response.success) {
-        history.push("/goodbye");
+        navigate("/goodbye");
       }
     });
   };

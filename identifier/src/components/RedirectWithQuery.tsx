@@ -1,22 +1,32 @@
-import type { RouteComponentProps } from "react-router";
-import { withRouter } from "react-router";
-import type { RedirectProps } from "react-router-dom";
-import { Redirect } from "react-router-dom";
+import type { NavigateProps } from "react-router";
+import { Navigate, useLocation } from "react-router";
 
-// The router props arrive from withRouter, so callers only supply target and
-// whatever else they want handed to Redirect.
-export interface RedirectWithQueryProps extends RouteComponentProps, Omit<RedirectProps, "to"> {
+// Callers supply the target and whatever else they want handed to Navigate.
+export interface RedirectWithQueryProps extends Omit<NavigateProps, "to"> {
   target: string;
 }
 
-const RedirectWithQuery = ({ target, location, ...rest }: RedirectWithQueryProps) => {
+/*
+ * The query string and the fragment are the OIDC request, so a redirect which
+ * dropped them would send the user to a screen that no longer knows what was
+ * being asked for.
+ *
+ * replace is set here because every caller is a guard: the path being left is
+ * one the user was not allowed to see, and leaving it in the back history means
+ * the browser's back button walks into the guard again. Navigate pushes by
+ * default, unlike the Redirect it replaces, so this is not a detail the callers
+ * can be left to remember.
+ */
+const RedirectWithQuery = ({ target, ...rest }: RedirectWithQueryProps) => {
+  const location = useLocation();
+
   const to = {
     pathname: target,
     search: location.search,
     hash: location.hash,
   };
 
-  return <Redirect to={to} {...rest}></Redirect>;
+  return <Navigate to={to} replace {...rest} />;
 };
 
-export default withRouter(RedirectWithQuery);
+export default RedirectWithQuery;

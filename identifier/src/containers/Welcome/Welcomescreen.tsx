@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
-
-import type { History } from "history";
+import { useNavigate } from "react-router";
 
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
@@ -11,17 +10,11 @@ import ResponsiveScreen from "../../components/ResponsiveScreen";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectBranding, selectHello } from "../../reducers/common";
 
-export interface WelcomescreenProps {
-  // Supplied by the Route which renders this screen.
-  history: History;
-}
-
-function Welcomescreen(props: WelcomescreenProps) {
-  const { history } = props;
-
+function Welcomescreen() {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const branding = useAppSelector(selectBranding);
   const hello = useAppSelector(selectHello);
 
@@ -30,7 +23,7 @@ function Welcomescreen(props: WelcomescreenProps) {
 
     dispatch(executeLogoff()).then((response) => {
       if (response.success) {
-        history.push("/identifier");
+        navigate("/identifier");
       }
     });
   };

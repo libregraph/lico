@@ -23,7 +23,7 @@ import {
   type HelloResponse,
   jsonReply,
   makeStore,
-  newTestHistory,
+  newTestNavigation,
   type PreloadedState,
   postedBody,
   postedInit,
@@ -543,12 +543,12 @@ describe("executeLogonIfFormValid", () => {
 describe("advanceLogonFlow", () => {
   it("does nothing when the logon did not succeed", () => {
     const { store, actions } = newHarness({ common: { flow: "oidc" } });
-    const history = newTestHistory("/?client_id=playground.js");
+    const nav = newTestNavigation("/?client_id=playground.js");
 
-    store.dispatch(advanceLogonFlow(false, history));
+    store.dispatch(advanceLogonFlow(false, nav));
 
     expect(actions).toEqual([]);
-    expect(history.location.pathname).toBe("/");
+    expect(nav.location.pathname).toBe("/");
   });
 
   it("replaces with the consent route when the flow still needs consent", () => {
@@ -561,17 +561,17 @@ describe("advanceLogonFlow", () => {
     const { store, actions } = newHarness({
       common: { flow: "oidc", hello: { state: true, username: "user1", details } },
     });
-    const history = newTestHistory("/?client_id=playground.js#frag");
+    const nav = newTestNavigation("/?client_id=playground.js#frag");
 
-    store.dispatch(advanceLogonFlow(true, history));
+    store.dispatch(advanceLogonFlow(true, nav));
 
     // Consent is a step of the same flow, so it replaces rather than pushes and
     // carries the whole query along.
-    expect(history.location.pathname).toBe("/consent");
-    expect(history.location.search).toBe("?client_id=playground.js");
-    expect(history.location.hash).toBe("#frag");
-    expect(history.action).toBe("REPLACE");
-    expect(history.entries).toHaveLength(1);
+    expect(nav.location.pathname).toBe("/consent");
+    expect(nav.location.search).toBe("?client_id=playground.js");
+    expect(nav.location.hash).toBe("#frag");
+    expect(nav.navigationType).toBe("REPLACE");
+    expect(nav.entries).toHaveLength(1);
     expect(actions).toEqual([]);
   });
 
@@ -585,13 +585,13 @@ describe("advanceLogonFlow", () => {
     const { store, actions } = newHarness({
       common: { flow: "oidc", hello: { state: true, username: "user1", details } },
     });
-    const history = newTestHistory("/?client_id=playground.js");
+    const nav = newTestNavigation("/?client_id=playground.js");
 
-    store.dispatch(advanceLogonFlow(true, history, true));
+    store.dispatch(advanceLogonFlow(true, nav, true));
 
-    expect(history.location.pathname).toBe("/welcome");
-    expect(history.action).toBe("PUSH");
-    expect(history.entries).toHaveLength(2);
+    expect(nav.location.pathname).toBe("/welcome");
+    expect(nav.navigationType).toBe("PUSH");
+    expect(nav.entries).toHaveLength(2);
     // The reset clears the loading flag the request set.
     expect(actions).toEqual([{ type: receiveValidateLogon.type, payload: {} }]);
   });
@@ -606,45 +606,45 @@ describe("advanceLogonFlow", () => {
     const { store } = newHarness({
       common: { flow: "oidc", hello: { state: true, username: "user1", details } },
     });
-    const history = newTestHistory("/?client_id=playground.js");
+    const nav = newTestNavigation("/?client_id=playground.js");
 
-    store.dispatch(advanceLogonFlow(true, history));
+    store.dispatch(advanceLogonFlow(true, nav));
 
-    expect(history.location.pathname).toBe("/welcome");
+    expect(nav.location.pathname).toBe("/welcome");
   });
 
   it("keeps the query and the fragment when the user arrived by a replace", () => {
     const { store } = newHarness();
-    const history = newTestHistory("/?client_id=playground.js#frag", "REPLACE");
+    const nav = newTestNavigation("/?client_id=playground.js#frag", "REPLACE");
 
-    store.dispatch(advanceLogonFlow(true, history));
+    store.dispatch(advanceLogonFlow(true, nav));
 
     // A replace means the identifier rewrote the URL itself, so the parameters
     // it was started with have to survive the hop to welcome.
-    expect(history.location.pathname).toBe("/welcome");
-    expect(history.location.search).toBe("?client_id=playground.js");
-    expect(history.location.hash).toBe("#frag");
+    expect(nav.location.pathname).toBe("/welcome");
+    expect(nav.location.search).toBe("?client_id=playground.js");
+    expect(nav.location.hash).toBe("#frag");
   });
 
   it("drops the query when the user navigated here themselves", () => {
     const { store } = newHarness();
-    const history = newTestHistory("/?client_id=playground.js#frag");
+    const nav = newTestNavigation("/?client_id=playground.js#frag");
 
-    store.dispatch(advanceLogonFlow(true, history));
+    store.dispatch(advanceLogonFlow(true, nav));
 
-    expect(history.location.pathname).toBe("/welcome");
-    expect(history.location.search).toBe("");
-    expect(history.location.hash).toBe("");
+    expect(nav.location.pathname).toBe("/welcome");
+    expect(nav.location.search).toBe("");
+    expect(nav.location.hash).toBe("");
   });
 
   it("refuses a legacy continue which points off origin", () => {
     const { store } = newHarness({
       common: { query: { continue: "https://elsewhere.test/app" } },
     });
-    const history = newTestHistory("/");
+    const nav = newTestNavigation("/");
 
-    store.dispatch(advanceLogonFlow(true, history));
+    store.dispatch(advanceLogonFlow(true, nav));
 
-    expect(history.location.pathname).toBe("/welcome");
+    expect(nav.location.pathname).toBe("/welcome");
   });
 });

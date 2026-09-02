@@ -5,7 +5,7 @@ import { screen } from "@testing-library/react";
 import RedirectWithQuery from "./components/RedirectWithQuery";
 import Routes from "./Routes";
 import {
-  newTestHistory,
+  arriveAt,
   type RenderWithProvidersOptions,
   renderWithProviders,
   replyEchoingState,
@@ -56,12 +56,10 @@ describe("Routes", () => {
   });
 
   it("shows the sign in screen for an unknown path below the index route", async () => {
-    const history = newTestHistory("/somewhere-else");
-
-    renderRoutes(null, { history });
+    const { nav } = renderRoutes(null, arriveAt("/somewhere-else"));
 
     expect(await screen.findByText("Sign in")).toBeInTheDocument();
-    expect(history.location.pathname).toBe("/identifier");
+    expect(nav.location.pathname).toBe("/identifier");
   });
 
   it("shows the goodbye screen on the goodbye route", async () => {
@@ -75,76 +73,65 @@ describe("PrivateRoute through Routes", () => {
   beforeEach(mockSignedOutHello);
 
   it("sends a visitor without a session away from the welcome route", async () => {
-    const history = newTestHistory("/welcome");
-
-    renderRoutes(null, { history });
+    const { nav } = renderRoutes(null, arriveAt("/welcome"));
 
     // Redirected onto the index route, which then shows the sign in screen.
     expect(await screen.findByText("Sign in")).toBeInTheDocument();
-    expect(history.location.pathname).toBe("/identifier");
+    expect(nav.location.pathname).toBe("/identifier");
   });
 
   it("sends a visitor away once hello has answered that nobody is signed in", async () => {
     // The hello state becomes an object as soon as the server answers, so a
     // guard testing only for its presence would let this visitor through and
     // then render the welcome screen with an empty name.
-    const history = newTestHistory("/welcome");
 
-    renderRoutes(signedOut, { history, preloaded: { common: { hello: signedOut } } });
+    const { nav } = renderRoutes(signedOut, { ...arriveAt("/welcome"), preloaded: { common: { hello: signedOut } } });
 
     expect(await screen.findByText("Sign in")).toBeInTheDocument();
-    expect(history.location.pathname).toBe("/identifier");
+    expect(nav.location.pathname).toBe("/identifier");
   });
 
   it("lets a visitor with a session reach the welcome route", async () => {
-    const history = newTestHistory("/welcome");
-
-    renderRoutes(signedIn, { history, preloaded: { common: { hello: signedIn } } });
+    const { nav } = renderRoutes(signedIn, { ...arriveAt("/welcome"), preloaded: { common: { hello: signedIn } } });
 
     expect(await screen.findByText("Welcome Lala 123 abc")).toBeInTheDocument();
-    expect(history.location.pathname).toBe("/welcome");
+    expect(nav.location.pathname).toBe("/welcome");
   });
 
   it("carries the query string and hash along when it sends the visitor away", async () => {
-    const history = newTestHistory("/welcome?client_id=demo&prompt=consent#anchor");
-
-    renderRoutes(null, { history });
+    const { nav } = renderRoutes(null, arriveAt("/welcome?client_id=demo&prompt=consent#anchor"));
 
     await screen.findByText("Sign in");
-    expect(history.location.search).toBe("?client_id=demo&prompt=consent");
-    expect(history.location.hash).toBe("#anchor");
+    expect(nav.location.search).toBe("?client_id=demo&prompt=consent");
+    expect(nav.location.hash).toBe("#anchor");
   });
 });
 
 describe("RedirectWithQuery", () => {
   it("redirects to the target while keeping the query string and the hash", () => {
-    const history = newTestHistory("/welcome?client_id=demo&scope=openid#section");
+    const { nav } = renderWithProviders(<RedirectWithQuery target="/identifier" />, {
+      ...arriveAt("/welcome?client_id=demo&scope=openid#section"),
+    });
 
-    renderWithProviders(<RedirectWithQuery target="/identifier" />, { history });
-
-    expect(history.location.pathname).toBe("/identifier");
-    expect(history.location.search).toBe("?client_id=demo&scope=openid");
-    expect(history.location.hash).toBe("#section");
+    expect(nav.location.pathname).toBe("/identifier");
+    expect(nav.location.search).toBe("?client_id=demo&scope=openid");
+    expect(nav.location.hash).toBe("#section");
   });
 
   it("redirects with an empty query string and hash when the source had none", () => {
-    const history = newTestHistory("/welcome");
+    const { nav } = renderWithProviders(<RedirectWithQuery target="/identifier" />, { ...arriveAt("/welcome") });
 
-    renderWithProviders(<RedirectWithQuery target="/identifier" />, { history });
-
-    expect(history.location.pathname).toBe("/identifier");
-    expect(history.location.search).toBe("");
-    expect(history.location.hash).toBe("");
+    expect(nav.location.pathname).toBe("/identifier");
+    expect(nav.location.search).toBe("");
+    expect(nav.location.hash).toBe("");
   });
 
   it("replaces the current entry rather than pushing a new one", () => {
-    const history = newTestHistory("/welcome");
-    const before = history.length;
+    const { nav } = renderWithProviders(<RedirectWithQuery target="/identifier" />, { ...arriveAt("/welcome") });
 
-    renderWithProviders(<RedirectWithQuery target="/identifier" />, { history });
-
-    // A guard redirect must not leave the guarded path in the back history.
-    expect(history.length).toBe(before);
-    expect(history.action).toBe("REPLACE");
+    // A guard redirect must not leave the guarded path in the back history, or
+    // the browser's back button walks straight into the guard again.
+    expect(nav.entries).toHaveLength(1);
+    expect(nav.action).toBe("REPLACE");
   });
 });

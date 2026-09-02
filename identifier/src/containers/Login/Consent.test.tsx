@@ -2,10 +2,10 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import {
+  arriveAt,
   type ClientDetails,
   fetchMock,
   type HelloResponse,
-  newTestHistory,
   postedInit,
   postedUrl,
   renderWithProviders,
@@ -73,7 +73,6 @@ const Subject = Consent;
 const renderConsent = (details: HelloResponse = helloResponse()) => {
   // Consent is rendered by a Route in the application, so it reads history from
   // its props. Rendered directly it has to be handed one.
-  const history = newTestHistory("/consent");
 
   // Shape of the session as the common reducer stores it.
   const hello = {
@@ -83,8 +82,8 @@ const renderConsent = (details: HelloResponse = helloResponse()) => {
     details,
   };
 
-  return renderWithProviders(<Subject history={history} />, {
-    history,
+  return renderWithProviders(<Subject />, {
+    ...arriveAt("/consent"),
     preloaded: { common: { hello, query } },
   });
 };
@@ -262,43 +261,40 @@ describe("Consent", () => {
   it("sends a visitor arriving without a session back to the identifier", () => {
     // Reaching consent with no session used to throw while mapping state, before
     // the mount guard which is meant to catch exactly this could run.
-    const history = newTestHistory("/consent?client_id=demo#frag", "POP");
 
-    renderWithProviders(<Subject history={history} />, {
-      history,
+    const { nav } = renderWithProviders(<Subject />, {
+      ...arriveAt("/consent?client_id=demo#frag"),
       preloaded: { common: { hello: null, query } },
     });
 
-    expect(history.location.pathname).toBe("/identifier");
-    expect(history.location.search).toBe("?client_id=demo");
-    expect(history.location.hash).toBe("#frag");
+    expect(nav.location.pathname).toBe("/identifier");
+    expect(nav.location.search).toBe("?client_id=demo");
+    expect(nav.location.hash).toBe("#frag");
   });
 
   it("sends a visitor away when the session names no client", () => {
     // The client was defaulted to an empty object, which reads as one being
     // present, so this case rendered on and failed inside the scopes list.
-    const history = newTestHistory("/consent", "POP");
     const hello = { state: true, username: "u", displayName: "D", details: {} };
 
-    renderWithProviders(<Subject history={history} />, {
-      history,
+    const { nav } = renderWithProviders(<Subject />, {
+      ...arriveAt("/consent"),
       preloaded: { common: { hello, query } },
     });
 
-    expect(history.location.pathname).toBe("/identifier");
+    expect(nav.location.pathname).toBe("/identifier");
   });
 
   it("renders nothing rather than failing when it stays without a session", () => {
     // The guard deliberately stays put when the application itself navigated
     // here, so this render has to be survivable.
-    const history = newTestHistory("/consent", "PUSH");
 
-    const { container } = renderWithProviders(<Subject history={history} />, {
-      history,
+    const { container, nav } = renderWithProviders(<Subject />, {
+      ...arriveAt("/consent", "PUSH"),
       preloaded: { common: { hello: null, query } },
     });
 
-    expect(history.location.pathname).toBe("/consent");
+    expect(nav.location.pathname).toBe("/consent");
     expect(container).toBeEmptyDOMElement();
   });
 });

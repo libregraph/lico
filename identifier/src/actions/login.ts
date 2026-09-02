@@ -1,4 +1,3 @@
-import type { History } from "history";
 import queryString from "query-string";
 
 import {
@@ -10,6 +9,7 @@ import {
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
   ExtendedError,
 } from "../errors";
+import type { FlowNavigation } from "../hooks/navigation";
 import type { AttemptResult, FieldErrors, HelloResponse } from "../models/api";
 import { newHelloRequest } from "../models/hello";
 import { receiveHello } from "../reducers/common";
@@ -239,7 +239,7 @@ export function executeLogonIfFormValid(
 
 export function advanceLogonFlow(
   success: boolean,
-  history: History,
+  nav: FlowNavigation,
   done = false,
   extraQuery: Record<string, string | null | undefined> = {},
 ): AppThunk {
@@ -261,7 +261,7 @@ export function advanceLogonFlow(
         }
 
         if (!done && hello.details.next === "consent") {
-          history.replace(withSearchAndHash("/consent", history.location));
+          nav.navigate(withSearchAndHash("/consent", nav.location), { replace: true });
           return;
         }
         if (hello.details.continue_uri) {
@@ -282,11 +282,11 @@ export function advanceLogonFlow(
 
     // Default action.
     let target = "/welcome";
-    if (history.action === "REPLACE") {
-      target = withSearchAndHash(target, history.location);
+    if (nav.navigationType === "REPLACE") {
+      target = withSearchAndHash(target, nav.location);
     }
 
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.
-    history.push(target);
+    nav.navigate(target);
   };
 }
