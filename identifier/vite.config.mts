@@ -36,6 +36,53 @@ const addScriptCSPNoncePlaceholderPlugin = (): Plugin => {
   };
 };
 
+/*
+ * A font is fetched when something paints text with it, not when the stylesheet
+ * declaring it arrives, so these two waited on the route chunks executing and
+ * started well over a second after the CSS had been parsed. Preloading makes the
+ * request unconditional and moves them alongside the document instead.
+ *
+ * Only the two the first screens actually ask for: Roboto latin at 400 and 500.
+ * The other weights and subsets stay demand-driven, which is what they should be
+ * — a preload the page never uses is a download spent on nothing. `crossorigin`
+ * is required even same-origin, because fonts are fetched in CORS mode and a
+ * preload whose mode differs is fetched a second time rather than reused.
+ */
+const preloadFirstPaintFontsPlugin = (): Plugin => {
+  const wanted = /^roboto-latin-(?:400|500)-normal-[^.]+\.woff2$/;
+
+  return {
+    name: "preload-first-paint-fonts",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(htmlData: string, ctx) {
+        const fonts = Object.keys(ctx.bundle ?? {})
+          .filter((file) => wanted.test(file.split("/").pop() ?? ""))
+          .sort();
+
+        // Names carry a content hash, so they are read off the bundle rather
+        // than written down. Nothing to preload means the font package changed
+        // its file names and this silently stopped working, which is worth a
+        // failed build rather than a slower page nobody measures.
+        if (fonts.length !== 2) {
+          throw new Error(
+            `expected two first-paint fonts to preload, found ${fonts.length}: ` +
+              `${fonts.join(", ") || "none"}. @fontsource/roboto has changed how it ` +
+              `names its files, so this plugin needs updating or removing.`,
+          );
+        }
+
+        const links = fonts
+          .map((file) => `<link rel="preload" href="./${file}" as="font" type="font/woff2" crossorigin>`)
+          .join("");
+
+        return htmlData.replace(/(<meta charset="utf-8"\s*\/?>)/i, `$1${links}`);
+      },
+    },
+  };
+};
+
 // Where the build writes everything it emits, named once because the file name
 // templates below have to repeat it: they replace the whole path, not just the
 // name, so `assetsDir` alone no longer decides where a chunk lands.
@@ -140,6 +187,7 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
           },
         }),
       addScriptCSPNoncePlaceholderPlugin(),
+      preloadFirstPaintFontsPlugin(),
     ],
     test: {
       globals: true,
