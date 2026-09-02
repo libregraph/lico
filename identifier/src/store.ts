@@ -1,15 +1,13 @@
-import { createStore, applyMiddleware, compose } from 'redux';
-import type { Middleware } from 'redux';
-import thunkMiddleware from 'redux-thunk';
-import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
+import type { Middleware } from "redux";
+import { applyMiddleware, compose, createStore } from "redux";
+import type { ThunkAction, ThunkDispatch } from "redux-thunk";
+import thunkMiddleware from "redux-thunk";
 
-import type { AppAction } from './actions/types';
-import rootReducer from './reducers';
-import type { RootState } from './reducers';
+import type { AppAction } from "./actions/types";
+import type { RootState } from "./reducers";
+import rootReducer from "./reducers";
 
-const middlewares: Middleware[] = [
-  thunkMiddleware
-];
+const middlewares: Middleware[] = [thunkMiddleware];
 
 /*
  * The devtools extension replaces compose when it is installed. It is not part
@@ -24,12 +22,7 @@ declare global {
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
-const store = createStore(
-  rootReducer,
-  composeEnhancers(applyMiddleware(
-    ...middlewares,
-  ))
-);
+const store = createStore(rootReducer, composeEnhancers(applyMiddleware(...middlewares)));
 
 /*
  * Dispatch accepts both plain actions and the thunks the action creators

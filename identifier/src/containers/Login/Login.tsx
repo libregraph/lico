@@ -1,33 +1,32 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { History } from 'history';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from 'react-i18next';
-
+import type { History } from "history";
 // The ESM build, imported by module path. The package root is a CommonJS barrel
 // whose default export is one object literal holding every validator, so nothing
 // can be shaken out of it and the whole library ships: 122 KB to answer one
 // question. This path is the same source compiled to ESM and reaches six
 // modules, which is why it costs about 5 KB instead. Aliasing the root to the
 // ESM build does not help, because that object literal is still what it exports.
-import isEmail from 'validator/es/lib/isEmail';
+import isEmail from "validator/es/lib/isEmail";
 
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import { updateInput, executeLogonIfFormValid, advanceLogonFlow } from '../../actions/login';
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import { green } from "@mui/material/colors";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
-import { ErrorMessage } from '../../errors';
-import { withSearchAndHash } from '../../utils';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment'
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { green } from '@mui/material/colors';
+import { advanceLogonFlow, executeLogonIfFormValid, updateInput } from "../../actions/login";
+import { ErrorMessage } from "../../errors";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { withSearchAndHash } from "../../utils";
 
 /*
  * login_hint decides only whether the username field is prefilled. The server
@@ -53,7 +52,7 @@ function looksLikeIdentity(hint: string): boolean {
  * thing as userinfo plus host and hand back only the host.
  */
 function withAsciiDomain(username: string): string {
-  const at = username.lastIndexOf('@');
+  const at = username.lastIndexOf("@");
   if (at === -1) {
     return username;
   }
@@ -76,16 +75,16 @@ function withAsciiDomain(username: string): string {
  */
 const buttonProgressSx = {
   color: green[500],
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
+  position: "absolute",
+  top: "50%",
+  left: "50%",
   mt: -1.5,
-  ml: -1.5
+  ml: -1.5,
 } as const;
 
 const wrapperSx = {
-  position: 'relative',
-  display: 'inline-block'
+  position: "relative",
+  display: "inline-block",
 } as const;
 
 export interface LoginProps {
@@ -98,13 +97,13 @@ function Login(props: LoginProps) {
 
   const dispatch = useAppDispatch();
 
-  const hello = useAppSelector(state => state.common.hello);
-  const branding = useAppSelector(state => state.common.branding);
-  const query = useAppSelector(state => state.common.query);
-  const loading = useAppSelector(state => state.login.loading);
-  const errors = useAppSelector(state => state.login.errors);
-  const username = useAppSelector(state => state.login.username);
-  const password = useAppSelector(state => state.login.password);
+  const hello = useAppSelector((state) => state.common.hello);
+  const branding = useAppSelector((state) => state.common.branding);
+  const query = useAppSelector((state) => state.common.query);
+  const loading = useAppSelector((state) => state.login.loading);
+  const errors = useAppSelector((state) => state.login.errors);
+  const username = useAppSelector((state) => state.login.username);
+  const password = useAppSelector((state) => state.login.password);
 
   const { t } = useTranslation();
 
@@ -117,13 +116,13 @@ function Login(props: LoginProps) {
   // query, the history or the store, which would fight the user as they type.
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if (hello?.state && history.action !== 'PUSH') {
-      if (!query.prompt || query.prompt.indexOf('select_account') === -1) {
+    if (hello?.state && history.action !== "PUSH") {
+      if (!query.prompt || query.prompt.indexOf("select_account") === -1) {
         dispatch(advanceLogonFlow(true, history));
         return;
       }
 
-      history.replace(withSearchAndHash('/chooseaccount', history.location));
+      history.replace(withSearchAndHash("/chooseaccount", history.location));
       return;
     }
 
@@ -142,10 +141,9 @@ function Login(props: LoginProps) {
     }
   }, []);
 
-  const handleChange = (name: string) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      dispatch(updateInput(name, event.target.value));
-    };
+  const handleChange = (name: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    dispatch(updateInput(name, event.target.value));
+  };
 
   const handleNextClick = (event: React.SyntheticEvent) => {
     event.preventDefault();
@@ -158,7 +156,7 @@ function Login(props: LoginProps) {
   };
 
   const usernamePlaceHolder = useMemo(() => {
-    if (branding?.usernameHintText ) {
+    if (branding?.usernameHintText) {
       switch (branding.usernameHintText) {
         case "Username":
           break;
@@ -184,17 +182,17 @@ function Login(props: LoginProps) {
         <TextField
           label={usernamePlaceHolder}
           error={!!errors.username}
-          helperText={<ErrorMessage error={errors.username} values={{what: usernamePlaceHolder}}></ErrorMessage>}
+          helperText={<ErrorMessage error={errors.username} values={{ what: usernamePlaceHolder }}></ErrorMessage>}
           fullWidth
           autoFocus
           slotProps={{
             htmlInput: {
-              autoCapitalize: 'off',
-              spellCheck: 'false'
-            }
+              autoCapitalize: "off",
+              spellCheck: "false",
+            },
           }}
           value={username}
-          onChange={handleChange('username')}
+          onChange={handleChange("username")}
           autoComplete="kopano-account username"
           variant="outlined"
           sx={{ mt: 1, mb: 1.5 }}
@@ -206,24 +204,28 @@ function Login(props: LoginProps) {
           error={!!errors.password}
           helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
           fullWidth
-          onChange={handleChange('password')}
+          onChange={handleChange("password")}
           autoComplete="kopano-account current-password"
           variant="outlined"
           slotProps={{
-            input: {      // End-adornment icon to show/hide password on visibility button click.
-              endAdornment: <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={() => setShowPassword((show) => !show)}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                  }}
-                  edge="end"
-                  size="large">
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            }
+            input: {
+              // End-adornment icon to show/hide password on visibility button click.
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowPassword((show) => !show)}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                    }}
+                    edge="end"
+                    size="large"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
           }}
         />
         <DialogActions>

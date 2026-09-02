@@ -1,1 +1,1 @@
-export { default } from './Welcomescreen';
+export { default } from "./Welcomescreen";

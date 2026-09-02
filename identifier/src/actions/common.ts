@@ -1,36 +1,34 @@
-import { newHelloRequest } from '../models/hello';
-import type { AttemptResult, HelloResponse, StateResponse } from '../models/api';
-
-import { withClientRequestState } from '../utils';
 import {
-  ExtendedError,
   asError,
+  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE
-} from '../errors';
-import type { AppThunk } from '../store';
-
-import { postJSON, isAbortError } from './utils';
-import type { PostJSONOptions } from './utils';
-import * as types from './types';
+  ExtendedError,
+} from "../errors";
+import type { AttemptResult, HelloResponse, StateResponse } from "../models/api";
+import { newHelloRequest } from "../models/hello";
+import type { AppThunk } from "../store";
+import { withClientRequestState } from "../utils";
 import type {
   ReceiveErrorAction,
   ReceiveHelloAction,
   ReceiveLogoffAction,
   RequestLogoffAction,
-  ResetHelloAction
-} from './types';
+  ResetHelloAction,
+} from "./types";
+import * as types from "./types";
+import type { PostJSONOptions } from "./utils";
+import { isAbortError, postJSON } from "./utils";
 
 export function receiveError(error: Error | null): ReceiveErrorAction {
   return {
     type: types.RECEIVE_ERROR,
-    error
+    error,
   };
 }
 
 export function resetHello(): ResetHelloAction {
   return {
-    type: types.RESET_HELLO
+    type: types.RESET_HELLO,
   };
 }
 
@@ -42,13 +40,11 @@ export function receiveHello(hello: Partial<HelloResponse>): ReceiveHelloAction 
     state: success === true,
     username,
     displayName,
-    hello
+    hello,
   };
 }
 
-export function executeHello(
-  options: PostJSONOptions = {}
-): AppThunk<Promise<HelloResponse | undefined>> {
+export function executeHello(options: PostJSONOptions = {}): AppThunk<Promise<HelloResponse | undefined>> {
   return async (dispatch, getState) => {
     dispatch(resetHello());
 
@@ -56,7 +52,7 @@ export function executeHello(
 
     const r = withClientRequestState(newHelloRequest(flow, query));
     try {
-      const { status, data } = await postJSON('./identifier/_/hello', r, options);
+      const { status, data } = await postJSON("./identifier/_/hello", r, options);
 
       // This endpoint answers 200 for both signed-in and signed-out visitors.
       if (status !== 200) {
@@ -83,9 +79,7 @@ export function executeHello(
   };
 }
 
-export function retryHello(
-  options: PostJSONOptions = {}
-): AppThunk<Promise<HelloResponse | undefined>> {
+export function retryHello(options: PostJSONOptions = {}): AppThunk<Promise<HelloResponse | undefined>> {
   return (dispatch) => {
     dispatch(receiveError(null));
 
@@ -95,14 +89,14 @@ export function retryHello(
 
 export function requestLogoff(): RequestLogoffAction {
   return {
-    type: types.REQUEST_LOGOFF
+    type: types.REQUEST_LOGOFF,
   };
 }
 
 export function receiveLogoff(state: boolean): ReceiveLogoffAction {
   return {
     type: types.RECEIVE_LOGOFF,
-    state
+    state,
   };
 }
 
@@ -113,7 +107,7 @@ export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<A
 
     const r = withClientRequestState({});
     try {
-      const { status, data } = await postJSON('./identifier/_/logoff', r, options);
+      const { status, data } = await postJSON("./identifier/_/logoff", r, options);
 
       if (status !== 200) {
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
@@ -140,8 +134,8 @@ export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<A
       return {
         success: false,
         errors: {
-          http: failure
-        }
+          http: failure,
+        },
       };
     }
   };

@@ -1,11 +1,11 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
-export const ERROR_LOGIN_VALIDATE_MISSINGUSERNAME = 'konnect.error.login.validate.missingUsername';
-export const ERROR_LOGIN_VALIDATE_MISSINGPASSWORD = 'konnect.error.login.validate.missingPassword';
-export const ERROR_LOGIN_FAILED = 'konnect.error.login.failed';
-export const ERROR_HTTP_NETWORK_ERROR = 'konnect.error.http.networkError';
-export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS = 'konnect.error.http.unexpectedResponseStatus';
-export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATE = 'konnect.error.http.unexpectedResponseState';
+export const ERROR_LOGIN_VALIDATE_MISSINGUSERNAME = "konnect.error.login.validate.missingUsername";
+export const ERROR_LOGIN_VALIDATE_MISSINGPASSWORD = "konnect.error.login.validate.missingPassword";
+export const ERROR_LOGIN_FAILED = "konnect.error.login.failed";
+export const ERROR_HTTP_NETWORK_ERROR = "konnect.error.http.networkError";
+export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS = "konnect.error.http.unexpectedResponseStatus";
+export const ERROR_HTTP_UNEXPECTED_RESPONSE_STATE = "konnect.error.http.unexpectedResponseState";
 
 // Error with values.
 export class ExtendedError extends Error {
@@ -68,9 +68,19 @@ export function ErrorMessage(props: ErrorMessageProps) {
     case ERROR_HTTP_NETWORK_ERROR:
       return <>{t("konnect.error.http.networkError", "Network error. Please check your connection and try again.")}</>;
     case ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS:
-      return <>{t("konnect.error.http.unexpectedResponseStatus", "Unexpected HTTP response: {{status}}. Please check your connection and try again.", interpolation)}</>;
+      return (
+        <>
+          {t(
+            "konnect.error.http.unexpectedResponseStatus",
+            "Unexpected HTTP response: {{status}}. Please check your connection and try again.",
+            interpolation,
+          )}
+        </>
+      );
     case ERROR_HTTP_UNEXPECTED_RESPONSE_STATE:
-      return <>{t("konnect.error.http.unexpectedResponseState", "Unexpected response state: {{state}}", interpolation)}</>;
+      return (
+        <>{t("konnect.error.http.unexpectedResponseState", "Unexpected response state: {{state}}", interpolation)}</>
+      );
     default:
   }
 

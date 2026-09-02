@@ -1,6 +1,5 @@
-import { createTheme } from '@mui/material/styles';
-
-import { blue, blueGrey, red } from '@mui/material/colors';
+import { blue, blueGrey, red } from "@mui/material/colors";
+import { createTheme } from "@mui/material/styles";
 
 const primaryColor = blue;
 const secondaryColor = blueGrey;
@@ -32,7 +31,7 @@ const theme = createTheme({
   typography: {
     fontSize: 12,
     button: {
-      textTransform: 'none',
+      textTransform: "none",
     },
   },
 });

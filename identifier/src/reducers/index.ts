@@ -1,10 +1,10 @@
-import { combineReducers } from 'redux';
+import { combineReducers } from "redux";
 
-import type { AppAction } from '../actions/types';
-import commonReducer from './common';
-import type { CommonState } from './common';
-import loginReducer from './login';
-import type { LoginState } from './login';
+import type { AppAction } from "../actions/types";
+import type { CommonState } from "./common";
+import commonReducer from "./common";
+import type { LoginState } from "./login";
+import loginReducer from "./login";
 
 /*
  * The shape of the store. combineReducers is told to produce exactly this, so a
@@ -18,7 +18,7 @@ export interface RootState {
 
 const rootReducer = combineReducers<RootState, AppAction>({
   common: commonReducer,
-  login: loginReducer
+  login: loginReducer,
 });
 
 export default rootReducer;

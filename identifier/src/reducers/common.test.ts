@@ -1,7 +1,7 @@
-import commonReducer from './common';
-import { receiveError, receiveHello, resetHello } from '../actions/common';
-import type { AppAction } from '../actions/types';
-import type { Branding, HelloResponse } from '../test-utils';
+import { receiveError, receiveHello, resetHello } from "../actions/common";
+import type { AppAction } from "../actions/types";
+import type { Branding, HelloResponse } from "../test-utils";
+import commonReducer from "./common";
 
 /*
  * Redux dispatches an initialisation action of its own, and a reducer has to
@@ -14,10 +14,10 @@ function foreignAction(type: string): AppAction {
   return { type } as AppAction;
 }
 
-const initial = () => commonReducer(undefined, foreignAction('@@INIT'));
+const initial = () => commonReducer(undefined, foreignAction("@@INIT"));
 
-describe('commonReducer', () => {
-  it('starts with no session and no branding', () => {
+describe("commonReducer", () => {
+  it("starts with no session and no branding", () => {
     const state = initial();
 
     expect(state.hello).toBeNull();
@@ -25,28 +25,28 @@ describe('commonReducer', () => {
     expect(state.error).toBeNull();
   });
 
-  it('falls back to the default path prefix when the placeholder was not substituted', () => {
+  it("falls back to the default path prefix when the placeholder was not substituted", () => {
     // The server replaces __PATH_PREFIX__ in index.html. In a test nothing does,
     // so the reducer must use its own default rather than the literal.
-    expect(initial().pathPrefix).toBe('/signin/v1');
+    expect(initial().pathPrefix).toBe("/signin/v1");
   });
 
-  it('stores a received error', () => {
-    const error = new Error('boom');
+  it("stores a received error", () => {
+    const error = new Error("boom");
 
     const state = commonReducer(initial(), receiveError(error));
 
     expect(state.error).toBe(error);
   });
 
-  it('records a successful hello as a session', () => {
+  it("records a successful hello as a session", () => {
     const hello: HelloResponse = {
-      state: 'ignored',
-      flow: 'oidc',
+      state: "ignored",
+      flow: "oidc",
       success: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      next: 'consent'
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      next: "consent",
     };
 
     const state = commonReducer(initial(), receiveHello(hello));
@@ -55,14 +55,14 @@ describe('commonReducer', () => {
     // success, not the echo nonce of the same name on the wire.
     expect(state.hello).toEqual({
       state: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      details: hello
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      details: hello,
     });
   });
 
-  it('records an unsuccessful hello with a false session flag', () => {
-    const hello: HelloResponse = { state: 'x', flow: '', success: false };
+  it("records an unsuccessful hello with a false session flag", () => {
+    const hello: HelloResponse = { state: "x", flow: "", success: false };
 
     const state = commonReducer(initial(), receiveHello(hello));
 
@@ -70,47 +70,41 @@ describe('commonReducer', () => {
       state: false,
       username: undefined,
       displayName: undefined,
-      details: hello
+      details: hello,
     });
   });
 
-  it('takes branding from a hello which carries it', () => {
+  it("takes branding from a hello which carries it", () => {
     const branding: Branding = {
-      bannerLogo: 'data:image/svg+xml;base64,AAAA',
-      usernameHintText: 'Email'
+      bannerLogo: "data:image/svg+xml;base64,AAAA",
+      usernameHintText: "Email",
     };
-    const hello: HelloResponse = { state: 'x', flow: '', success: false, branding };
+    const hello: HelloResponse = { state: "x", flow: "", success: false, branding };
 
     const state = commonReducer(initial(), receiveHello(hello));
 
     expect(state.branding).toBe(branding);
   });
 
-  it('keeps existing branding when a later hello omits it', () => {
-    const branding: Branding = { usernameHintText: 'Email' };
-    const withBranding = commonReducer(
-      initial(),
-      receiveHello({ state: 'x', flow: '', success: false, branding })
-    );
+  it("keeps existing branding when a later hello omits it", () => {
+    const branding: Branding = { usernameHintText: "Email" };
+    const withBranding = commonReducer(initial(), receiveHello({ state: "x", flow: "", success: false, branding }));
 
-    const after = commonReducer(
-      withBranding,
-      receiveHello({ state: 'y', flow: '', success: true, username: 'u' })
-    );
+    const after = commonReducer(withBranding, receiveHello({ state: "y", flow: "", success: true, username: "u" }));
 
     expect(after.branding).toBe(branding);
   });
 
-  it('clears the session and branding on reset', () => {
+  it("clears the session and branding on reset", () => {
     const seeded = commonReducer(
       initial(),
       receiveHello({
-        state: 'x',
-        flow: '',
+        state: "x",
+        flow: "",
         success: true,
-        username: 'u',
-        branding: { usernameHintText: 'Email' }
-      })
+        username: "u",
+        branding: { usernameHintText: "Email" },
+      }),
     );
 
     const state = commonReducer(seeded, resetHello());
@@ -119,9 +113,9 @@ describe('commonReducer', () => {
     expect(state.branding).toBeNull();
   });
 
-  it('returns the same state object for an unrelated action', () => {
+  it("returns the same state object for an unrelated action", () => {
     const before = initial();
 
-    expect(commonReducer(before, foreignAction('SOMETHING_ELSE'))).toBe(before);
+    expect(commonReducer(before, foreignAction("SOMETHING_ELSE"))).toBe(before);
   });
 });

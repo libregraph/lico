@@ -1,12 +1,11 @@
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from 'react-i18next';
+import MenuItem from "@mui/material/MenuItem";
+import type { SelectChangeEvent, SelectProps } from "@mui/material/Select";
+import Select from "@mui/material/Select";
 
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import type { SelectChangeEvent, SelectProps } from '@mui/material/Select';
-
-import allLocales from '../locales';
+import allLocales from "../locales";
 
 /*
  * Returns the first supported locale the browser asks for, preferring an exact
@@ -18,7 +17,7 @@ import allLocales from '../locales';
  * the application.
  */
 function bestSupportedLocale(wanted: readonly string[], supported: readonly string[]): string | null {
-  const lower = supported.map(locale => locale.toLowerCase());
+  const lower = supported.map((locale) => locale.toLowerCase());
   const find = (code: string): string | null => {
     const index = lower.indexOf(code.toLowerCase());
     return index === -1 ? null : supported[index];
@@ -30,8 +29,8 @@ function bestSupportedLocale(wanted: readonly string[], supported: readonly stri
       return exact;
     }
 
-    const primary = code.split('-')[0].toLowerCase();
-    const related = supported.find(locale => locale.toLowerCase().split('-')[0] === primary);
+    const primary = code.split("-")[0].toLowerCase();
+    const related = supported.find((locale) => locale.toLowerCase().split("-")[0] === primary);
     if (related) {
       return related;
     }
@@ -49,7 +48,7 @@ function browserLanguages(): readonly string[] {
   return language ? [language] : [];
 }
 
-export interface LocaleSelectProps extends Omit<SelectProps<string>, 'value' | 'onChange'> {
+export interface LocaleSelectProps extends Omit<SelectProps<string>, "value" | "onChange"> {
   // The locale codes the branding enables. Every shipped locale is offered when
   // this is absent.
   locales?: string[];
@@ -58,17 +57,20 @@ export interface LocaleSelectProps extends Omit<SelectProps<string>, 'value' | '
 function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}) {
   const { i18n, ready } = useTranslation();
 
-  const handleChange = useCallback((event: SelectChangeEvent<string>) => {
-    // Every menu item below carries a locale code as its value, which the
-    // generic above names, so the value needs no narrowing.
-    i18n.changeLanguage(event.target.value);
-  }, [ i18n ])
+  const handleChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      // Every menu item below carries a locale code as its value, which the
+      // generic above names, so the value needs no narrowing.
+      i18n.changeLanguage(event.target.value);
+    },
+    [i18n],
+  );
 
   const locales = useMemo(() => {
     if (!localesProp) {
       return allLocales;
     }
-    const supported = allLocales.filter(locale => {
+    const supported = allLocales.filter((locale) => {
       return localesProp.includes(locale.locale);
     });
     return supported;
@@ -78,7 +80,7 @@ function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}
     // An empty list is possible: the branding may enable only locales this build
     // does not ship, and filtering then leaves nothing to choose from.
     if (locales && locales.length > 0) {
-      const codes = locales.map(locale => locale.locale);
+      const codes = locales.map((locale) => locale.locale);
       if (codes.includes(i18n.language)) {
         // Have language -> is supported all good.
         return;
@@ -98,19 +100,17 @@ function LocaleSelect({ locales: localesProp, ...other }: LocaleSelectProps = {}
   }
 
   // Named over string so the change handler's event carries a string value.
-  return <Select<string>
-    value={i18n.language}
-    onChange={handleChange}
-    {...other}
-  >
-    {locales.map(language => {
-      return <MenuItem
-        key={language.locale}
-        value={language.locale}>
-        {language.nativeName}
-      </MenuItem>;
-    })}
-  </Select>;
+  return (
+    <Select<string> value={i18n.language} onChange={handleChange} {...other}>
+      {locales.map((language) => {
+        return (
+          <MenuItem key={language.locale} value={language.locale}>
+            {language.nativeName}
+          </MenuItem>
+        );
+      })}
+    </Select>
+  );
 }
 
 export default LocaleSelect;

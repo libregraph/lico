@@ -1,7 +1,7 @@
-import Dialog from '@mui/material/Dialog';
-import type { DialogProps } from '@mui/material/Dialog';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
+import type { DialogProps } from "@mui/material/Dialog";
+import Dialog from "@mui/material/Dialog";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 /*
  * A dialog which fills the screen on a small viewport. This replaces v4's
@@ -14,9 +14,9 @@ import { useTheme } from '@mui/material/styles';
  */
 const ResponsiveDialog = (props: DialogProps) => {
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  return <Dialog fullScreen={fullScreen} {...props}/>;
+  return <Dialog fullScreen={fullScreen} {...props} />;
 };
 
 export default ResponsiveDialog;

@@ -13,10 +13,7 @@ export interface HelloRequest {
   max_age?: string;
 }
 
-export function newHelloRequest(
-  flow: string | null | undefined,
-  query: Record<string, string>
-): HelloRequest {
+export function newHelloRequest(flow: string | null | undefined, query: Record<string, string>): HelloRequest {
   const r: HelloRequest = {};
 
   if (query.prompt) {
@@ -26,12 +23,12 @@ export function newHelloRequest(
 
   let selectedFlow: string | null | undefined = flow;
   switch (flow) {
-    case 'oauth':
-    case 'consent':
-    case 'oidc':
-      r.scope = query.scope || '';
-      r.client_id = query.client_id || '';
-      r.redirect_uri = query.redirect_uri || '';
+    case "oauth":
+    case "consent":
+    case "oidc":
+      r.scope = query.scope || "";
+      r.client_id = query.client_id || "";
+      r.redirect_uri = query.redirect_uri || "";
       if (query.id_token_hint) {
         r.id_token_hint = query.id_token_hint;
       }

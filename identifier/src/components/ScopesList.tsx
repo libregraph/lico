@@ -1,15 +1,13 @@
+import type React from "react";
+import { useTranslation } from "react-i18next";
 
-import type React from 'react';
+import Checkbox from "@mui/material/Checkbox";
+import type { ListProps } from "@mui/material/List";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 
-import List from '@mui/material/List';
-import type { ListProps } from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Checkbox from '@mui/material/Checkbox';
-
-import { useTranslation } from 'react-i18next';
-
-import type { ScopesMeta } from '../models/api';
+import type { ScopesMeta } from "../models/api";
 
 const rowSx = { pt: 0, pb: 0 };
 
@@ -19,7 +17,7 @@ export interface ScopesListProps extends ListProps {
   meta: ScopesMeta;
 }
 
-const ScopesList = ({scopes, meta, ...rest}: ScopesListProps) => {
+const ScopesList = ({ scopes, meta, ...rest }: ScopesListProps) => {
   const { mapping, definitions } = meta;
 
   const { t } = useTranslation();
@@ -45,10 +43,10 @@ const ScopesList = ({scopes, meta, ...rest}: ScopesListProps) => {
     let label: string | undefined;
     if (definition) {
       switch (definition.id) {
-        case 'scope_alias_basic':
+        case "scope_alias_basic":
           label = t("konnect.scopeDescription.aliasBasic", "Access your basic account information");
           break;
-        case 'scope_offline_access':
+        case "scope_offline_access":
           label = t("konnect.scopeDescription.offlineAccess", "Keep the allowed access persistently and forever");
           break;
         default:
@@ -62,26 +60,14 @@ const ScopesList = ({scopes, meta, ...rest}: ScopesListProps) => {
     }
 
     rows.push(
-      <ListItem
-        disableGutters
-        dense
-        key={id}
-        sx={rowSx}
-      ><Checkbox
-          checked
-          disableRipple
-          disabled
-        />
+      <ListItem disableGutters dense key={id} sx={rowSx}>
+        <Checkbox checked disableRipple disabled />
         <ListItemText primary={label} />
-      </ListItem>
+      </ListItem>,
     );
   }
 
-  return (
-    <List {...rest}>
-      {rows}
-    </List>
-  );
+  return <List {...rest}>{rows}</List>;
 };
 
 export default ScopesList;

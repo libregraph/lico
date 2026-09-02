@@ -1,12 +1,11 @@
+import type React from "react";
+import type { RouteComponentProps, RouteProps } from "react-router-dom";
+import { Route } from "react-router-dom";
 
-import type React from 'react';
-import { Route } from 'react-router-dom';
-import type { RouteComponentProps, RouteProps } from 'react-router-dom';
+import type { Session } from "../models/api";
+import RedirectWithQuery from "./RedirectWithQuery";
 
-import RedirectWithQuery from './RedirectWithQuery';
-import type { Session } from '../models/api';
-
-export interface PrivateRouteProps extends Omit<RouteProps, 'component' | 'render' | 'children'> {
+export interface PrivateRouteProps extends Omit<RouteProps, "component" | "render" | "children"> {
   component: React.ComponentType<RouteComponentProps>;
   hello?: Session | null;
 }
@@ -15,13 +14,10 @@ export interface PrivateRouteProps extends Omit<RouteProps, 'component' | 'rende
 // not anyone is signed in, so its presence alone says nothing. Only its state
 // flag does.
 const PrivateRoute = ({ component: Target, hello, ...rest }: PrivateRouteProps) => (
-  <Route {...rest} render={props => (
-    hello?.state ? (
-      <Target {...props}/>
-    ) : (
-      <RedirectWithQuery target='/identifier' />
-    )
-  )}/>
+  <Route
+    {...rest}
+    render={(props) => (hello?.state ? <Target {...props} /> : <RedirectWithQuery target="/identifier" />)}
+  />
 );
 
 export default PrivateRoute;
