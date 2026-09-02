@@ -59,16 +59,14 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
           passes: 2,
         },
       },
-      rolldownOptions: {
-        output: {
-          codeSplitting: {
-            // Everything installed goes to one chunk, which is what the vendor
-            // chunk plugin did before it was removed. Rolldown keeps a chunk per
-            // lazy route beside it.
-            groups: [{ name: "vendor", test: /[\\/]node_modules[\\/]/ }],
-          },
-        },
-      },
+      /*
+       * No chunk groups on purpose. Collecting every installed package into one
+       * vendor chunk, which is what the removed vendor chunk plugin did, makes
+       * each route pay for every other route's dependencies: it cost 76 kB on
+       * the sign-out screen and saved 1 kB on sign-in, and put a 528 kB chunk
+       * past the size warning. Left alone, the splitter keeps a chunk per lazy
+       * route and shares what more than one of them reaches for.
+       */
     },
     base: "./",
     server: {
