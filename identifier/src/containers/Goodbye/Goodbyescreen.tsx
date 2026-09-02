@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { executeHello, executeLogoff } from "../../actions/common";
 import ResponsiveScreen from "../../components/ResponsiveScreen";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { selectBranding, selectHello } from "../../reducers/common";
 
 export interface GoodbyescreenProps {
   // Supplied by the Route which renders this screen.
@@ -23,8 +24,8 @@ function Goodbyescreen(props: GoodbyescreenProps) {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
-  const branding = useAppSelector((state) => state.common.branding);
-  const hello = useAppSelector((state) => state.common.hello);
+  const branding = useAppSelector(selectBranding);
+  const hello = useAppSelector(selectHello);
 
   // dispatch is stable for the store's lifetime, so this runs once on mount.
   useEffect(() => {

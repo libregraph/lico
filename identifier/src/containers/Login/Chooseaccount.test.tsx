@@ -2,8 +2,8 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { MemoryHistory } from "history";
 
-import { REQUEST_LOGON } from "../../actions/types";
 import { ERROR_LOGIN_FAILED } from "../../errors";
+import { requestLogon } from "../../reducers/login";
 import {
   fetchMock,
   type HelloResponse,
@@ -83,7 +83,7 @@ describe("Chooseaccount", () => {
   it("marks both account entries as disabled while a logon is in flight", () => {
     renderChooseaccount(newTestHistory("/chooseaccount", "PUSH"), {
       common: { hello: session },
-      login: { loading: REQUEST_LOGON },
+      login: { loading: requestLogon.type },
     });
 
     expect(screen.getByRole("button", { name: /user1@example\.com/ })).toHaveAttribute("aria-disabled", "true");

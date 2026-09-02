@@ -1,3 +1,5 @@
+import type { UnknownAction } from "@reduxjs/toolkit";
+
 import {
   ERROR_HTTP_NETWORK_ERROR,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
@@ -6,7 +8,16 @@ import {
   ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
 } from "../errors";
-import rootReducer from "../reducers";
+import { receiveHello } from "../reducers/common";
+import {
+  receiveConsent,
+  receiveLogon,
+  receiveValidateLogon,
+  requestConsentAllow,
+  requestConsentCancel,
+  requestLogon,
+} from "../reducers/login";
+import { rootReducer } from "../store";
 import {
   fetchMock,
   type HelloResponse,
@@ -28,18 +39,16 @@ import {
   executeLogonIfFormValid,
   validateUsernamePassword,
 } from "./login";
-import type { AppAction } from "./types";
-import * as types from "./types";
 
 /*
- * Reading a payload means naming which member of the closed action union is
- * expected. This throws on a mismatch, so a test which dispatched something
- * else names the action which actually arrived rather than reading undefined
- * and failing later on an unrelated line.
+ * Reading a payload means establishing which action arrived. The creator's own
+ * matcher does that and narrows the type with it, so a test which dispatched
+ * something else names what actually arrived rather than reading undefined and
+ * failing later on an unrelated line.
  */
-function receiveHelloAction(action: AppAction): types.ReceiveHelloAction {
-  if (action.type !== types.RECEIVE_HELLO) {
-    throw new Error(`expected ${types.RECEIVE_HELLO}, dispatched was ${action.type}`);
+function receiveHelloAction(action: UnknownAction) {
+  if (!receiveHello.match(action)) {
+    throw new Error(`expected ${receiveHello.type}, dispatched was ${action.type}`);
   }
   return action;
 }
@@ -52,7 +61,7 @@ function receiveHelloAction(action: AppAction): types.ReceiveHelloAction {
  */
 function newHarness(preloaded: PreloadedState = {}) {
   const store = makeStore(preloaded);
-  const actions: AppAction[] = [];
+  const actions: UnknownAction[] = [];
 
   store.replaceReducer((state, action) => {
     actions.push(action);
@@ -70,7 +79,7 @@ beforeEach(() => {
 describe("executeLogon", () => {
   it("announces the request and clears the session before it posts", async () => {
     const { store, actions } = newHarness();
-    let seenAtPost: AppAction[] = [];
+    let seenAtPost: UnknownAction[] = [];
     fetchMock().mockImplementation((_url: string, init: RequestInit) => {
       seenAtPost = [...actions];
       const sent = JSON.parse(String(init.body)) as { state?: string };
@@ -79,15 +88,12 @@ describe("executeLogon", () => {
 
     await store.dispatch(executeLogon("user1@example.com", "secret"));
 
-    expect(seenAtPost.map((a) => a.type)).toEqual([types.REQUEST_LOGON, types.RECEIVE_HELLO]);
+    expect(seenAtPost.map((a) => a.type)).toEqual([requestLogon.type, receiveHello.type]);
     // The interim hello carries the username but no session, so a stale signed
     // in state cannot survive into the answer.
     expect(seenAtPost[1]).toEqual({
-      type: types.RECEIVE_HELLO,
-      state: false,
-      username: "user1@example.com",
-      displayName: undefined,
-      hello: { username: "user1@example.com" },
+      type: receiveHello.type,
+      payload: { username: "user1@example.com" },
     });
   });
 
@@ -161,22 +167,15 @@ describe("executeLogon", () => {
     const response = await store.dispatch(executeLogon("user1@example.com", "secret"));
 
     expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_LOGON,
+      requestLogon.type,
+      receiveHello.type,
+      receiveHello.type,
+      receiveLogon.type,
     ]);
-    expect(actions[2]).toEqual({
-      type: types.RECEIVE_HELLO,
-      state: true,
-      username: "user1@example.com",
-      displayName: "Lala 123 abc",
-      hello,
-    });
+    expect(actions[2]).toEqual({ type: receiveHello.type, payload: hello });
     expect(actions[3]).toEqual({
-      type: types.RECEIVE_LOGON,
-      success: true,
-      errors: undefined,
+      type: receiveLogon.type,
+      payload: { success: true, hello, state: postedBody().state },
     });
     expect(response).toEqual({
       success: true,
@@ -198,11 +197,8 @@ describe("executeLogon", () => {
     await store.dispatch(executeLogon("user1@example.com", "secret"));
 
     expect(actions[2]).toEqual({
-      type: types.RECEIVE_HELLO,
-      state: true,
-      username: "user1@example.com",
-      displayName: undefined,
-      hello: { success: true, username: "user1@example.com" },
+      type: receiveHello.type,
+      payload: { success: true, username: "user1@example.com" },
     });
   });
 
@@ -218,19 +214,22 @@ describe("executeLogon", () => {
     expect(response).toEqual({
       success: false,
       state: postedBody().state,
-      errors: { http: new Error(ERROR_LOGIN_FAILED) },
+      errors: { http: { message: ERROR_LOGIN_FAILED } },
     });
     expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_LOGON,
+      requestLogon.type,
+      receiveHello.type,
+      receiveHello.type,
+      receiveLogon.type,
     ]);
-    expect(receiveHelloAction(actions[2]).state).toBe(false);
+    expect(receiveHelloAction(actions[2]).payload.success).toBe(false);
     expect(actions[3]).toEqual({
-      type: types.RECEIVE_LOGON,
-      success: false,
-      errors: { http: new Error(ERROR_LOGIN_FAILED) },
+      type: receiveLogon.type,
+      payload: {
+        success: false,
+        state: postedBody().state,
+        errors: { http: { message: ERROR_LOGIN_FAILED } },
+      },
     });
     expect(store.getState().login.errors.http.message).toBe(ERROR_LOGIN_FAILED);
     expect(store.getState().login.loading).toBe("");
@@ -251,11 +250,7 @@ describe("executeLogon", () => {
       success: false,
       errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } },
     });
-    expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_VALIDATE_LOGON,
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([requestLogon.type, receiveHello.type, receiveValidateLogon.type]);
   });
 
   it("reports an unexpected response status as a logon error", async () => {
@@ -277,11 +272,7 @@ describe("executeLogon", () => {
     });
     // A failed logon reports through the form errors, never through the global
     // error which hello uses.
-    expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_VALIDATE_LOGON,
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([requestLogon.type, receiveHello.type, receiveValidateLogon.type]);
     expect(store.getState().common.error).toBeNull();
   });
 
@@ -305,7 +296,7 @@ describe("executeLogon", () => {
 
     const response = await store.dispatch(executeLogon("user1", "secret"));
 
-    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_LOGON, types.RECEIVE_HELLO]);
+    expect(actions.map((a) => a.type)).toEqual([requestLogon.type, receiveHello.type]);
     expect(response).toEqual({ success: false, errors: {} });
     expect(store.getState().login.errors).toEqual({});
     expect(store.getState().common.error).toBeNull();
@@ -373,8 +364,8 @@ describe("executeConsent", () => {
     await allowed.store.dispatch(executeConsent(true, "openid"));
     await cancelled.store.dispatch(executeConsent(false, "openid"));
 
-    expect(allowed.actions[0]).toEqual({ type: types.REQUEST_CONSENT_ALLOW });
-    expect(cancelled.actions[0]).toEqual({ type: types.REQUEST_CONSENT_CANCEL });
+    expect(allowed.actions[0]).toEqual({ type: requestConsentAllow.type });
+    expect(cancelled.actions[0]).toEqual({ type: requestConsentCancel.type });
   });
 
   it("dispatches the received consent and resolves with the response on a 200", async () => {
@@ -383,11 +374,10 @@ describe("executeConsent", () => {
 
     const response = await store.dispatch(executeConsent(true, "openid"));
 
-    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW, types.RECEIVE_CONSENT]);
+    expect(actions.map((a) => a.type)).toEqual([requestConsentAllow.type, receiveConsent.type]);
     expect(actions[1]).toEqual({
-      type: types.RECEIVE_CONSENT,
-      success: true,
-      errors: undefined,
+      type: receiveConsent.type,
+      payload: { success: true, state: postedBody().state },
     });
     expect(response).toEqual({ success: true, state: postedBody().state });
   });
@@ -400,9 +390,8 @@ describe("executeConsent", () => {
 
     expect(response).toEqual({ success: true, state: postedBody().state });
     expect(actions[1]).toEqual({
-      type: types.RECEIVE_CONSENT,
-      success: true,
-      errors: undefined,
+      type: receiveConsent.type,
+      payload: { success: true, state: postedBody().state },
     });
   });
 
@@ -416,7 +405,7 @@ describe("executeConsent", () => {
       success: false,
       errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS } },
     });
-    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW, types.RECEIVE_VALIDATE_LOGON]);
+    expect(actions.map((a) => a.type)).toEqual([requestConsentAllow.type, receiveValidateLogon.type]);
   });
 
   it("reports a reply whose state does not echo the request", async () => {
@@ -428,7 +417,7 @@ describe("executeConsent", () => {
     expect(result).toMatchObject({
       errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } },
     });
-    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW, types.RECEIVE_VALIDATE_LOGON]);
+    expect(actions.map((a) => a.type)).toEqual([requestConsentAllow.type, receiveValidateLogon.type]);
   });
 
   it("stays silent on an abort and resolves an unsuccessful result", async () => {
@@ -438,7 +427,7 @@ describe("executeConsent", () => {
 
     const response = await store.dispatch(executeConsent(true, "openid"));
 
-    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW]);
+    expect(actions.map((a) => a.type)).toEqual([requestConsentAllow.type]);
     expect(response).toEqual({ success: false, errors: {} });
     expect(store.getState().login.errors).toEqual({});
     expect(store.getState().common.error).toBeNull();
@@ -451,17 +440,17 @@ describe("validateUsernamePassword", () => {
 
     expect(store.dispatch(validateUsernamePassword("user1", "secret", false))).toEqual({});
 
-    expect(actions).toEqual([{ type: types.RECEIVE_VALIDATE_LOGON, errors: {} }]);
+    expect(actions).toEqual([{ type: receiveValidateLogon.type, payload: {} }]);
   });
 
   it("reports a missing username", () => {
     const { store, actions } = newHarness();
 
     expect(store.dispatch(validateUsernamePassword("", "secret", false))).toEqual({
-      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
+      username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME },
     });
 
-    expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_VALIDATE_LOGON]);
+    expect(actions.map((a) => a.type)).toEqual([receiveValidateLogon.type]);
     expect(store.getState().login.errors.username.message).toBe(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
   });
 
@@ -469,7 +458,7 @@ describe("validateUsernamePassword", () => {
     const { store } = newHarness();
 
     expect(store.dispatch(validateUsernamePassword("user1", "", false))).toEqual({
-      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD),
+      password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD },
     });
   });
 
@@ -477,8 +466,8 @@ describe("validateUsernamePassword", () => {
     const { store } = newHarness();
 
     expect(store.dispatch(validateUsernamePassword("", "", false))).toEqual({
-      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
-      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD),
+      username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME },
+      password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD },
     });
   });
 
@@ -494,7 +483,7 @@ describe("validateUsernamePassword", () => {
     const { store } = newHarness();
 
     expect(store.dispatch(validateUsernamePassword("", "", true))).toEqual({
-      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
+      username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME },
     });
   });
 
@@ -517,11 +506,11 @@ describe("executeLogonIfFormValid", () => {
     expect(postedBody().params).toEqual(["user1@example.com", "secret", "1"]);
     expect(response).toMatchObject({ success: true });
     expect(actions.map((a) => a.type)).toEqual([
-      types.RECEIVE_VALIDATE_LOGON,
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_HELLO,
-      types.RECEIVE_LOGON,
+      receiveValidateLogon.type,
+      requestLogon.type,
+      receiveHello.type,
+      receiveHello.type,
+      receiveLogon.type,
     ]);
   });
 
@@ -547,7 +536,7 @@ describe("executeLogonIfFormValid", () => {
         password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD },
       },
     });
-    expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_VALIDATE_LOGON]);
+    expect(actions.map((a) => a.type)).toEqual([receiveValidateLogon.type]);
   });
 });
 
@@ -604,7 +593,7 @@ describe("advanceLogonFlow", () => {
     expect(history.action).toBe("PUSH");
     expect(history.entries).toHaveLength(2);
     // The reset clears the loading flag the request set.
-    expect(actions).toEqual([{ type: types.RECEIVE_VALIDATE_LOGON, errors: {} }]);
+    expect(actions).toEqual([{ type: receiveValidateLogon.type, payload: {} }]);
   });
 
   it("ignores the requested flow when the hello answered a different one", () => {

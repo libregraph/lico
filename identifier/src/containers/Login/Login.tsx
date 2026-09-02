@@ -23,9 +23,11 @@ import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import { advanceLogonFlow, executeLogonIfFormValid, updateInput } from "../../actions/login";
+import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import { ErrorMessage } from "../../errors";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { selectBranding, selectHello, selectQuery } from "../../reducers/common";
+import { selectErrors, selectLoading, selectPassword, selectUsername, updateInput } from "../../reducers/login";
 import { withSearchAndHash } from "../../utils";
 
 /*
@@ -97,13 +99,13 @@ function Login(props: LoginProps) {
 
   const dispatch = useAppDispatch();
 
-  const hello = useAppSelector((state) => state.common.hello);
-  const branding = useAppSelector((state) => state.common.branding);
-  const query = useAppSelector((state) => state.common.query);
-  const loading = useAppSelector((state) => state.login.loading);
-  const errors = useAppSelector((state) => state.login.errors);
-  const username = useAppSelector((state) => state.login.username);
-  const password = useAppSelector((state) => state.login.password);
+  const hello = useAppSelector(selectHello);
+  const branding = useAppSelector(selectBranding);
+  const query = useAppSelector(selectQuery);
+  const loading = useAppSelector(selectLoading);
+  const errors = useAppSelector(selectErrors);
+  const username = useAppSelector(selectUsername);
+  const password = useAppSelector(selectPassword);
 
   const { t } = useTranslation();
 
@@ -128,7 +130,7 @@ function Login(props: LoginProps) {
 
     // Prefill the username from login_hint when it looks like an identity.
     if (query?.login_hint && looksLikeIdentity(query.login_hint)) {
-      dispatch(updateInput("username", query.login_hint));
+      dispatch(updateInput({ name: "username", value: query.login_hint }));
 
       // Move focus on to the password once the field above has its value. The
       // timer is cleared on unmount, because otherwise the callback runs against
@@ -141,9 +143,10 @@ function Login(props: LoginProps) {
     }
   }, []);
 
-  const handleChange = (name: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    dispatch(updateInput(name, event.target.value));
-  };
+  const handleChange =
+    (name: "username" | "password") => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      dispatch(updateInput({ name, value: event.target.value }));
+    };
 
   const handleNextClick = (event: React.SyntheticEvent) => {
     event.preventDefault();

@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { retryHello } from "../actions/common";
 import { ErrorMessage } from "../errors";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
+import { selectError } from "../reducers/common";
 
 /*
  * Grid's root is a div, and React's div typings dropped the deprecated align
@@ -20,7 +21,7 @@ function Loading() {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
-  const error = useAppSelector((state) => state.common.error);
+  const error = useAppSelector(selectError);
 
   const handleRetry = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();

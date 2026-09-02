@@ -14,12 +14,13 @@ import type { TooltipProps as BaseTooltipProps } from "@mui/material/Tooltip";
 import BaseTooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
-import { advanceLogonFlow, executeConsent, receiveValidateLogon } from "../../actions/login";
-import { REQUEST_CONSENT_ALLOW } from "../../actions/types";
+import { advanceLogonFlow, executeConsent } from "../../actions/login";
 import ClientDisplayName from "../../components/ClientDisplayName";
 import ScopesList from "../../components/ScopesList";
 import { ErrorMessage } from "../../errors";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { selectHello } from "../../reducers/common";
+import { receiveValidateLogon, requestConsentAllow, selectErrors, selectLoading } from "../../reducers/login";
 import { withSearchAndHash } from "../../utils";
 
 // Both action buttons share the same wrapper, which positions the progress
@@ -71,9 +72,9 @@ function Consent(props: ConsentProps) {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
-  const hello = useAppSelector((state) => state.common.hello);
-  const loading = useAppSelector((state) => state.login.loading);
-  const errors = useAppSelector((state) => state.login.errors);
+  const hello = useAppSelector(selectHello);
+  const loading = useAppSelector(selectLoading);
+  const errors = useAppSelector(selectErrors);
 
   // No session means no client, and the mount guard tests for exactly that, so
   // it must not be given an empty object which would read as one being present.
@@ -180,7 +181,7 @@ function Consent(props: ConsentProps) {
             >
               {t("konnect.consent.cancelButton.label", "Cancel")}
             </Button>
-            {loading && loading !== REQUEST_CONSENT_ALLOW && <CircularProgress size={24} sx={buttonProgressSx} />}
+            {loading && loading !== requestConsentAllow.type && <CircularProgress size={24} sx={buttonProgressSx} />}
           </Box>
           <Box sx={wrapperSx}>
             <Button
@@ -193,7 +194,7 @@ function Consent(props: ConsentProps) {
             >
               {t("konnect.consent.allowButton.label", "Allow")}
             </Button>
-            {loading === REQUEST_CONSENT_ALLOW && <CircularProgress size={24} sx={buttonProgressSx} />}
+            {loading === requestConsentAllow.type && <CircularProgress size={24} sx={buttonProgressSx} />}
           </Box>
         </DialogActions>
 

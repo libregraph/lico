@@ -1,10 +1,14 @@
+import type { UnknownAction } from "@reduxjs/toolkit";
+
 import {
   ERROR_HTTP_NETWORK_ERROR,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
-  ExtendedError,
+  type TranslatableError,
 } from "../errors";
-import rootReducer from "../reducers";
+import { receiveError, receiveHello, resetHello } from "../reducers/common";
+import { receiveLogoff } from "../reducers/login";
+import { rootReducer } from "../store";
 import {
   fetchMock,
   type HelloResponse,
@@ -20,8 +24,6 @@ import {
   stubFetch,
 } from "../test-utils";
 import { executeHello, executeLogoff, retryHello } from "./common";
-import type { AppAction } from "./types";
-import * as types from "./types";
 
 /*
  * makeStore builds its dispatch chain inside applyMiddleware, so replacing the
@@ -31,7 +33,7 @@ import * as types from "./types";
  */
 function newHarness(preloaded: PreloadedState = {}) {
   const store = makeStore(preloaded);
-  const actions: AppAction[] = [];
+  const actions: UnknownAction[] = [];
 
   store.replaceReducer((state, action) => {
     actions.push(action);
@@ -43,41 +45,41 @@ function newHarness(preloaded: PreloadedState = {}) {
 }
 
 /*
- * Reading a payload means naming which member of the closed action union is
- * expected. These throw on a mismatch, so a test which dispatched something
- * else names the action which actually arrived rather than reading undefined
- * and failing later on an unrelated line.
+ * Reading a payload means establishing which action arrived. Each creator's own
+ * matcher does that and narrows the type with it, so a test which dispatched
+ * something else names what actually arrived rather than reading undefined and
+ * failing later on an unrelated line.
  */
-function receiveErrorAction(action: AppAction): types.ReceiveErrorAction {
-  if (action.type !== types.RECEIVE_ERROR) {
-    throw new Error(`expected ${types.RECEIVE_ERROR}, dispatched was ${action.type}`);
+function receiveErrorAction(action: UnknownAction) {
+  if (!receiveError.match(action)) {
+    throw new Error(`expected ${receiveError.type}, dispatched was ${action.type}`);
   }
   return action;
 }
 
-function receiveLogoffAction(action: AppAction): types.ReceiveLogoffAction {
-  if (action.type !== types.RECEIVE_LOGOFF) {
-    throw new Error(`expected ${types.RECEIVE_LOGOFF}, dispatched was ${action.type}`);
+function receiveLogoffAction(action: UnknownAction) {
+  if (!receiveLogoff.match(action)) {
+    throw new Error(`expected ${receiveLogoff.type}, dispatched was ${action.type}`);
   }
   return action;
 }
 
 /* The failure a reported error carries, which every test below expects to find. */
-function reportedError(action: AppAction): Error {
-  const { error } = receiveErrorAction(action);
-  if (error === null) {
-    throw new Error(`${types.RECEIVE_ERROR} carried no error`);
+function reportedError(action: UnknownAction): TranslatableError {
+  const { payload } = receiveErrorAction(action);
+  if (payload === null) {
+    throw new Error(`${receiveError.type} carried no error`);
   }
-  return error;
+  return payload;
 }
 
 /*
- * The values interpolated into an error message. They live on ExtendedError, so
- * an error carrying none is not the error under test.
+ * The values interpolated into an error message. asError copies them off an
+ * ExtendedError, so an error carrying none is not the error under test.
  */
-function errorValues(error: Error | null): Record<string, unknown> {
-  if (!(error instanceof ExtendedError) || error.values === undefined) {
-    throw new Error(`expected an ExtendedError carrying values, got ${String(error)}`);
+function errorValues(error: TranslatableError | null): Record<string, unknown> {
+  if (error?.values === undefined) {
+    throw new Error(`expected an error carrying values, got ${String(error)}`);
   }
   return error.values;
 }
@@ -98,7 +100,7 @@ describe("executeHello", () => {
 
     await store.dispatch(executeHello());
 
-    expect(seenAtPost).toEqual([types.RESET_HELLO]);
+    expect(seenAtPost).toEqual([resetHello.type]);
   });
 
   it("posts to a page relative endpoint with the XSRF header", async () => {
@@ -165,14 +167,8 @@ describe("executeHello", () => {
 
     const response = await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_HELLO]);
-    expect(actions[1]).toEqual({
-      type: types.RECEIVE_HELLO,
-      state: true,
-      username: "user1@example.com",
-      displayName: "Lala 123 abc",
-      hello: response,
-    });
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveHello.type]);
+    expect(actions[1]).toEqual({ type: receiveHello.type, payload: response });
     expect(response).toEqual({ ...hello, state: postedBody().state });
   });
 
@@ -184,13 +180,7 @@ describe("executeHello", () => {
 
     const response = await store.dispatch(executeHello());
 
-    expect(actions[1]).toEqual({
-      type: types.RECEIVE_HELLO,
-      state: false,
-      username: undefined,
-      displayName: undefined,
-      hello: response,
-    });
+    expect(actions[1]).toEqual({ type: receiveHello.type, payload: response });
     expect(store.getState().common.hello?.state).toBe(false);
   });
 
@@ -201,7 +191,7 @@ describe("executeHello", () => {
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveError.type]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
     expect(errorValues(reportedError(actions[1])).status).toBe(204);
   });
@@ -212,7 +202,7 @@ describe("executeHello", () => {
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveError.type]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
     // A forged reply must never reach the session, and the error has to be
     // readable from the store since that is what the loading screen shows.
@@ -228,7 +218,7 @@ describe("executeHello", () => {
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveError.type]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
     expect(errorValues(reportedError(actions[1])).status).toBe(500);
   });
@@ -249,7 +239,7 @@ describe("executeHello", () => {
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveError.type]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_NETWORK_ERROR);
     expect(store.getState().common.error?.message).toBe(ERROR_HTTP_NETWORK_ERROR);
   });
@@ -262,7 +252,7 @@ describe("executeHello", () => {
 
     const response = await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO]);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type]);
     expect(store.getState().common.error).toBeNull();
     expect(response).toBeUndefined();
   });
@@ -287,8 +277,8 @@ describe("retryHello", () => {
 
     const response = await store.dispatch(retryHello());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_ERROR, types.RESET_HELLO, types.RECEIVE_HELLO]);
-    expect(receiveErrorAction(actions[0]).error).toBeNull();
+    expect(actions.map((a) => a.type)).toEqual([receiveError.type, resetHello.type, receiveHello.type]);
+    expect(receiveErrorAction(actions[0]).payload).toBeNull();
     expect(store.getState().common.error).toBeNull();
     expect(response?.username).toBe("user1@example.com");
   });
@@ -306,7 +296,7 @@ describe("executeLogoff", () => {
 
     await store.dispatch(executeLogoff());
 
-    expect(seenAtPost).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF]);
+    expect(seenAtPost).toEqual([resetHello.type]);
   });
 
   it("posts nothing but the state nonce to a page relative endpoint", async () => {
@@ -331,21 +321,23 @@ describe("executeLogoff", () => {
 
     const response = await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF, types.RECEIVE_LOGOFF]);
-    expect(receiveLogoffAction(actions[2]).state).toBe(true);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveLogoff.type]);
+    receiveLogoffAction(actions[1]); // the reply's success is read off the resolved value, not the action
     expect(response).toEqual({ success: true, state: postedBody().state });
     // The login reducer forgets the credentials once logoff is received.
     expect(store.getState().login.username).toBe("");
     expect(store.getState().login.password).toBe("");
   });
 
-  it("dispatches an unsuccessful logoff with a false flag", async () => {
+  it("ends the session even when the logoff reply is unsuccessful", async () => {
     replyEchoingState(200, { success: false });
     const { store, actions } = newHarness();
 
     await store.dispatch(executeLogoff());
 
-    expect(actions[2]).toEqual({ type: types.RECEIVE_LOGOFF, state: false });
+    // A 200 answered the request, so the flag the reply carries changes nothing.
+    expect(actions[1].type).toBe(receiveLogoff.type);
+    expect(store.getState().login.username).toBe("");
   });
 
   it("treats a 204 as an unexpected status, unlike logon and consent", async () => {
@@ -356,8 +348,8 @@ describe("executeLogoff", () => {
 
     await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF, types.RECEIVE_ERROR]);
-    expect(reportedError(actions[2]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveError.type]);
+    expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
   });
 
   it("reports a reply whose state does not echo the request", async () => {
@@ -366,8 +358,8 @@ describe("executeLogoff", () => {
 
     await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF, types.RECEIVE_ERROR]);
-    expect(reportedError(actions[2]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveError.type]);
+    expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
   });
 
   it("reports a request which never got a response as a network error", async () => {
@@ -376,7 +368,7 @@ describe("executeLogoff", () => {
 
     await store.dispatch(executeLogoff());
 
-    expect(reportedError(actions[2]).message).toBe(ERROR_HTTP_NETWORK_ERROR);
+    expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_NETWORK_ERROR);
     expect(store.getState().common.error?.message).toBe(ERROR_HTTP_NETWORK_ERROR);
   });
 
@@ -402,7 +394,7 @@ describe("executeLogoff", () => {
 
     const response = await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF]);
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type]);
     expect(response).toMatchObject({ success: false, errors: {} });
     expect(store.getState().common.error).toBeNull();
   });
