@@ -36,6 +36,23 @@ const addScriptCSPNoncePlaceholderPlugin = (): Plugin => {
   };
 };
 
+// Where the build writes everything it emits, named once because the file name
+// templates below have to repeat it: they replace the whole path, not just the
+// name, so `assetsDir` alone no longer decides where a chunk lands.
+const assetsDir = "static/assets";
+
+/*
+ * A chunk is named after the module that anchors it, so it arrives spelled the
+ * way that source file is, and the shared runtime arrives named after the
+ * bundler that emitted it. Neither is what we want on disk: everything served
+ * from here is lowercase and hyphenated.
+ */
+const chunkName = (name: string): string =>
+  (name === "rolldown-runtime" ? "runtime" : name)
+    .replace(/([a-z\d])([A-Z])/g, "$1-$2")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .toLowerCase();
+
 export default defineConfig((env: ConfigEnv): ViteUserConfig => {
   return {
     resolve: {
@@ -46,7 +63,7 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
     },
     build: {
       outDir: "build",
-      assetsDir: "static/assets",
+      assetsDir,
       manifest: "asset-manifest.json",
       sourcemap: true,
       // terser is smaller than the default minifier here, and it is already a
@@ -67,6 +84,15 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
        * past the size warning. Left alone, the splitter keeps a chunk per lazy
        * route and shares what more than one of them reaches for.
        */
+      rolldownOptions: {
+        output: {
+          // base64 is the default and puts capitals in every hash, including
+          // the ones on the font files. base36 keeps them lowercase.
+          hashCharacters: "base36",
+          entryFileNames: (chunk) => `${assetsDir}/${chunkName(chunk.name)}-[hash].js`,
+          chunkFileNames: (chunk) => `${assetsDir}/${chunkName(chunk.name)}-[hash].js`,
+        },
+      },
     },
     base: "./",
     server: {
