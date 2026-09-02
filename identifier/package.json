@@ -63,7 +63,8 @@
     "vitest": "^4.1.11"
   },
   "resolutions": {
-    "@types/react": "^17.0.70"
+    "@types/react": "^17.0.70",
+    "react-is": "^17.0.2"
   },
   "browserslist": {
     "production": [
