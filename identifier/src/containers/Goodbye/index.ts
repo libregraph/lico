@@ -1,1 +1,1 @@
-export { default } from './Goodbyescreen';
+export { default } from "./Goodbyescreen";

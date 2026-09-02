@@ -1,12 +1,8 @@
-import queryString from 'query-string';
+import queryString from "query-string";
 
-import type { AppAction } from '../actions/types';
-import {
-  RECEIVE_ERROR,
-  RESET_HELLO,
-  RECEIVE_HELLO
-} from '../actions/types';
-import type { Branding, Session } from '../models/api';
+import type { AppAction } from "../actions/types";
+import { RECEIVE_ERROR, RECEIVE_HELLO, RESET_HELLO } from "../actions/types";
+import type { Branding, Session } from "../models/api";
 
 /*
  * query-string hands back an array when a parameter repeats. Every reader here
@@ -15,15 +11,15 @@ import type { Branding, Session } from '../models/api';
  * unwrap one.
  */
 const query = queryString.parse(document.location.search) as Record<string, string>;
-const flow = query.flow || '';
+const flow = query.flow || "";
 delete query.flow;
 
 const defaultPathPrefix = (() => {
-  const root = document.getElementById('root');
-  let pathPrefix = root ? root.getAttribute('data-path-prefix') : null;
-  if (!pathPrefix || pathPrefix === '__PATH_PREFIX__') {
+  const root = document.getElementById("root");
+  let pathPrefix = root ? root.getAttribute("data-path-prefix") : null;
+  if (!pathPrefix || pathPrefix === "__PATH_PREFIX__") {
     // Not replaced, probably we are running in debug mode or whatever. Use sane default.
-    pathPrefix = '/signin/v1';
+    pathPrefix = "/signin/v1";
   }
   return pathPrefix;
 })();
@@ -43,20 +39,20 @@ const defaultState: CommonState = {
   error: null,
   flow: flow,
   query: query,
-  pathPrefix: defaultPathPrefix
+  pathPrefix: defaultPathPrefix,
 };
 
 function commonReducer(state: CommonState = defaultState, action: AppAction): CommonState {
   switch (action.type) {
     case RECEIVE_ERROR:
       return Object.assign({}, state, {
-        error: action.error
+        error: action.error,
       });
 
     case RESET_HELLO:
       return Object.assign({}, state, {
         hello: null,
-        branding: null
+        branding: null,
       });
 
     case RECEIVE_HELLO:
@@ -65,9 +61,9 @@ function commonReducer(state: CommonState = defaultState, action: AppAction): Co
           state: action.state,
           username: action.username,
           displayName: action.displayName,
-          details: action.hello
+          details: action.hello,
         },
-        branding: action.hello.branding ? action.hello.branding : state.branding
+        branding: action.hello.branding ? action.hello.branding : state.branding,
       });
 
     default:

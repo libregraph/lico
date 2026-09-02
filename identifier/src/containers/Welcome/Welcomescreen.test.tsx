@@ -1,28 +1,27 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
-import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-
-import Welcomescreen from './Welcomescreen';
 import {
-  type HelloResponse,
   fetchMock,
+  type HelloResponse,
   newTestHistory,
   postedBody,
   postedInit,
   postedUrl,
   renderWithProviders,
   replyEchoingState,
-  stubFetch
-} from '../../test-utils';
+  stubFetch,
+} from "../../test-utils";
+import Welcomescreen from "./Welcomescreen";
 
 const Subject = Welcomescreen;
 
 const helloResponse: HelloResponse = {
-  state: 'nonce-from-the-server',
-  flow: '',
+  state: "nonce-from-the-server",
+  flow: "",
   success: true,
-  username: 'user1@example.com',
-  displayName: 'Lala 123 abc'
+  username: "user1@example.com",
+  displayName: "Lala 123 abc",
 };
 
 /* The shape the common reducer stores, not the wire shape. */
@@ -30,13 +29,13 @@ const session = {
   state: true,
   username: helloResponse.username,
   displayName: helloResponse.displayName,
-  details: helloResponse
+  details: helloResponse,
 };
 
-function renderWelcome(history = newTestHistory('/welcome', 'POP')) {
+function renderWelcome(history = newTestHistory("/welcome", "POP")) {
   return renderWithProviders(<Subject history={history} />, {
     history,
-    preloaded: { common: { hello: session } }
+    preloaded: { common: { hello: session } },
   });
 }
 
@@ -45,91 +44,91 @@ function replyWith(payload: Record<string, unknown>): void {
   replyEchoingState(200, payload);
 }
 
-describe('Welcomescreen', () => {
+describe("Welcomescreen", () => {
   beforeEach(() => {
     stubFetch();
   });
 
-  it('greets the signed in user and confirms the session', () => {
+  it("greets the signed in user and confirms the session", () => {
     renderWelcome();
 
-    expect(screen.getByText('Welcome Lala 123 abc')).toBeInTheDocument();
-    expect(screen.getByText('user1@example.com')).toBeInTheDocument();
-    expect(screen.getByText('You are signed in - awesome!')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    expect(screen.getByText("Welcome Lala 123 abc")).toBeInTheDocument();
+    expect(screen.getByText("user1@example.com")).toBeInTheDocument();
+    expect(screen.getByText("You are signed in - awesome!")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
-  it('shows the loading state instead of failing when the session is gone', () => {
+  it("shows the loading state instead of failing when the session is gone", () => {
     // Signing out clears the session before the request completes, so this
     // screen re-renders without one and must not read from it.
-    renderWithProviders(<Subject history={newTestHistory('/welcome', 'POP')} />, {
-      preloaded: { common: { hello: null } }
+    renderWithProviders(<Subject history={newTestHistory("/welcome", "POP")} />, {
+      preloaded: { common: { hello: null } },
     });
 
-    expect(screen.queryByText('You are signed in - awesome!')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+    expect(screen.queryByText("You are signed in - awesome!")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
   });
 
-  it('does not talk to the server on mount', () => {
+  it("does not talk to the server on mount", () => {
     // Unlike Goodbyescreen this screen trusts the hello it was routed with.
     renderWelcome();
 
     expect(fetchMock()).not.toHaveBeenCalled();
   });
 
-  it('does not redirect when arriving by client side navigation', () => {
-    const history = newTestHistory('/welcome?flow=oidc#frag', 'PUSH');
+  it("does not redirect when arriving by client side navigation", () => {
+    const history = newTestHistory("/welcome?flow=oidc#frag", "PUSH");
 
     renderWelcome(history);
 
-    expect(history.location.pathname).toBe('/welcome');
+    expect(history.location.pathname).toBe("/welcome");
     expect(history.length).toBe(1);
   });
 
-  it('does not redirect when arriving by a fresh page load', () => {
+  it("does not redirect when arriving by a fresh page load", () => {
     // This screen has no mount time guard of its own, unlike the login
     // containers. Access is gated by the PrivateRoute which renders it.
-    const history = newTestHistory('/welcome?flow=oidc#frag', 'POP');
+    const history = newTestHistory("/welcome?flow=oidc#frag", "POP");
 
     renderWelcome(history);
 
-    expect(history.location.pathname).toBe('/welcome');
+    expect(history.location.pathname).toBe("/welcome");
     expect(history.length).toBe(1);
   });
 
-  it('posts to the logoff endpoint with the XSRF header when signing out', async () => {
+  it("posts to the logoff endpoint with the XSRF header when signing out", async () => {
     replyWith({ success: true });
     renderWelcome();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
-    expect(postedUrl()).toBe('./identifier/_/logoff');
-    expect(typeof postedBody().state).toBe('string');
+    expect(postedUrl()).toBe("./identifier/_/logoff");
+    expect(typeof postedBody().state).toBe("string");
     expect(postedInit().headers).toEqual({
-      'Content-Type': 'application/json',
-      'Kopano-Konnect-XSRF': '1'
+      "Content-Type": "application/json",
+      "Kopano-Konnect-XSRF": "1",
     });
   });
 
-  it('sends the user back to the identifier page after a successful sign out', async () => {
+  it("sends the user back to the identifier page after a successful sign out", async () => {
     replyWith({ success: true });
-    const history = newTestHistory('/welcome', 'PUSH');
+    const history = newTestHistory("/welcome", "PUSH");
     renderWelcome(history);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
-    await waitFor(() => expect(history.location.pathname).toBe('/identifier'));
+    await waitFor(() => expect(history.location.pathname).toBe("/identifier"));
   });
 
-  it('stays on the welcome page when the server refuses the sign out', async () => {
+  it("stays on the welcome page when the server refuses the sign out", async () => {
     replyWith({ success: false });
-    const history = newTestHistory('/welcome', 'PUSH');
+    const history = newTestHistory("/welcome", "PUSH");
     renderWelcome(history);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
-    expect(history.location.pathname).toBe('/welcome');
+    expect(history.location.pathname).toBe("/welcome");
   });
 });

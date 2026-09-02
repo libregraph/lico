@@ -1,15 +1,15 @@
-import type { AppAction } from '../actions/types';
+import type { AppAction } from "../actions/types";
 import {
-  RECEIVE_VALIDATE_LOGON,
-  REQUEST_LOGON,
-  RECEIVE_LOGON,
+  RECEIVE_CONSENT,
   RECEIVE_LOGOFF,
+  RECEIVE_LOGON,
+  RECEIVE_VALIDATE_LOGON,
   REQUEST_CONSENT_ALLOW,
   REQUEST_CONSENT_CANCEL,
-  RECEIVE_CONSENT,
-  UPDATE_INPUT
-} from '../actions/types';
-import type { FieldErrors } from '../models/api';
+  REQUEST_LOGON,
+  UPDATE_INPUT,
+} from "../actions/types";
+import type { FieldErrors } from "../models/api";
 
 export interface LoginState {
   // Empty when nothing is in flight, otherwise the action type which started
@@ -21,10 +21,10 @@ export interface LoginState {
 }
 
 const defaultState: LoginState = {
-  loading: '',
-  username: '',
-  password: '',
-  errors: {}
+  loading: "",
+  username: "",
+  password: "",
+  errors: {},
 };
 
 function loginReducer(state: LoginState = defaultState, action: AppAction): LoginState {
@@ -32,7 +32,7 @@ function loginReducer(state: LoginState = defaultState, action: AppAction): Logi
     case RECEIVE_VALIDATE_LOGON:
       return Object.assign({}, state, {
         errors: action.errors,
-        loading: ''
+        loading: "",
       });
 
     case REQUEST_CONSENT_ALLOW:
@@ -40,7 +40,7 @@ function loginReducer(state: LoginState = defaultState, action: AppAction): Logi
     case REQUEST_LOGON:
       return Object.assign({}, state, {
         loading: action.type,
-        errors: {}
+        errors: {},
       });
 
     case RECEIVE_CONSENT:
@@ -48,15 +48,15 @@ function loginReducer(state: LoginState = defaultState, action: AppAction): Logi
       if (!action.success) {
         return Object.assign({}, state, {
           errors: action.errors ? action.errors : {},
-          loading: ''
+          loading: "",
         });
       }
       return state;
 
     case RECEIVE_LOGOFF:
       return Object.assign({}, state, {
-        username: '',
-        password: ''
+        username: "",
+        password: "",
       });
 
     case UPDATE_INPUT: {
@@ -67,7 +67,7 @@ function loginReducer(state: LoginState = defaultState, action: AppAction): Logi
 
       return Object.assign({}, state, {
         errors,
-        [action.name]: action.value
+        [action.name]: action.value,
       });
     }
 

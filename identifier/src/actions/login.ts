@@ -1,53 +1,50 @@
-import queryString from 'query-string';
-import type { History } from 'history';
+import type { History } from "history";
+import queryString from "query-string";
 
-import { newHelloRequest } from '../models/hello';
-import type { AttemptResult, FieldErrors, HelloResponse } from '../models/api';
-import { withClientRequestState, withSearchAndHash } from '../utils';
 import {
-  ExtendedError,
   asError,
-  ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
-  ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
-  ERROR_LOGIN_FAILED,
+  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE
-} from '../errors';
-import type { AppThunk } from '../store';
-
-import * as types from './types';
+  ERROR_LOGIN_FAILED,
+  ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
+  ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
+  ExtendedError,
+} from "../errors";
+import type { AttemptResult, FieldErrors, HelloResponse } from "../models/api";
+import { newHelloRequest } from "../models/hello";
+import type { AppThunk } from "../store";
+import { withClientRequestState, withSearchAndHash } from "../utils";
+import { receiveHello } from "./common";
 import type {
   ReceiveConsentAction,
   ReceiveLogonAction,
   ReceiveValidateLogonAction,
   RequestConsentAction,
   RequestLogonAction,
-  UpdateInputAction
-} from './types';
-import { receiveHello } from './common';
-import { postJSON, isAbortError } from './utils';
-import type { PostJSONOptions } from './utils';
+  UpdateInputAction,
+} from "./types";
+import * as types from "./types";
+import type { PostJSONOptions } from "./utils";
+import { isAbortError, postJSON } from "./utils";
 
 // Modes for logon.
-export const ModeLogonUsernameEmptyPasswordCookie = '0';
-export const ModeLogonUsernamePassword = '1';
+export const ModeLogonUsernameEmptyPasswordCookie = "0";
+export const ModeLogonUsernamePassword = "1";
 
-export type LogonMode =
-  | typeof ModeLogonUsernameEmptyPasswordCookie
-  | typeof ModeLogonUsernamePassword;
+export type LogonMode = typeof ModeLogonUsernameEmptyPasswordCookie | typeof ModeLogonUsernamePassword;
 
 export function updateInput(name: string, value: string): UpdateInputAction {
   return {
     type: types.UPDATE_INPUT,
     name,
-    value
+    value,
   };
 }
 
 export function receiveValidateLogon(errors: FieldErrors): ReceiveValidateLogonAction {
   return {
     type: types.RECEIVE_VALIDATE_LOGON,
-    errors
+    errors,
   };
 }
 
@@ -55,7 +52,7 @@ export function requestLogon(username: string, password: string): RequestLogonAc
   return {
     type: types.REQUEST_LOGON,
     username,
-    password
+    password,
   };
 }
 
@@ -65,13 +62,13 @@ export function receiveLogon(logon: AttemptResult): ReceiveLogonAction {
   return {
     type: types.RECEIVE_LOGON,
     success,
-    errors
+    errors,
   };
 }
 
 export function requestConsent(allow = false): RequestConsentAction {
   return {
-    type: allow ? types.REQUEST_CONSENT_ALLOW : types.REQUEST_CONSENT_CANCEL
+    type: allow ? types.REQUEST_CONSENT_ALLOW : types.REQUEST_CONSENT_CANCEL,
   };
 }
 
@@ -81,7 +78,7 @@ export function receiveConsent(logon: AttemptResult): ReceiveConsentAction {
   return {
     type: types.RECEIVE_CONSENT,
     success,
-    errors
+    errors,
   };
 }
 
@@ -89,13 +86,15 @@ export function executeLogon(
   username: string,
   password: string,
   mode: LogonMode = ModeLogonUsernamePassword,
-  options: PostJSONOptions = {}
+  options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return async (dispatch, getState): Promise<AttemptResult> => {
     dispatch(requestLogon(username, password));
-    dispatch(receiveHello({
-      username
-    })); // Reset any hello state on logon.
+    dispatch(
+      receiveHello({
+        username,
+      }),
+    ); // Reset any hello state on logon.
 
     const { flow, query } = getState().common;
 
@@ -109,7 +108,7 @@ export function executeLogon(
 
       case ModeLogonUsernameEmptyPasswordCookie:
         // Username with empty password - this only works when the user is already signed in.
-        params.push(username, '', mode);
+        params.push(username, "", mode);
         break;
 
       default:
@@ -117,10 +116,10 @@ export function executeLogon(
 
     const r = withClientRequestState({
       params: params,
-      hello: newHelloRequest(flow, query)
+      hello: newHelloRequest(flow, query),
     });
     try {
-      const { status, headers, data } = await postJSON('./identifier/_/logon', r, options);
+      const { status, headers, data } = await postJSON("./identifier/_/logon", r, options);
 
       let response: AttemptResult;
       switch (status) {
@@ -133,10 +132,10 @@ export function executeLogon(
           // body to carry it.
           response = {
             success: false,
-            state: headers.get('Kopano-Konnect-State'),
+            state: headers.get("Kopano-Konnect-State"),
             errors: {
-              http: new Error(ERROR_LOGIN_FAILED)
-            }
+              http: new Error(ERROR_LOGIN_FAILED),
+            },
           };
           break;
         default:
@@ -151,7 +150,7 @@ export function executeLogon(
       // so the outcome and the name that was tried stand in for one.
       const hello: Partial<HelloResponse> = response.hello ?? {
         success: response.success,
-        username
+        username,
       };
 
       dispatch(receiveHello(hello));
@@ -165,13 +164,13 @@ export function executeLogon(
       }
 
       const errors: FieldErrors = {
-        http: asError(error)
+        http: asError(error),
       };
 
       dispatch(receiveValidateLogon(errors));
       return {
         success: false,
-        errors: errors
+        errors: errors,
       };
     }
   };
@@ -179,8 +178,8 @@ export function executeLogon(
 
 export function executeConsent(
   allow = false,
-  scope = '',
-  options: PostJSONOptions = {}
+  scope = "",
+  options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return async (dispatch, getState): Promise<AttemptResult> => {
     dispatch(requestConsent(allow));
@@ -190,13 +189,13 @@ export function executeConsent(
     const r = withClientRequestState({
       allow,
       scope,
-      client_id: query.client_id || '',
-      redirect_uri: query.redirect_uri || '',
-      ref: query.state || '',
-      flow_nonce: query.nonce || ''
+      client_id: query.client_id || "",
+      redirect_uri: query.redirect_uri || "",
+      ref: query.state || "",
+      flow_nonce: query.nonce || "",
     });
     try {
-      const { status, headers, data } = await postJSON('./identifier/_/consent', r, options);
+      const { status, headers, data } = await postJSON("./identifier/_/consent", r, options);
 
       let response: AttemptResult;
       switch (status) {
@@ -209,7 +208,7 @@ export function executeConsent(
           // body to carry it.
           response = {
             success: true,
-            state: headers.get('Kopano-Konnect-State')
+            state: headers.get("Kopano-Konnect-State"),
           };
           break;
         default:
@@ -230,13 +229,13 @@ export function executeConsent(
       }
 
       const errors: FieldErrors = {
-        http: asError(error)
+        http: asError(error),
       };
 
       dispatch(receiveValidateLogon(errors));
       return {
         success: false,
-        errors: errors
+        errors: errors,
       };
     }
   };
@@ -250,7 +249,7 @@ export function executeConsent(
 export function validateUsernamePassword(
   username: string,
   password: string,
-  isSignedIn: boolean
+  isSignedIn: boolean,
 ): AppThunk<FieldErrors> {
   return (dispatch) => {
     const errors: FieldErrors = {};
@@ -272,14 +271,14 @@ export function executeLogonIfFormValid(
   username: string,
   password: string,
   isSignedIn: boolean,
-  options: PostJSONOptions = {}
+  options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return (dispatch) => {
     const errors = dispatch(validateUsernamePassword(username, password, isSignedIn));
     if (Object.keys(errors).length > 0) {
       return Promise.resolve({
         success: false,
-        errors: errors
+        errors: errors,
       });
     }
 
@@ -292,7 +291,7 @@ export function advanceLogonFlow(
   success: boolean,
   history: History,
   done = false,
-  extraQuery: Record<string, string | null | undefined> = {}
+  extraQuery: Record<string, string | null | undefined> = {},
 ): AppThunk {
   return (dispatch, getState) => {
     if (!success) {
@@ -303,20 +302,20 @@ export function advanceLogonFlow(
     const q: Record<string, string | null | undefined> = Object.assign({}, query, extraQuery);
 
     switch (flow) {
-      case 'oauth':
-      case 'consent':
-      case 'oidc':
+      case "oauth":
+      case "consent":
+      case "oidc":
         if (hello?.details.flow !== flow) {
           // Ignore requested flow if hello flow does not match.
           break;
         }
 
-        if (!done && hello.details.next === 'consent') {
-          history.replace(withSearchAndHash('/consent', history.location));
+        if (!done && hello.details.next === "consent") {
+          history.replace(withSearchAndHash("/consent", history.location));
           return;
         }
         if (hello.details.continue_uri) {
-          q.prompt = 'none';
+          q.prompt = "none";
           window.location.replace(`${hello.details.continue_uri}?${queryString.stringify(q)}`);
           return;
         }
@@ -332,8 +331,8 @@ export function advanceLogonFlow(
     }
 
     // Default action.
-    let target = '/welcome';
-    if (history.action === 'REPLACE') {
+    let target = "/welcome";
+    if (history.action === "REPLACE") {
       target = withSearchAndHash(target, history.location);
     }
 

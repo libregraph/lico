@@ -1,15 +1,16 @@
-import { Suspense, lazy } from 'react';
+import { lazy, Suspense } from "react";
 
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
 
-import './App.css';
-import './fancy-background.css';
-import Spinner from './components/Spinner';
-import * as version from './version';
-import theme from './theme';
+import "./App.css";
+import "./fancy-background.css";
 
-const LazyMain = lazy(() => import('./Main'));
+import Spinner from "./components/Spinner";
+import theme from "./theme";
+import * as version from "./version";
+
+const LazyMain = lazy(() => import("./Main"));
 
 console.info(`Kopano Identifier build version: ${version.build}`);
 
@@ -21,12 +22,12 @@ console.info(`Kopano Identifier build version: ${version.build}`);
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline/>
-      <Suspense fallback={<Spinner/>}>
+      <CssBaseline />
+      <Suspense fallback={<Spinner />}>
         <LazyMain />
       </Suspense>
     </ThemeProvider>
   );
-}
+};
 
 export default App;

@@ -1,16 +1,16 @@
-import { useEffect } from 'react';
-import type { History } from 'history';
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useTranslation } from 'react-i18next';
+import type { History } from "history";
 
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import DialogActions from '@mui/material/DialogActions';
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import Typography from "@mui/material/Typography";
 
-import ResponsiveScreen from '../../components/ResponsiveScreen';
-import { executeHello, executeLogoff } from '../../actions/common';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
+import { executeHello, executeLogoff } from "../../actions/common";
+import ResponsiveScreen from "../../components/ResponsiveScreen";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 
 export interface GoodbyescreenProps {
   // Supplied by the Route which renders this screen.
@@ -23,8 +23,8 @@ function Goodbyescreen(props: GoodbyescreenProps) {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
-  const branding = useAppSelector(state => state.common.branding);
-  const hello = useAppSelector(state => state.common.hello);
+  const branding = useAppSelector((state) => state.common.branding);
+  const hello = useAppSelector((state) => state.common.hello);
 
   // dispatch is stable for the store's lifetime, so this runs once on mount.
   useEffect(() => {
@@ -42,7 +42,7 @@ function Goodbyescreen(props: GoodbyescreenProps) {
       dispatch(executeHello());
 
       if (response.success) {
-        history.push('/goodbye');
+        history.push("/goodbye");
       }
     });
   };
@@ -58,9 +58,7 @@ function Goodbyescreen(props: GoodbyescreenProps) {
           <Typography variant="subtitle1" sx={{ mb: 5 }}>
             {t("konnect.goodbye.subHeader", "you have been signed out from your account")}
           </Typography>
-          <Typography gutterBottom>
-            {t("konnect.goodbye.message.close", "You can close this window now.")}
-          </Typography>
+          <Typography gutterBottom>{t("konnect.goodbye.message.close", "You can close this window now.")}</Typography>
         </div>
       )}
       {hello !== null && hello.state === true && (
@@ -77,12 +75,8 @@ function Goodbyescreen(props: GoodbyescreenProps) {
           </Typography>
 
           <DialogActions>
-            <Box sx={{ mt: 5, position: 'relative', display: 'inline-block' }}>
-              <Button
-                color="secondary"
-                variant="outlined"
-                onClick={handleLogoff}
-              >
+            <Box sx={{ mt: 5, position: "relative", display: "inline-block" }}>
+              <Button color="secondary" variant="outlined" onClick={handleLogoff}>
                 {t("konnect.goodbye.signoutButton.label", "Sign out")}
               </Button>
             </Box>

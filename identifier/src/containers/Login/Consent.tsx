@@ -1,44 +1,44 @@
-import { useEffect } from 'react';
-import type { History } from 'history';
+import { useEffect } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
-import { Trans, useTranslation } from 'react-i18next';
+import type { History } from "history";
 
-import type { SxProps, Theme } from '@mui/material/styles';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import BaseTooltip from '@mui/material/Tooltip';
-import type { TooltipProps as BaseTooltipProps } from '@mui/material/Tooltip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import { executeConsent, advanceLogonFlow, receiveValidateLogon } from '../../actions/login';
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import { green } from "@mui/material/colors";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import type { SxProps, Theme } from "@mui/material/styles";
+import type { TooltipProps as BaseTooltipProps } from "@mui/material/Tooltip";
+import BaseTooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 
-import { ErrorMessage } from '../../errors';
-import { REQUEST_CONSENT_ALLOW } from '../../actions/types';
-import ClientDisplayName from '../../components/ClientDisplayName';
-import ScopesList from '../../components/ScopesList';
-import { withSearchAndHash } from '../../utils';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { green } from '@mui/material/colors';
+import { advanceLogonFlow, executeConsent, receiveValidateLogon } from "../../actions/login";
+import { REQUEST_CONSENT_ALLOW } from "../../actions/types";
+import ClientDisplayName from "../../components/ClientDisplayName";
+import ScopesList from "../../components/ScopesList";
+import { ErrorMessage } from "../../errors";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { withSearchAndHash } from "../../utils";
 
 // Both action buttons share the same wrapper, which positions the progress
 // indicator over them.
 const wrapperSx: SxProps<Theme> = {
   mt: 2,
-  position: 'relative',
-  display: 'inline-block'
+  position: "relative",
+  display: "inline-block",
 };
 
 // The negative offsets centre the 24px indicator on the button. In spacing
 // units -1.5 is the former -12px.
 const buttonProgressSx: SxProps<Theme> = {
   color: green[500],
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
+  position: "absolute",
+  top: "50%",
+  left: "50%",
   mt: -1.5,
-  ml: -1.5
+  ml: -1.5,
 };
 
 /*
@@ -46,15 +46,19 @@ const buttonProgressSx: SxProps<Theme> = {
  * guarantees. Its own children are widened to any node so the Trans component
  * can hand it whatever the translation interpolates.
  */
-interface TooltipProps extends Omit<BaseTooltipProps, 'children'> {
+interface TooltipProps extends Omit<BaseTooltipProps, "children"> {
   children: React.ReactNode;
 }
 
 const Tooltip = ({ children, ...other }: TooltipProps) => {
   // Ensures that there is only a single child for the tooltip element to
   // make it compatible with the Trans component.
-  return <BaseTooltip {...other}><span>{children}</span></BaseTooltip>;
-}
+  return (
+    <BaseTooltip {...other}>
+      <span>{children}</span>
+    </BaseTooltip>
+  );
+};
 
 export interface ConsentProps {
   // Supplied by the Route which renders this screen.
@@ -67,9 +71,9 @@ function Consent(props: ConsentProps) {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
-  const hello = useAppSelector(state => state.common.hello);
-  const loading = useAppSelector(state => state.login.loading);
-  const errors = useAppSelector(state => state.login.errors);
+  const hello = useAppSelector((state) => state.common.hello);
+  const loading = useAppSelector((state) => state.login.loading);
+  const errors = useAppSelector((state) => state.login.errors);
 
   // No session means no client, and the mount guard tests for exactly that, so
   // it must not be given an empty object which would read as one being present.
@@ -80,8 +84,8 @@ function Consent(props: ConsentProps) {
   // in the middle of deciding.
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if ((!hello?.state || !client) && history.action !== 'PUSH') {
-      history.replace(withSearchAndHash('/identifier', history.location));
+    if ((!hello?.state || !client) && history.action !== "PUSH") {
+      history.replace(withSearchAndHash("/identifier", history.location));
     }
 
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.
@@ -89,7 +93,8 @@ function Consent(props: ConsentProps) {
 
   // No default for allow: the form passes it undefined to mean "decide nothing",
   // and a default would turn that into an explicit refusal.
-  const action = (allow: boolean | undefined, scopes: Record<string, boolean> = {}) =>
+  const action =
+    (allow: boolean | undefined, scopes: Record<string, boolean> = {}) =>
     (event: React.SyntheticEvent) => {
       event.preventDefault();
 
@@ -98,13 +103,15 @@ function Consent(props: ConsentProps) {
       }
 
       // Convert all scopes which are true to a scope value.
-      const scope = Object.keys(scopes).filter(scope => {
-        return !!scopes[scope];
-      }).join(' ');
+      const scope = Object.keys(scopes)
+        .filter((scope) => {
+          return !!scopes[scope];
+        })
+        .join(" ");
 
       dispatch(executeConsent(allow, scope)).then((response) => {
         if (response.success) {
-          dispatch(advanceLogonFlow(response.success, history, true, {konnect: response.state}));
+          dispatch(advanceLogonFlow(response.success, history, true, { konnect: response.state }));
         }
       });
     };
@@ -132,6 +139,14 @@ function Consent(props: ConsentProps) {
       </Typography>
 
       <Typography variant="subtitle1" gutterBottom>
+        {/*
+         * The translations address these children by position: konnect.consent.message
+         * is "<0><0><0></0></0></0> wants to". Reflowing the JSX inserts {" "}
+         * children between the elements, which shifts every index after the first
+         * and silently wraps the wrong node, so this stays on the lines it was
+         * written on.
+         */}
+        {/* biome-ignore format: children are index-mapped by the translations */}
         <Trans t={t} i18nKey="konnect.consent.message">
           <Tooltip
             placement="bottom"
@@ -144,6 +159,7 @@ function Consent(props: ConsentProps) {
       <ScopesList dense disablePadding sx={{ mb: 2 }} scopes={scopes} meta={meta}></ScopesList>
 
       <Typography variant="subtitle1" gutterBottom>
+        {/* biome-ignore format: children are index-mapped by the translations, see above */}
         <Trans t={t} i18nKey="konnect.consent.question">
           Allow <em><ClientDisplayName client={client}/></em> to do this?
         </Trans>
@@ -164,8 +180,7 @@ function Consent(props: ConsentProps) {
             >
               {t("konnect.consent.cancelButton.label", "Cancel")}
             </Button>
-            {(loading && loading !== REQUEST_CONSENT_ALLOW) &&
-              <CircularProgress size={24} sx={buttonProgressSx} />}
+            {loading && loading !== REQUEST_CONSENT_ALLOW && <CircularProgress size={24} sx={buttonProgressSx} />}
           </Box>
           <Box sx={wrapperSx}>
             <Button

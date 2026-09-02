@@ -1,37 +1,35 @@
-import rootReducer from '../reducers';
-
-import type { AppAction } from './types';
-import {
-  type HelloResponse,
-  type PreloadedState,
-  fetchMock,
-  jsonReply,
-  makeStore,
-  newTestHistory,
-  postedBody,
-  postedInit,
-  postedUrl,
-  replyEchoingState,
-  replyNoContentEchoingState,
-  stubFetch
-} from '../test-utils';
 import {
   ERROR_HTTP_NETWORK_ERROR,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
   ERROR_LOGIN_FAILED,
   ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
-  ERROR_LOGIN_VALIDATE_MISSINGUSERNAME
-} from '../errors';
-
-import * as types from './types';
+  ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
+} from "../errors";
+import rootReducer from "../reducers";
+import {
+  fetchMock,
+  type HelloResponse,
+  jsonReply,
+  makeStore,
+  newTestHistory,
+  type PreloadedState,
+  postedBody,
+  postedInit,
+  postedUrl,
+  replyEchoingState,
+  replyNoContentEchoingState,
+  stubFetch,
+} from "../test-utils";
 import {
   advanceLogonFlow,
   executeConsent,
   executeLogon,
   executeLogonIfFormValid,
-  validateUsernamePassword
-} from './login';
+  validateUsernamePassword,
+} from "./login";
+import type { AppAction } from "./types";
+import * as types from "./types";
 
 /*
  * Reading a payload means naming which member of the closed action union is
@@ -69,8 +67,8 @@ beforeEach(() => {
   stubFetch();
 });
 
-describe('executeLogon', () => {
-  it('announces the request and clears the session before it posts', async () => {
+describe("executeLogon", () => {
+  it("announces the request and clears the session before it posts", async () => {
     const { store, actions } = newHarness();
     let seenAtPost: AppAction[] = [];
     fetchMock().mockImplementation((_url: string, init: RequestInit) => {
@@ -79,294 +77,278 @@ describe('executeLogon', () => {
       return Promise.resolve(jsonReply(200, { success: true, state: sent.state }));
     });
 
-    await store.dispatch(executeLogon('user1@example.com', 'secret'));
+    await store.dispatch(executeLogon("user1@example.com", "secret"));
 
-    expect(seenAtPost.map((a) => a.type)).toEqual([
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO
-    ]);
+    expect(seenAtPost.map((a) => a.type)).toEqual([types.REQUEST_LOGON, types.RECEIVE_HELLO]);
     // The interim hello carries the username but no session, so a stale signed
     // in state cannot survive into the answer.
     expect(seenAtPost[1]).toEqual({
       type: types.RECEIVE_HELLO,
       state: false,
-      username: 'user1@example.com',
+      username: "user1@example.com",
       displayName: undefined,
-      hello: { username: 'user1@example.com' }
+      hello: { username: "user1@example.com" },
     });
   });
 
-  it('posts to a page relative endpoint with the XSRF header', async () => {
+  it("posts to a page relative endpoint with the XSRF header", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
-    await store.dispatch(executeLogon('user1', 'secret'));
+    await store.dispatch(executeLogon("user1", "secret"));
 
-    expect(postedUrl()).toBe('./identifier/_/logon');
+    expect(postedUrl()).toBe("./identifier/_/logon");
     expect(postedInit().headers).toEqual({
-      'Content-Type': 'application/json',
-      'Kopano-Konnect-XSRF': '1'
+      "Content-Type": "application/json",
+      "Kopano-Konnect-XSRF": "1",
     });
   });
 
-  it('posts the username, the password and mode 1 by default', async () => {
+  it("posts the username, the password and mode 1 by default", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
-    await store.dispatch(executeLogon('user1@example.com', 'secret'));
+    await store.dispatch(executeLogon("user1@example.com", "secret"));
 
-    expect(postedBody().params).toEqual([
-      'user1@example.com',
-      'secret',
-      '1'
-    ]);
+    expect(postedBody().params).toEqual(["user1@example.com", "secret", "1"]);
   });
 
-  it('posts an empty password with mode 0 for an already signed in user', async () => {
+  it("posts an empty password with mode 0 for an already signed in user", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
-    await store.dispatch(executeLogon('user1@example.com', 'secret', '0'));
+    await store.dispatch(executeLogon("user1@example.com", "secret", "0"));
 
     // Mode 0 rides on the session cookie, so the password must not be sent.
-    expect(postedBody().params).toEqual([
-      'user1@example.com',
-      '',
-      '0'
-    ]);
+    expect(postedBody().params).toEqual(["user1@example.com", "", "0"]);
   });
 
-  it('includes a hello request built from the flow and query', async () => {
+  it("includes a hello request built from the flow and query", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness({
       common: {
-        flow: 'oidc',
+        flow: "oidc",
         query: {
-          scope: 'openid profile',
-          client_id: 'playground.js',
-          redirect_uri: 'https://app.test/callback'
-        }
-      }
+          scope: "openid profile",
+          client_id: "playground.js",
+          redirect_uri: "https://app.test/callback",
+        },
+      },
     });
 
-    await store.dispatch(executeLogon('user1', 'secret'));
+    await store.dispatch(executeLogon("user1", "secret"));
 
     expect(postedBody().hello).toEqual({
-      flow: 'oidc',
-      scope: 'openid profile',
-      client_id: 'playground.js',
-      redirect_uri: 'https://app.test/callback'
+      flow: "oidc",
+      scope: "openid profile",
+      client_id: "playground.js",
+      redirect_uri: "https://app.test/callback",
     });
   });
 
-  it('dispatches the hello from the response and then the logon on a 200', async () => {
+  it("dispatches the hello from the response and then the logon on a 200", async () => {
     const hello: HelloResponse = {
-      state: 'server-side',
-      flow: 'oidc',
+      state: "server-side",
+      flow: "oidc",
       success: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      next: 'consent'
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      next: "consent",
     };
     replyEchoingState(200, { success: true, hello });
-    const { store, actions } = newHarness({ common: { flow: 'oidc' } });
+    const { store, actions } = newHarness({ common: { flow: "oidc" } });
 
-    const response = await store.dispatch(
-      executeLogon('user1@example.com', 'secret')
-    );
+    const response = await store.dispatch(executeLogon("user1@example.com", "secret"));
 
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
       types.RECEIVE_HELLO,
-      types.RECEIVE_LOGON
+      types.RECEIVE_LOGON,
     ]);
     expect(actions[2]).toEqual({
       type: types.RECEIVE_HELLO,
       state: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      hello
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      hello,
     });
     expect(actions[3]).toEqual({
       type: types.RECEIVE_LOGON,
       success: true,
-      errors: undefined
+      errors: undefined,
     });
     expect(response).toEqual({
       success: true,
       hello,
-      state: postedBody().state
+      state: postedBody().state,
     });
     expect(store.getState().common.hello).toEqual({
       state: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      details: hello
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      details: hello,
     });
   });
 
-  it('synthesises a hello from the username when the response carries none', async () => {
+  it("synthesises a hello from the username when the response carries none", async () => {
     replyEchoingState(200, { success: true });
     const { store, actions } = newHarness();
 
-    await store.dispatch(executeLogon('user1@example.com', 'secret'));
+    await store.dispatch(executeLogon("user1@example.com", "secret"));
 
     expect(actions[2]).toEqual({
       type: types.RECEIVE_HELLO,
       state: true,
-      username: 'user1@example.com',
+      username: "user1@example.com",
       displayName: undefined,
-      hello: { success: true, username: 'user1@example.com' }
+      hello: { success: true, username: "user1@example.com" },
     });
   });
 
-  it('treats a 204 as a failed logon and echoes the state from the header', async () => {
+  it("treats a 204 as a failed logon and echoes the state from the header", async () => {
     // This is what a wrong password looks like on the wire.
     replyNoContentEchoingState();
     const { store, actions } = newHarness();
 
-    const response = await store.dispatch(executeLogon('user1', 'wrong'));
+    const response = await store.dispatch(executeLogon("user1", "wrong"));
 
     // Passing the state check proves the nonce was read back out of the
     // Kopano-Konnect-State response header.
     expect(response).toEqual({
       success: false,
       state: postedBody().state,
-      errors: { http: new Error(ERROR_LOGIN_FAILED) }
+      errors: { http: new Error(ERROR_LOGIN_FAILED) },
     });
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
       types.RECEIVE_HELLO,
-      types.RECEIVE_LOGON
+      types.RECEIVE_LOGON,
     ]);
     expect(receiveHelloAction(actions[2]).state).toBe(false);
     expect(actions[3]).toEqual({
       type: types.RECEIVE_LOGON,
       success: false,
-      errors: { http: new Error(ERROR_LOGIN_FAILED) }
+      errors: { http: new Error(ERROR_LOGIN_FAILED) },
     });
     expect(store.getState().login.errors.http.message).toBe(ERROR_LOGIN_FAILED);
-    expect(store.getState().login.loading).toBe('');
+    expect(store.getState().login.loading).toBe("");
   });
 
-  it('reports a 204 whose state header does not echo the request', async () => {
+  it("reports a 204 whose state header does not echo the request", async () => {
     fetchMock().mockResolvedValue(
       new Response(null, {
         status: 204,
-        headers: { 'Kopano-Konnect-State': 'not-the-nonce' }
-      })
+        headers: { "Kopano-Konnect-State": "not-the-nonce" },
+      }),
     );
     const { store, actions } = newHarness();
 
-    const result = await store.dispatch(executeLogon('user1', 'wrong'));
+    const result = await store.dispatch(executeLogon("user1", "wrong"));
 
     expect(result).toMatchObject({
       success: false,
-      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } }
+      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } },
     });
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
-      types.RECEIVE_VALIDATE_LOGON
+      types.RECEIVE_VALIDATE_LOGON,
     ]);
   });
 
-  it('reports an unexpected response status as a logon error', async () => {
+  it("reports an unexpected response status as a logon error", async () => {
     // fetch resolves for a 500, so the thunk's own status switch is the only
     // thing that turns it into an error.
-    fetchMock().mockResolvedValue(new Response('internal server error', { status: 500 }));
+    fetchMock().mockResolvedValue(new Response("internal server error", { status: 500 }));
     const { store, actions } = newHarness();
 
-    const result = await store.dispatch(executeLogon('user1', 'secret'));
+    const result = await store.dispatch(executeLogon("user1", "secret"));
 
     expect(result).toMatchObject({
       success: false,
       errors: {
         http: {
           message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
-          values: { status: 500 }
-        }
-      }
+          values: { status: 500 },
+        },
+      },
     });
     // A failed logon reports through the form errors, never through the global
     // error which hello uses.
     expect(actions.map((a) => a.type)).toEqual([
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
-      types.RECEIVE_VALIDATE_LOGON
+      types.RECEIVE_VALIDATE_LOGON,
     ]);
     expect(store.getState().common.error).toBeNull();
   });
 
-  it('reports a request which never got a response as a network error', async () => {
-    fetchMock().mockRejectedValue(new TypeError('Failed to fetch'));
+  it("reports a request which never got a response as a network error", async () => {
+    fetchMock().mockRejectedValue(new TypeError("Failed to fetch"));
     const { store } = newHarness();
 
-    const result = await store.dispatch(executeLogon('user1', 'secret'));
+    const result = await store.dispatch(executeLogon("user1", "secret"));
 
     expect(result).toMatchObject({
-      errors: { http: { message: ERROR_HTTP_NETWORK_ERROR } }
+      errors: { http: { message: ERROR_HTTP_NETWORK_ERROR } },
     });
     expect(store.getState().login.errors.http.message).toBe(ERROR_HTTP_NETWORK_ERROR);
   });
 
-  it('stays silent on an abort and resolves an unsuccessful result', async () => {
+  it("stays silent on an abort and resolves an unsuccessful result", async () => {
     // The caller cancelled the request itself, so there is nothing to report on
     // a form which is going away.
-    fetchMock().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    fetchMock().mockRejectedValue(new DOMException("aborted", "AbortError"));
     const { store, actions } = newHarness();
 
-    const response = await store.dispatch(executeLogon('user1', 'secret'));
+    const response = await store.dispatch(executeLogon("user1", "secret"));
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_LOGON,
-      types.RECEIVE_HELLO
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_LOGON, types.RECEIVE_HELLO]);
     expect(response).toEqual({ success: false, errors: {} });
     expect(store.getState().login.errors).toEqual({});
     expect(store.getState().common.error).toBeNull();
   });
 });
 
-describe('executeConsent', () => {
-  it('posts the scope and the client details from the query', async () => {
+describe("executeConsent", () => {
+  it("posts the scope and the client details from the query", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness({
       common: {
-        flow: 'consent',
+        flow: "consent",
         query: {
-          client_id: 'playground.js',
-          redirect_uri: 'https://app.test/callback',
-          state: 'caller-state',
-          nonce: 'caller-nonce'
-        }
-      }
+          client_id: "playground.js",
+          redirect_uri: "https://app.test/callback",
+          state: "caller-state",
+          nonce: "caller-nonce",
+        },
+      },
     });
 
-    await store.dispatch(executeConsent(true, 'openid profile email'));
+    await store.dispatch(executeConsent(true, "openid profile email"));
 
-    expect(postedUrl()).toBe('./identifier/_/consent');
+    expect(postedUrl()).toBe("./identifier/_/consent");
     expect(postedInit().headers).toEqual({
-      'Content-Type': 'application/json',
-      'Kopano-Konnect-XSRF': '1'
+      "Content-Type": "application/json",
+      "Kopano-Konnect-XSRF": "1",
     });
     // ref carries the caller's state while the body's own state is the client
     // generated echo nonce. Two different values with the same name.
     expect(postedBody()).toEqual({
       allow: true,
-      scope: 'openid profile email',
-      client_id: 'playground.js',
-      redirect_uri: 'https://app.test/callback',
-      ref: 'caller-state',
-      flow_nonce: 'caller-nonce',
-      state: expect.any(String)
+      scope: "openid profile email",
+      client_id: "playground.js",
+      redirect_uri: "https://app.test/callback",
+      ref: "caller-state",
+      flow_nonce: "caller-nonce",
+      state: expect.any(String),
     });
-    expect(postedBody().state).not.toBe('caller-state');
+    expect(postedBody().state).not.toBe("caller-state");
   });
 
-  it('sends empty strings for query members which are absent', async () => {
+  it("sends empty strings for query members which are absent", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
@@ -374,96 +356,87 @@ describe('executeConsent', () => {
 
     expect(postedBody()).toEqual({
       allow: false,
-      scope: '',
-      client_id: '',
-      redirect_uri: '',
-      ref: '',
-      flow_nonce: '',
-      state: expect.any(String)
+      scope: "",
+      client_id: "",
+      redirect_uri: "",
+      ref: "",
+      flow_nonce: "",
+      state: expect.any(String),
     });
   });
 
-  it('announces an allow differently from a cancel', async () => {
+  it("announces an allow differently from a cancel", async () => {
     replyEchoingState(200, { success: true });
     const allowed = newHarness();
     const cancelled = newHarness();
 
-    await allowed.store.dispatch(executeConsent(true, 'openid'));
-    await cancelled.store.dispatch(executeConsent(false, 'openid'));
+    await allowed.store.dispatch(executeConsent(true, "openid"));
+    await cancelled.store.dispatch(executeConsent(false, "openid"));
 
     expect(allowed.actions[0]).toEqual({ type: types.REQUEST_CONSENT_ALLOW });
     expect(cancelled.actions[0]).toEqual({ type: types.REQUEST_CONSENT_CANCEL });
   });
 
-  it('dispatches the received consent and resolves with the response on a 200', async () => {
+  it("dispatches the received consent and resolves with the response on a 200", async () => {
     replyEchoingState(200, { success: true });
     const { store, actions } = newHarness();
 
-    const response = await store.dispatch(executeConsent(true, 'openid'));
+    const response = await store.dispatch(executeConsent(true, "openid"));
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_CONSENT_ALLOW,
-      types.RECEIVE_CONSENT
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW, types.RECEIVE_CONSENT]);
     expect(actions[1]).toEqual({
       type: types.RECEIVE_CONSENT,
       success: true,
-      errors: undefined
+      errors: undefined,
     });
     expect(response).toEqual({ success: true, state: postedBody().state });
   });
 
-  it('treats a 204 as a successful cancel rather than as a failure', async () => {
+  it("treats a 204 as a successful cancel rather than as a failure", async () => {
     replyNoContentEchoingState();
     const { store, actions } = newHarness();
 
-    const response = await store.dispatch(executeConsent(false, ''));
+    const response = await store.dispatch(executeConsent(false, ""));
 
     expect(response).toEqual({ success: true, state: postedBody().state });
     expect(actions[1]).toEqual({
       type: types.RECEIVE_CONSENT,
       success: true,
-      errors: undefined
+      errors: undefined,
     });
   });
 
-  it('reports an unexpected response status through the form errors', async () => {
-    fetchMock().mockResolvedValue(new Response('internal server error', { status: 500 }));
+  it("reports an unexpected response status through the form errors", async () => {
+    fetchMock().mockResolvedValue(new Response("internal server error", { status: 500 }));
     const { store, actions } = newHarness();
 
-    const result = await store.dispatch(executeConsent(true, 'openid'));
+    const result = await store.dispatch(executeConsent(true, "openid"));
 
     expect(result).toMatchObject({
       success: false,
-      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS } }
+      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS } },
     });
-    expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_CONSENT_ALLOW,
-      types.RECEIVE_VALIDATE_LOGON
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW, types.RECEIVE_VALIDATE_LOGON]);
   });
 
-  it('reports a reply whose state does not echo the request', async () => {
-    fetchMock().mockResolvedValue(jsonReply(200, { success: true, state: 'not-the-nonce' }));
+  it("reports a reply whose state does not echo the request", async () => {
+    fetchMock().mockResolvedValue(jsonReply(200, { success: true, state: "not-the-nonce" }));
     const { store, actions } = newHarness();
 
-    const result = await store.dispatch(executeConsent(true, 'openid'));
+    const result = await store.dispatch(executeConsent(true, "openid"));
 
     expect(result).toMatchObject({
-      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } }
+      errors: { http: { message: ERROR_HTTP_UNEXPECTED_RESPONSE_STATE } },
     });
-    expect(actions.map((a) => a.type)).toEqual([
-      types.REQUEST_CONSENT_ALLOW,
-      types.RECEIVE_VALIDATE_LOGON
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW, types.RECEIVE_VALIDATE_LOGON]);
   });
 
-  it('stays silent on an abort and resolves an unsuccessful result', async () => {
+  it("stays silent on an abort and resolves an unsuccessful result", async () => {
     // A request the caller cancelled is not a consent failure to report.
-    fetchMock().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    fetchMock().mockRejectedValue(new DOMException("aborted", "AbortError"));
     const { store, actions } = newHarness();
 
-    const response = await store.dispatch(executeConsent(true, 'openid'));
+    const response = await store.dispatch(executeConsent(true, "openid"));
 
     expect(actions.map((a) => a.type)).toEqual([types.REQUEST_CONSENT_ALLOW]);
     expect(response).toEqual({ success: false, errors: {} });
@@ -472,231 +445,217 @@ describe('executeConsent', () => {
   });
 });
 
-describe('validateUsernamePassword', () => {
-  it('reports no errors when both are given', () => {
+describe("validateUsernamePassword", () => {
+  it("reports no errors when both are given", () => {
     const { store, actions } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('user1', 'secret', false))).toEqual({});
+    expect(store.dispatch(validateUsernamePassword("user1", "secret", false))).toEqual({});
 
     expect(actions).toEqual([{ type: types.RECEIVE_VALIDATE_LOGON, errors: {} }]);
   });
 
-  it('reports a missing username', () => {
+  it("reports a missing username", () => {
     const { store, actions } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('', 'secret', false))).toEqual({
-      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME)
+    expect(store.dispatch(validateUsernamePassword("", "secret", false))).toEqual({
+      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
     });
 
     expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_VALIDATE_LOGON]);
-    expect(store.getState().login.errors.username.message).toBe(
-      ERROR_LOGIN_VALIDATE_MISSINGUSERNAME
-    );
+    expect(store.getState().login.errors.username.message).toBe(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
   });
 
-  it('reports a missing password', () => {
+  it("reports a missing password", () => {
     const { store } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('user1', '', false))).toEqual({
-      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD)
+    expect(store.dispatch(validateUsernamePassword("user1", "", false))).toEqual({
+      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD),
     });
   });
 
-  it('reports both errors when nothing was entered', () => {
+  it("reports both errors when nothing was entered", () => {
     const { store } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('', '', false))).toEqual({
+    expect(store.dispatch(validateUsernamePassword("", "", false))).toEqual({
       username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
-      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD)
+      password: new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD),
     });
   });
 
-  it('accepts a missing password when the user is already signed in', () => {
+  it("accepts a missing password when the user is already signed in", () => {
     // The signed in form has no password field, so demanding one would make it
     // impossible to submit.
     const { store } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('user1', '', true))).toEqual({});
+    expect(store.dispatch(validateUsernamePassword("user1", "", true))).toEqual({});
   });
 
-  it('still demands a username when the user is already signed in', () => {
+  it("still demands a username when the user is already signed in", () => {
     const { store } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('', '', true))).toEqual({
-      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME)
+    expect(store.dispatch(validateUsernamePassword("", "", true))).toEqual({
+      username: new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME),
     });
   });
 
-  it('hands back a plain value rather than a promise', () => {
+  it("hands back a plain value rather than a promise", () => {
     // Callers branch on the result directly. A promise here would put an
     // incomplete form back behind a then or a catch clause.
     const { store } = newHarness();
 
-    expect(store.dispatch(validateUsernamePassword('', '', false))).not.toBeInstanceOf(Promise);
+    expect(store.dispatch(validateUsernamePassword("", "", false))).not.toBeInstanceOf(Promise);
   });
 });
 
-describe('executeLogonIfFormValid', () => {
-  it('logs on with mode 1 when the user is not signed in', async () => {
+describe("executeLogonIfFormValid", () => {
+  it("logs on with mode 1 when the user is not signed in", async () => {
     replyEchoingState(200, { success: true });
     const { store, actions } = newHarness();
 
-    const response = await store.dispatch(
-      executeLogonIfFormValid('user1@example.com', 'secret', false)
-    );
+    const response = await store.dispatch(executeLogonIfFormValid("user1@example.com", "secret", false));
 
-    expect(postedBody().params).toEqual([
-      'user1@example.com',
-      'secret',
-      '1'
-    ]);
+    expect(postedBody().params).toEqual(["user1@example.com", "secret", "1"]);
     expect(response).toMatchObject({ success: true });
     expect(actions.map((a) => a.type)).toEqual([
       types.RECEIVE_VALIDATE_LOGON,
       types.REQUEST_LOGON,
       types.RECEIVE_HELLO,
       types.RECEIVE_HELLO,
-      types.RECEIVE_LOGON
+      types.RECEIVE_LOGON,
     ]);
   });
 
-  it('logs on with mode 0 when the user is already signed in', async () => {
+  it("logs on with mode 0 when the user is already signed in", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness();
 
-    await store.dispatch(
-      executeLogonIfFormValid('user1@example.com', '', true)
-    );
+    await store.dispatch(executeLogonIfFormValid("user1@example.com", "", true));
 
-    expect(postedBody().params).toEqual([
-      'user1@example.com',
-      '',
-      '0'
-    ]);
+    expect(postedBody().params).toEqual(["user1@example.com", "", "0"]);
   });
 
-  it('returns the validation errors without asking the server', async () => {
+  it("returns the validation errors without asking the server", async () => {
     const { store, actions } = newHarness();
 
-    const result = await store.dispatch(executeLogonIfFormValid('', '', false));
+    const result = await store.dispatch(executeLogonIfFormValid("", "", false));
 
     expect(fetchMock()).not.toHaveBeenCalled();
     expect(result).toMatchObject({
       success: false,
       errors: {
         username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME },
-        password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD }
-      }
+        password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD },
+      },
     });
     expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_VALIDATE_LOGON]);
   });
 });
 
-describe('advanceLogonFlow', () => {
-  it('does nothing when the logon did not succeed', () => {
-    const { store, actions } = newHarness({ common: { flow: 'oidc' } });
-    const history = newTestHistory('/?client_id=playground.js');
+describe("advanceLogonFlow", () => {
+  it("does nothing when the logon did not succeed", () => {
+    const { store, actions } = newHarness({ common: { flow: "oidc" } });
+    const history = newTestHistory("/?client_id=playground.js");
 
     store.dispatch(advanceLogonFlow(false, history));
 
     expect(actions).toEqual([]);
-    expect(history.location.pathname).toBe('/');
+    expect(history.location.pathname).toBe("/");
   });
 
-  it('replaces with the consent route when the flow still needs consent', () => {
+  it("replaces with the consent route when the flow still needs consent", () => {
     const details: HelloResponse = {
-      state: 'server-side',
-      flow: 'oidc',
+      state: "server-side",
+      flow: "oidc",
       success: true,
-      next: 'consent'
+      next: "consent",
     };
     const { store, actions } = newHarness({
-      common: { flow: 'oidc', hello: { state: true, username: 'user1', details } }
+      common: { flow: "oidc", hello: { state: true, username: "user1", details } },
     });
-    const history = newTestHistory('/?client_id=playground.js#frag');
+    const history = newTestHistory("/?client_id=playground.js#frag");
 
     store.dispatch(advanceLogonFlow(true, history));
 
     // Consent is a step of the same flow, so it replaces rather than pushes and
     // carries the whole query along.
-    expect(history.location.pathname).toBe('/consent');
-    expect(history.location.search).toBe('?client_id=playground.js');
-    expect(history.location.hash).toBe('#frag');
-    expect(history.action).toBe('REPLACE');
+    expect(history.location.pathname).toBe("/consent");
+    expect(history.location.search).toBe("?client_id=playground.js");
+    expect(history.location.hash).toBe("#frag");
+    expect(history.action).toBe("REPLACE");
     expect(history.entries).toHaveLength(1);
     expect(actions).toEqual([]);
   });
 
-  it('pushes welcome once consent is done', () => {
+  it("pushes welcome once consent is done", () => {
     const details: HelloResponse = {
-      state: 'server-side',
-      flow: 'oidc',
+      state: "server-side",
+      flow: "oidc",
       success: true,
-      next: 'consent'
+      next: "consent",
     };
     const { store, actions } = newHarness({
-      common: { flow: 'oidc', hello: { state: true, username: 'user1', details } }
+      common: { flow: "oidc", hello: { state: true, username: "user1", details } },
     });
-    const history = newTestHistory('/?client_id=playground.js');
+    const history = newTestHistory("/?client_id=playground.js");
 
     store.dispatch(advanceLogonFlow(true, history, true));
 
-    expect(history.location.pathname).toBe('/welcome');
-    expect(history.action).toBe('PUSH');
+    expect(history.location.pathname).toBe("/welcome");
+    expect(history.action).toBe("PUSH");
     expect(history.entries).toHaveLength(2);
     // The reset clears the loading flag the request set.
     expect(actions).toEqual([{ type: types.RECEIVE_VALIDATE_LOGON, errors: {} }]);
   });
 
-  it('ignores the requested flow when the hello answered a different one', () => {
+  it("ignores the requested flow when the hello answered a different one", () => {
     const details: HelloResponse = {
-      state: 'server-side',
-      flow: 'oauth',
+      state: "server-side",
+      flow: "oauth",
       success: true,
-      next: 'consent'
+      next: "consent",
     };
     const { store } = newHarness({
-      common: { flow: 'oidc', hello: { state: true, username: 'user1', details } }
+      common: { flow: "oidc", hello: { state: true, username: "user1", details } },
     });
-    const history = newTestHistory('/?client_id=playground.js');
+    const history = newTestHistory("/?client_id=playground.js");
 
     store.dispatch(advanceLogonFlow(true, history));
 
-    expect(history.location.pathname).toBe('/welcome');
+    expect(history.location.pathname).toBe("/welcome");
   });
 
-  it('keeps the query and the fragment when the user arrived by a replace', () => {
+  it("keeps the query and the fragment when the user arrived by a replace", () => {
     const { store } = newHarness();
-    const history = newTestHistory('/?client_id=playground.js#frag', 'REPLACE');
+    const history = newTestHistory("/?client_id=playground.js#frag", "REPLACE");
 
     store.dispatch(advanceLogonFlow(true, history));
 
     // A replace means the identifier rewrote the URL itself, so the parameters
     // it was started with have to survive the hop to welcome.
-    expect(history.location.pathname).toBe('/welcome');
-    expect(history.location.search).toBe('?client_id=playground.js');
-    expect(history.location.hash).toBe('#frag');
+    expect(history.location.pathname).toBe("/welcome");
+    expect(history.location.search).toBe("?client_id=playground.js");
+    expect(history.location.hash).toBe("#frag");
   });
 
-  it('drops the query when the user navigated here themselves', () => {
+  it("drops the query when the user navigated here themselves", () => {
     const { store } = newHarness();
-    const history = newTestHistory('/?client_id=playground.js#frag');
+    const history = newTestHistory("/?client_id=playground.js#frag");
 
     store.dispatch(advanceLogonFlow(true, history));
 
-    expect(history.location.pathname).toBe('/welcome');
-    expect(history.location.search).toBe('');
-    expect(history.location.hash).toBe('');
+    expect(history.location.pathname).toBe("/welcome");
+    expect(history.location.search).toBe("");
+    expect(history.location.hash).toBe("");
   });
 
-  it('refuses a legacy continue which points off origin', () => {
+  it("refuses a legacy continue which points off origin", () => {
     const { store } = newHarness({
-      common: { query: { continue: 'https://elsewhere.test/app' } }
+      common: { query: { continue: "https://elsewhere.test/app" } },
     });
-    const history = newTestHistory('/');
+    const history = newTestHistory("/");
 
     store.dispatch(advanceLogonFlow(true, history));
 
-    expect(history.location.pathname).toBe('/welcome');
+    expect(history.location.pathname).toBe("/welcome");
   });
 });

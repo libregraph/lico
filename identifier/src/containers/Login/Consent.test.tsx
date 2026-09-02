@@ -1,20 +1,19 @@
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
-import { fireEvent, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-
-import Consent from './Consent';
 import {
   type ClientDetails,
-  type HelloResponse,
-  type ScopesMeta,
   fetchMock,
+  type HelloResponse,
   newTestHistory,
   postedInit,
   postedUrl,
   renderWithProviders,
   replyEchoingState,
-  stubFetch
-} from '../../test-utils';
+  type ScopesMeta,
+  stubFetch,
+} from "../../test-utils";
+import Consent from "./Consent";
 
 interface ConsentRequestBody {
   allow: boolean;
@@ -28,7 +27,7 @@ interface ConsentRequestBody {
 
 const consentBodies = (): ConsentRequestBody[] =>
   fetchMock()
-    .mock.calls.filter((call: unknown[]) => call[0] === './identifier/_/consent')
+    .mock.calls.filter((call: unknown[]) => call[0] === "./identifier/_/consent")
     .map((call: unknown[]) => {
       // fetch's second argument, as the action passed it.
       const init = call[1] as RequestInit;
@@ -36,37 +35,37 @@ const consentBodies = (): ConsentRequestBody[] =>
     });
 
 const client: ClientDetails = {
-  id: 'playground.js',
-  display_name: 'OIDC Playground',
-  redirect_uri: 'https://example.test/',
-  trusted: false
+  id: "playground.js",
+  display_name: "OIDC Playground",
+  redirect_uri: "https://example.test/",
+  trusted: false,
 };
 
 // Every requested scope maps to the same basic alias, so the list shows one row.
 const scopesMeta: ScopesMeta = {
-  mapping: { openid: 'basic', profile: 'basic', email: 'basic' },
-  definitions: { basic: { priority: 20, id: 'scope_alias_basic' } }
+  mapping: { openid: "basic", profile: "basic", email: "basic" },
+  definitions: { basic: { priority: 20, id: "scope_alias_basic" } },
 };
 
 const helloResponse = (overrides: Partial<HelloResponse> = {}): HelloResponse => ({
-  state: 'echo-nonce',
-  flow: 'oidc',
+  state: "echo-nonce",
+  flow: "oidc",
   success: true,
-  username: 'user1@example.test',
-  displayName: 'User One',
-  next: 'consent',
+  username: "user1@example.test",
+  displayName: "User One",
+  next: "consent",
   scopes: { openid: true, profile: true, email: true },
   client,
   meta: { scopes: scopesMeta },
-  ...overrides
+  ...overrides,
 });
 
 const query = {
-  client_id: 'playground.js',
-  redirect_uri: 'https://example.test/',
-  state: 'ref-1',
-  nonce: 'nonce-1',
-  scope: 'openid profile email'
+  client_id: "playground.js",
+  redirect_uri: "https://example.test/",
+  state: "ref-1",
+  nonce: "nonce-1",
+  scope: "openid profile email",
 };
 
 const Subject = Consent;
@@ -74,19 +73,19 @@ const Subject = Consent;
 const renderConsent = (details: HelloResponse = helloResponse()) => {
   // Consent is rendered by a Route in the application, so it reads history from
   // its props. Rendered directly it has to be handed one.
-  const history = newTestHistory('/consent');
+  const history = newTestHistory("/consent");
 
   // Shape of the session as the common reducer stores it.
   const hello = {
     state: details.success,
     username: details.username,
     displayName: details.displayName,
-    details
+    details,
   };
 
   return renderWithProviders(<Subject history={history} />, {
     history,
-    preloaded: { common: { hello, query } }
+    preloaded: { common: { hello, query } },
   });
 };
 
@@ -97,217 +96,209 @@ beforeEach(() => {
   replyEchoingState(200, { success: true });
 });
 
-describe('Consent', () => {
-  it('greets the signed-in user and names the account', () => {
+describe("Consent", () => {
+  it("greets the signed-in user and names the account", () => {
     renderConsent();
 
-    expect(screen.getByText('Hi User One')).toBeInTheDocument();
-    expect(screen.getByText('user1@example.test')).toBeInTheDocument();
+    expect(screen.getByText("Hi User One")).toBeInTheDocument();
+    expect(screen.getByText("user1@example.test")).toBeInTheDocument();
   });
 
-  it('names the client which asks for consent', () => {
+  it("names the client which asks for consent", () => {
     renderConsent();
 
     // The sentences are assembled by Trans, so the client name sits in a child
     // element and the assertion has to look at the whole line.
-    expect(screen.getByText(/wants to/)).toHaveTextContent('OIDC Playground wants to');
-    expect(screen.getByText(/to do this\?/)).toHaveTextContent(
-      'Allow OIDC Playground to do this?'
-    );
+    expect(screen.getByText(/wants to/)).toHaveTextContent("OIDC Playground wants to");
+    expect(screen.getByText(/to do this\?/)).toHaveTextContent("Allow OIDC Playground to do this?");
   });
 
-  it('falls back to the client id when the client has no display name', () => {
-    renderConsent(helloResponse({ client: { ...client, display_name: '' } }));
+  it("falls back to the client id when the client has no display name", () => {
+    renderConsent(helloResponse({ client: { ...client, display_name: "" } }));
 
-    expect(screen.getByText(/to do this\?/)).toHaveTextContent('Allow playground.js to do this?');
+    expect(screen.getByText(/to do this\?/)).toHaveTextContent("Allow playground.js to do this?");
   });
 
-  it('lists the requested scopes once per scope alias', () => {
+  it("lists the requested scopes once per scope alias", () => {
     renderConsent();
 
-    expect(screen.getByText('Access your basic account information')).toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText("Access your basic account information")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 
-  it('omits scopes which were not requested', () => {
+  it("omits scopes which were not requested", () => {
     renderConsent(
       helloResponse({
         scopes: { openid: true, offline_access: false },
         meta: {
           scopes: {
             mapping: {},
-            definitions: { offline_access: { id: 'scope_offline_access' } }
-          }
-        }
-      })
+            definitions: { offline_access: { id: "scope_offline_access" } },
+          },
+        },
+      }),
     );
 
-    expect(
-      screen.queryByText('Keep the allowed access persistently and forever')
-    ).not.toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByText("Keep the allowed access persistently and forever")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 
-  it('shows where allowing will send the browser', () => {
+  it("shows where allowing will send the browser", () => {
     renderConsent();
 
     // The tooltip publishes its text as the child's accessible label rather
     // than as a title attribute, so that is what identifies it here.
-    expect(
-      screen.getByLabelText('Clicking "Allow" will redirect you to: https://example.test/')
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Clicking "Allow" will redirect you to: https://example.test/')).toBeInTheDocument();
   });
 
-  it('grants the requested scopes when allow is clicked', async () => {
+  it("grants the requested scopes when allow is clicked", async () => {
     renderConsent();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole("button", { name: "Allow" }));
 
     await waitFor(() => expect(consentBodies()).toHaveLength(1));
     const body = consentBodies()[0];
     expect(body.allow).toBe(true);
-    expect(body.scope).toBe('openid profile email');
-    expect(body.client_id).toBe('playground.js');
-    expect(body.redirect_uri).toBe('https://example.test/');
-    expect(body.ref).toBe('ref-1');
-    expect(body.flow_nonce).toBe('nonce-1');
-    expect(typeof body.state).toBe('string');
+    expect(body.scope).toBe("openid profile email");
+    expect(body.client_id).toBe("playground.js");
+    expect(body.redirect_uri).toBe("https://example.test/");
+    expect(body.ref).toBe("ref-1");
+    expect(body.flow_nonce).toBe("nonce-1");
+    expect(typeof body.state).toBe("string");
   });
 
-  it('denies the request when cancel is clicked', async () => {
+  it("denies the request when cancel is clicked", async () => {
     renderConsent();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     await waitFor(() => expect(consentBodies()).toHaveLength(1));
     expect(consentBodies()[0].allow).toBe(false);
-    expect(consentBodies()[0].scope).toBe('openid profile email');
+    expect(consentBodies()[0].scope).toBe("openid profile email");
   });
 
-  it('sends the consent to the relative endpoint with the XSRF header', async () => {
+  it("sends the consent to the relative endpoint with the XSRF header", async () => {
     renderConsent();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole("button", { name: "Allow" }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalled());
-    expect(postedUrl()).toBe('./identifier/_/consent');
+    expect(postedUrl()).toBe("./identifier/_/consent");
     expect(postedInit().headers).toEqual({
-      'Content-Type': 'application/json',
-      'Kopano-Konnect-XSRF': '1'
+      "Content-Type": "application/json",
+      "Kopano-Konnect-XSRF": "1",
     });
   });
 
-  it('grants consent when Enter is pressed on the focused allow button', async () => {
+  it("grants consent when Enter is pressed on the focused allow button", async () => {
     renderConsent();
 
-    const allow = screen.getByRole('button', { name: 'Allow' });
+    const allow = screen.getByRole("button", { name: "Allow" });
     allow.focus();
     // skipClick, because user-event otherwise clicks the button to focus it,
     // which would already count as a decision.
-    await userEvent.type(allow, '{Enter}', { skipClick: true });
+    await userEvent.type(allow, "{Enter}", { skipClick: true });
 
     await waitFor(() => expect(consentBodies()).toHaveLength(1));
     expect(consentBodies()[0].allow).toBe(true);
   });
 
-  it('keeps the actions inside a form so Enter reaches the buttons (regression: the form must stay a form)', async () => {
+  it("keeps the actions inside a form so Enter reaches the buttons (regression: the form must stay a form)", async () => {
     // The abandoned modernization replaced this <form onSubmit> with a plain
     // <div>, which drops keyboard submission. Enter works by activating the
     // focused button, which requires the buttons to stay inside the form.
     const { container } = renderConsent();
 
-    const form = container.querySelector('form');
+    const form = container.querySelector("form");
     expect(form).not.toBeNull();
-    expect(form).toContainElement(screen.getByRole('button', { name: 'Allow' }));
-    expect(screen.getByRole('button', { name: 'Allow' })).toHaveAttribute('type', 'submit');
+    expect(form).toContainElement(screen.getByRole("button", { name: "Allow" }));
+    expect(screen.getByRole("button", { name: "Allow" })).toHaveAttribute("type", "submit");
   });
 
-  it('decides nothing when the form itself is submitted', async () => {
+  it("decides nothing when the form itself is submitted", async () => {
     // Submitting the form without activating a button expresses no choice, so it
     // must not be taken as a refusal.
     const { container } = renderConsent();
 
-    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+    fireEvent.submit(container.querySelector("form") as HTMLFormElement);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Allow' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Allow" })).toBeEnabled());
     expect(consentBodies()).toHaveLength(0);
   });
 
-  it('locks both decisions and shows progress while a decision is in flight', async () => {
+  it("locks both decisions and shows progress while a decision is in flight", async () => {
     renderConsent();
     fetchMock().mockReturnValue(new Promise(() => undefined)); // Never settles.
 
-    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole("button", { name: "Allow" }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Allow' })).toBeDisabled());
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Allow" })).toBeDisabled());
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 
-  it('leaves both decisions open and shows no progress before anything is clicked', () => {
+  it("leaves both decisions open and shows no progress before anything is clicked", () => {
     renderConsent();
 
-    expect(screen.getByRole('button', { name: 'Allow' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Allow" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
-  it('reports an unexpected response status to the user', async () => {
+  it("reports an unexpected response status to the user", async () => {
     renderConsent();
-    fetchMock().mockResolvedValue(new Response('', { status: 500 }));
+    fetchMock().mockResolvedValue(new Response("", { status: 500 }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
+    await userEvent.click(screen.getByRole("button", { name: "Allow" }));
 
     await waitFor(() =>
       expect(
-        screen.getByText(
-          'Unexpected HTTP response: 500. Please check your connection and try again.'
-        )
-      ).toBeInTheDocument()
+        screen.getByText("Unexpected HTTP response: 500. Please check your connection and try again."),
+      ).toBeInTheDocument(),
     );
-    expect(screen.getByRole('button', { name: 'Allow' })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Allow" })).toBeEnabled();
   });
 
-  it('sends a visitor arriving without a session back to the identifier', () => {
+  it("sends a visitor arriving without a session back to the identifier", () => {
     // Reaching consent with no session used to throw while mapping state, before
     // the mount guard which is meant to catch exactly this could run.
-    const history = newTestHistory('/consent?client_id=demo#frag', 'POP');
+    const history = newTestHistory("/consent?client_id=demo#frag", "POP");
 
     renderWithProviders(<Subject history={history} />, {
       history,
-      preloaded: { common: { hello: null, query } }
+      preloaded: { common: { hello: null, query } },
     });
 
-    expect(history.location.pathname).toBe('/identifier');
-    expect(history.location.search).toBe('?client_id=demo');
-    expect(history.location.hash).toBe('#frag');
+    expect(history.location.pathname).toBe("/identifier");
+    expect(history.location.search).toBe("?client_id=demo");
+    expect(history.location.hash).toBe("#frag");
   });
 
-  it('sends a visitor away when the session names no client', () => {
+  it("sends a visitor away when the session names no client", () => {
     // The client was defaulted to an empty object, which reads as one being
     // present, so this case rendered on and failed inside the scopes list.
-    const history = newTestHistory('/consent', 'POP');
-    const hello = { state: true, username: 'u', displayName: 'D', details: {} };
+    const history = newTestHistory("/consent", "POP");
+    const hello = { state: true, username: "u", displayName: "D", details: {} };
 
     renderWithProviders(<Subject history={history} />, {
       history,
-      preloaded: { common: { hello, query } }
+      preloaded: { common: { hello, query } },
     });
 
-    expect(history.location.pathname).toBe('/identifier');
+    expect(history.location.pathname).toBe("/identifier");
   });
 
-  it('renders nothing rather than failing when it stays without a session', () => {
+  it("renders nothing rather than failing when it stays without a session", () => {
     // The guard deliberately stays put when the application itself navigated
     // here, so this render has to be survivable.
-    const history = newTestHistory('/consent', 'PUSH');
+    const history = newTestHistory("/consent", "PUSH");
 
     const { container } = renderWithProviders(<Subject history={history} />, {
       history,
-      preloaded: { common: { hello: null, query } }
+      preloaded: { common: { hello: null, query } },
     });
 
-    expect(history.location.pathname).toBe('/consent');
+    expect(history.location.pathname).toBe("/consent");
     expect(container).toBeEmptyDOMElement();
   });
 });

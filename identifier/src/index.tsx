@@ -1,19 +1,19 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
+import React from "react";
+import ReactDOM from "react-dom";
+import { Provider } from "react-redux";
 
-import createCache from '@emotion/cache';
-import { CacheProvider } from '@emotion/react';
+import createCache from "@emotion/cache";
+import { CacheProvider } from "@emotion/react";
 
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
 
-import './i18n';
+import "./i18n";
 
-import App from './App';
-import store from './store';
+import App from "./App";
+import store from "./store";
 
 /*
  * The nonce the server wrote into the document. Emotion does not look for this
@@ -25,11 +25,9 @@ import store from './store';
  * bogus nonce on every style element instead of none.
  */
 const getNonce = (): string | undefined => {
-  const nonce = document
-    .querySelector('meta[property="csp-nonce"]')
-    ?.getAttribute('content');
+  const nonce = document.querySelector('meta[property="csp-nonce"]')?.getAttribute("content");
 
-  return nonce && nonce !== '__CSP_NONCE__' ? nonce : undefined;
+  return nonce && nonce !== "__CSP_NONCE__" ? nonce : undefined;
 };
 
 /*
@@ -38,7 +36,7 @@ const getNonce = (): string | undefined => {
  * be needed for.
  */
 const cache = createCache({
-  key: 'mui',
+  key: "mui",
   nonce: getNonce(),
   prepend: true,
 });
@@ -47,9 +45,9 @@ ReactDOM.render(
   <React.StrictMode>
     <CacheProvider value={cache}>
       <Provider store={store}>
-        <App/>
+        <App />
       </Provider>
     </CacheProvider>
   </React.StrictMode>,
-  document.getElementById('root')
+  document.getElementById("root"),
 );

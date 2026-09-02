@@ -1,29 +1,27 @@
-import rootReducer from '../reducers';
-
-import type { AppAction } from './types';
 import {
-  type HelloResponse,
-  type PreloadedState,
-  type StateResponse,
+  ERROR_HTTP_NETWORK_ERROR,
+  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
+  ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
+  ExtendedError,
+} from "../errors";
+import rootReducer from "../reducers";
+import {
   fetchMock,
+  type HelloResponse,
   jsonReply,
   makeStore,
+  type PreloadedState,
   postedBody,
   postedInit,
   postedUrl,
   replyEchoingState,
   replyNoContentEchoingState,
-  stubFetch
-} from '../test-utils';
-import {
-  ERROR_HTTP_NETWORK_ERROR,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
-  ExtendedError
-} from '../errors';
-
-import * as types from './types';
-import { executeHello, executeLogoff, retryHello } from './common';
+  type StateResponse,
+  stubFetch,
+} from "../test-utils";
+import { executeHello, executeLogoff, retryHello } from "./common";
+import type { AppAction } from "./types";
+import * as types from "./types";
 
 /*
  * makeStore builds its dispatch chain inside applyMiddleware, so replacing the
@@ -88,8 +86,8 @@ beforeEach(() => {
   stubFetch();
 });
 
-describe('executeHello', () => {
-  it('resets any existing hello before it asks the server', async () => {
+describe("executeHello", () => {
+  it("resets any existing hello before it asks the server", async () => {
     const { store, actions } = newHarness();
     let seenAtPost: string[] = [];
     fetchMock().mockImplementation((_url: string, init: RequestInit) => {
@@ -103,7 +101,7 @@ describe('executeHello', () => {
     expect(seenAtPost).toEqual([types.RESET_HELLO]);
   });
 
-  it('posts to a page relative endpoint with the XSRF header', async () => {
+  it("posts to a page relative endpoint with the XSRF header", async () => {
     replyEchoingState(200, { success: false });
     const { store } = newHarness();
 
@@ -111,41 +109,41 @@ describe('executeHello', () => {
 
     // The URL is relative to the page the identifier is served from, which is
     // what lets it work under any path prefix.
-    expect(postedUrl()).toBe('./identifier/_/hello');
-    expect(postedInit().method).toBe('POST');
+    expect(postedUrl()).toBe("./identifier/_/hello");
+    expect(postedInit().method).toBe("POST");
     expect(postedInit().headers).toEqual({
-      'Content-Type': 'application/json',
-      'Kopano-Konnect-XSRF': '1'
+      "Content-Type": "application/json",
+      "Kopano-Konnect-XSRF": "1",
     });
   });
 
-  it('builds the posted body from the flow and query held in the store', async () => {
+  it("builds the posted body from the flow and query held in the store", async () => {
     replyEchoingState(200, { success: false });
     const { store } = newHarness({
       common: {
-        flow: 'oidc',
+        flow: "oidc",
         query: {
-          scope: 'openid profile',
-          client_id: 'playground.js',
-          redirect_uri: 'https://app.test/callback',
-          prompt: 'consent'
-        }
-      }
+          scope: "openid profile",
+          client_id: "playground.js",
+          redirect_uri: "https://app.test/callback",
+          prompt: "consent",
+        },
+      },
     });
 
     await store.dispatch(executeHello());
 
     expect(postedBody()).toEqual({
-      prompt: 'consent',
-      flow: 'oidc',
-      scope: 'openid profile',
-      client_id: 'playground.js',
-      redirect_uri: 'https://app.test/callback',
-      state: expect.any(String)
+      prompt: "consent",
+      flow: "oidc",
+      scope: "openid profile",
+      client_id: "playground.js",
+      redirect_uri: "https://app.test/callback",
+      state: expect.any(String),
     });
   });
 
-  it('posts only the state nonce when the store holds no recognised flow', async () => {
+  it("posts only the state nonce when the store holds no recognised flow", async () => {
     replyEchoingState(200, { success: false });
     const { store } = newHarness();
 
@@ -154,38 +152,35 @@ describe('executeHello', () => {
     expect(postedBody()).toEqual({ state: expect.any(String) });
   });
 
-  it('dispatches the received hello and resolves with the response on a 200', async () => {
-    const hello: Omit<HelloResponse, 'state'> = {
-      flow: 'oidc',
+  it("dispatches the received hello and resolves with the response on a 200", async () => {
+    const hello: Omit<HelloResponse, "state"> = {
+      flow: "oidc",
       success: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      next: 'consent'
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      next: "consent",
     };
     replyEchoingState(200, { ...hello });
-    const { store, actions } = newHarness({ common: { flow: 'oidc' } });
+    const { store, actions } = newHarness({ common: { flow: "oidc" } });
 
     const response = await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.RECEIVE_HELLO
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_HELLO]);
     expect(actions[1]).toEqual({
       type: types.RECEIVE_HELLO,
       state: true,
-      username: 'user1@example.com',
-      displayName: 'Lala 123 abc',
-      hello: response
+      username: "user1@example.com",
+      displayName: "Lala 123 abc",
+      hello: response,
     });
     expect(response).toEqual({ ...hello, state: postedBody().state });
   });
 
-  it('records a 200 with success false as not signed in', async () => {
+  it("records a 200 with success false as not signed in", async () => {
     // The server answers a hello for an anonymous visitor with 200 and
     // success false, never with a 204.
-    replyEchoingState(200, { success: false, flow: 'oidc' });
-    const { store, actions } = newHarness({ common: { flow: 'oidc' } });
+    replyEchoingState(200, { success: false, flow: "oidc" });
+    const { store, actions } = newHarness({ common: { flow: "oidc" } });
 
     const response = await store.dispatch(executeHello());
 
@@ -194,66 +189,53 @@ describe('executeHello', () => {
       state: false,
       username: undefined,
       displayName: undefined,
-      hello: response
+      hello: response,
     });
     expect(store.getState().common.hello?.state).toBe(false);
   });
 
-  it('treats a 204 as an unexpected status, since hello never answers one', async () => {
+  it("treats a 204 as an unexpected status, since hello never answers one", async () => {
     // The dead 204 arm this thunk used to carry was removed with the rewrite.
     replyNoContentEchoingState();
     const { store, actions } = newHarness();
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.RECEIVE_ERROR
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
     expect(errorValues(reportedError(actions[1])).status).toBe(204);
   });
 
-  it('reports a reply whose state does not echo the request', async () => {
-    fetchMock().mockResolvedValue(
-      jsonReply(200, { success: true, username: 'attacker', state: 'not-the-nonce' })
-    );
+  it("reports a reply whose state does not echo the request", async () => {
+    fetchMock().mockResolvedValue(jsonReply(200, { success: true, username: "attacker", state: "not-the-nonce" }));
     const { store, actions } = newHarness();
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.RECEIVE_ERROR
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
     // A forged reply must never reach the session, and the error has to be
     // readable from the store since that is what the loading screen shows.
-    expect(store.getState().common.error?.message).toBe(
-      ERROR_HTTP_UNEXPECTED_RESPONSE_STATE
-    );
+    expect(store.getState().common.error?.message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
     expect(store.getState().common.hello).toBeNull();
   });
 
-  it('reports an unexpected response status', async () => {
+  it("reports an unexpected response status", async () => {
     // fetch resolves for a 500, so the thunk's own status switch is the only
     // thing that turns it into an error.
-    fetchMock().mockResolvedValue(new Response('internal server error', { status: 500 }));
+    fetchMock().mockResolvedValue(new Response("internal server error", { status: 500 }));
     const { store, actions } = newHarness();
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.RECEIVE_ERROR
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
     expect(errorValues(reportedError(actions[1])).status).toBe(500);
   });
 
-  it('carries only the status in the error, not the whole response', async () => {
+  it("carries only the status in the error, not the whole response", async () => {
     // The error is dispatched into the store, so it has to stay serializable.
-    fetchMock().mockResolvedValue(new Response('bad gateway', { status: 502 }));
+    fetchMock().mockResolvedValue(new Response("bad gateway", { status: 502 }));
     const { store } = newHarness();
 
     await store.dispatch(executeHello());
@@ -261,24 +243,21 @@ describe('executeHello', () => {
     expect(errorValues(store.getState().common.error)).toEqual({ status: 502 });
   });
 
-  it('reports a request which never got a response as a network error', async () => {
-    fetchMock().mockRejectedValue(new TypeError('Failed to fetch'));
+  it("reports a request which never got a response as a network error", async () => {
+    fetchMock().mockRejectedValue(new TypeError("Failed to fetch"));
     const { store, actions } = newHarness();
 
     await store.dispatch(executeHello());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.RECEIVE_ERROR
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.RECEIVE_ERROR]);
     expect(reportedError(actions[1]).message).toBe(ERROR_HTTP_NETWORK_ERROR);
     expect(store.getState().common.error?.message).toBe(ERROR_HTTP_NETWORK_ERROR);
   });
 
-  it('stays silent when the caller aborts the request', async () => {
+  it("stays silent when the caller aborts the request", async () => {
     // An abort is the caller's own doing. Reporting it as a network failure
     // would put an error on screen for a screen which is going away.
-    fetchMock().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    fetchMock().mockRejectedValue(new DOMException("aborted", "AbortError"));
     const { store, actions } = newHarness();
 
     const response = await store.dispatch(executeHello());
@@ -288,7 +267,7 @@ describe('executeHello', () => {
     expect(response).toBeUndefined();
   });
 
-  it('passes an abort signal through to the request', async () => {
+  it("passes an abort signal through to the request", async () => {
     replyEchoingState(200, { success: false });
     const controller = new AbortController();
     const { store } = newHarness();
@@ -299,28 +278,24 @@ describe('executeHello', () => {
   });
 });
 
-describe('retryHello', () => {
-  it('clears the standing error before it asks again', async () => {
-    replyEchoingState(200, { success: true, username: 'user1@example.com' });
+describe("retryHello", () => {
+  it("clears the standing error before it asks again", async () => {
+    replyEchoingState(200, { success: true, username: "user1@example.com" });
     const { store, actions } = newHarness({
-      common: { error: new Error(ERROR_HTTP_NETWORK_ERROR) }
+      common: { error: new Error(ERROR_HTTP_NETWORK_ERROR) },
     });
 
     const response = await store.dispatch(retryHello());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RECEIVE_ERROR,
-      types.RESET_HELLO,
-      types.RECEIVE_HELLO
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RECEIVE_ERROR, types.RESET_HELLO, types.RECEIVE_HELLO]);
     expect(receiveErrorAction(actions[0]).error).toBeNull();
     expect(store.getState().common.error).toBeNull();
-    expect(response?.username).toBe('user1@example.com');
+    expect(response?.username).toBe("user1@example.com");
   });
 });
 
-describe('executeLogoff', () => {
-  it('resets hello and announces the request before it posts', async () => {
+describe("executeLogoff", () => {
+  it("resets hello and announces the request before it posts", async () => {
     const { store, actions } = newHarness();
     let seenAtPost: string[] = [];
     fetchMock().mockImplementation((_url: string, init: RequestInit) => {
@@ -334,41 +309,37 @@ describe('executeLogoff', () => {
     expect(seenAtPost).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF]);
   });
 
-  it('posts nothing but the state nonce to a page relative endpoint', async () => {
+  it("posts nothing but the state nonce to a page relative endpoint", async () => {
     replyEchoingState(200, { success: true });
-    const { store } = newHarness({ common: { flow: 'oidc', query: { scope: 'openid' } } });
+    const { store } = newHarness({ common: { flow: "oidc", query: { scope: "openid" } } });
 
     await store.dispatch(executeLogoff());
 
-    expect(postedUrl()).toBe('./identifier/_/logoff');
+    expect(postedUrl()).toBe("./identifier/_/logoff");
     expect(postedInit().headers).toEqual({
-      'Content-Type': 'application/json',
-      'Kopano-Konnect-XSRF': '1'
+      "Content-Type": "application/json",
+      "Kopano-Konnect-XSRF": "1",
     });
     // Logoff needs no flow or query context, unlike hello.
     expect(postedBody()).toEqual({ state: expect.any(String) });
   });
 
-  it('dispatches a successful logoff and resolves with the response', async () => {
-    const reply: Omit<StateResponse, 'state'> = { success: true };
+  it("dispatches a successful logoff and resolves with the response", async () => {
+    const reply: Omit<StateResponse, "state"> = { success: true };
     replyEchoingState(200, { ...reply });
-    const { store, actions } = newHarness({ login: { username: 'user1', password: 'secret' } });
+    const { store, actions } = newHarness({ login: { username: "user1", password: "secret" } });
 
     const response = await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.REQUEST_LOGOFF,
-      types.RECEIVE_LOGOFF
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF, types.RECEIVE_LOGOFF]);
     expect(receiveLogoffAction(actions[2]).state).toBe(true);
     expect(response).toEqual({ success: true, state: postedBody().state });
     // The login reducer forgets the credentials once logoff is received.
-    expect(store.getState().login.username).toBe('');
-    expect(store.getState().login.password).toBe('');
+    expect(store.getState().login.username).toBe("");
+    expect(store.getState().login.password).toBe("");
   });
 
-  it('dispatches an unsuccessful logoff with a false flag', async () => {
+  it("dispatches an unsuccessful logoff with a false flag", async () => {
     replyEchoingState(200, { success: false });
     const { store, actions } = newHarness();
 
@@ -377,7 +348,7 @@ describe('executeLogoff', () => {
     expect(actions[2]).toEqual({ type: types.RECEIVE_LOGOFF, state: false });
   });
 
-  it('treats a 204 as an unexpected status, unlike logon and consent', async () => {
+  it("treats a 204 as an unexpected status, unlike logon and consent", async () => {
     // Logoff has no 204 arm at all, so the empty reply those endpoints use for
     // a negative answer is an error here.
     replyNoContentEchoingState();
@@ -385,30 +356,22 @@ describe('executeLogoff', () => {
 
     await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.REQUEST_LOGOFF,
-      types.RECEIVE_ERROR
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF, types.RECEIVE_ERROR]);
     expect(reportedError(actions[2]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS);
   });
 
-  it('reports a reply whose state does not echo the request', async () => {
-    fetchMock().mockResolvedValue(jsonReply(200, { success: true, state: 'not-the-nonce' }));
+  it("reports a reply whose state does not echo the request", async () => {
+    fetchMock().mockResolvedValue(jsonReply(200, { success: true, state: "not-the-nonce" }));
     const { store, actions } = newHarness();
 
     await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.REQUEST_LOGOFF,
-      types.RECEIVE_ERROR
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF, types.RECEIVE_ERROR]);
     expect(reportedError(actions[2]).message).toBe(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE);
   });
 
-  it('reports a request which never got a response as a network error', async () => {
-    fetchMock().mockRejectedValue(new TypeError('Failed to fetch'));
+  it("reports a request which never got a response as a network error", async () => {
+    fetchMock().mockRejectedValue(new TypeError("Failed to fetch"));
     const { store, actions } = newHarness();
 
     await store.dispatch(executeLogoff());
@@ -417,32 +380,29 @@ describe('executeLogoff', () => {
     expect(store.getState().common.error?.message).toBe(ERROR_HTTP_NETWORK_ERROR);
   });
 
-  it('resolves an unsuccessful result on failure rather than nothing', async () => {
+  it("resolves an unsuccessful result on failure rather than nothing", async () => {
     // Welcomescreen and Goodbyescreen both read success off the resolved value,
     // so resolving undefined made a failed sign out throw instead of report.
-    fetchMock().mockRejectedValue(new TypeError('Failed to fetch'));
+    fetchMock().mockRejectedValue(new TypeError("Failed to fetch"));
     const { store } = newHarness();
 
     const response = await store.dispatch(executeLogoff());
 
     expect(response).toMatchObject({
       success: false,
-      errors: { http: { message: ERROR_HTTP_NETWORK_ERROR } }
+      errors: { http: { message: ERROR_HTTP_NETWORK_ERROR } },
     });
   });
 
-  it('resolves the same unsuccessful shape on an abort, without an error', async () => {
+  it("resolves the same unsuccessful shape on an abort, without an error", async () => {
     // Callers read success off the value either way, but nobody should be told
     // about a request they cancelled themselves.
-    fetchMock().mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    fetchMock().mockRejectedValue(new DOMException("aborted", "AbortError"));
     const { store, actions } = newHarness();
 
     const response = await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([
-      types.RESET_HELLO,
-      types.REQUEST_LOGOFF
-    ]);
+    expect(actions.map((a) => a.type)).toEqual([types.RESET_HELLO, types.REQUEST_LOGOFF]);
     expect(response).toMatchObject({ success: false, errors: {} });
     expect(store.getState().common.error).toBeNull();
   });

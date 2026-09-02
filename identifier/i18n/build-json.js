@@ -1,52 +1,54 @@
 #!/usr/bin/env node
 
-const cldr = require('cldr');
+const cldr = require("cldr");
 
 if (process.argv.length < 4) {
-  throw new Error('usage error: at least 2 arguments are required!');
+  throw new Error("usage error: at least 2 arguments are required!");
 }
 
 const output = process.argv[2];
 const pos = process.argv.slice(3);
 
-const englishLanguageDisplayNames = cldr.extractLanguageDisplayNames('en');
-const englishTerritoryDisplayNames = cldr.extractTerritoryDisplayNames('en');
+const englishLanguageDisplayNames = cldr.extractLanguageDisplayNames("en");
+const englishTerritoryDisplayNames = cldr.extractTerritoryDisplayNames("en");
 
 function localeCapitalize(s, locale) {
-  return s.charAt(0).toLocaleUpperCase(locale) + s.slice(1)
+  return s.charAt(0).toLocaleUpperCase(locale) + s.slice(1);
 }
 
-function Locale(locale, overrides={}) {
+function Locale(locale, overrides = {}) {
   let ietf = null;
-  let [code, country] = locale.split('-', 2);
-  switch(locale) {
+  let [code, country] = locale.split("-", 2);
+  switch (locale) {
     // Additional mapping.
-    case 'zh-CN':
-      code = 'zh_hans';
+    case "zh-CN":
+      code = "zh_hans";
       ietf = code;
       country = null;
       break;
-    case 'zh-TW':
-      code = 'zh_hant';
+    case "zh-TW":
+      code = "zh_hant";
       ietf = code;
       country = null;
       break;
     default:
   }
-  overrides = ietf ? {
-    ietf,
-    ...overrides,
-  } : overrides;
+  overrides = ietf
+    ? {
+        ietf,
+        ...overrides,
+      }
+    : overrides;
 
   const languageDisplayNames = cldr.extractLanguageDisplayNames(code);
   if (languageDisplayNames) {
-    let name = localeCapitalize(englishLanguageDisplayNames[code], 'en');
+    let name = localeCapitalize(englishLanguageDisplayNames[code], "en");
     let nativeName = localeCapitalize(languageDisplayNames[code], locale);
     if (name && nativeName) {
       if (country) {
         const countryNative = localeCapitalize(cldr.extractTerritoryDisplayNames(code)[country], locale);
         nativeName = `${nativeName} (${countryNative})`;
-        name = `${name} (${localeCapitalize(englishTerritoryDisplayNames[country], 'en')})`;
+        name = `${name} (${localeCapitalize(englishTerritoryDisplayNames[country], "en")})`;
       }
       return {
         locale,
@@ -54,17 +56,17 @@ function Locale(locale, overrides={}) {
         nativeName,
         ...cldr.extractLayout(code),
         ...overrides,
-      }
+      };
     }
   }
 }
 
 var locales = [
-  Locale('en-GB', { name: 'English', nativeName: 'English' }), // Always add en-GB as English.
-]
+  Locale("en-GB", { name: "English", nativeName: "English" }), // Always add en-GB as English.
+];
 
 for (const po of pos) {
-  const locale = Locale(po.replace(/\.[^/.]+$/, ''));
+  const locale = Locale(po.replace(/\.[^/.]+$/, ""));
   if (locale) {
     locales.push(locale);
   }
@@ -72,6 +74,6 @@ for (const po of pos) {
 
 locales.sort((a, b) => {
   return a.locale > b.locale ? 1 : -1;
-})
+});
 
-require('node:fs').writeFileSync(output, JSON.stringify(locales, null, 2));
+require("node:fs").writeFileSync(output, JSON.stringify(locales, null, 2));

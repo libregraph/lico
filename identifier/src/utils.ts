@@ -15,9 +15,6 @@ export function withClientRequestState<T extends object>(obj: T): T & { state: s
  * The location is named structurally rather than as a router type, so a plain
  * object is enough to call this with.
  */
-export function withSearchAndHash(
-  path: string,
-  location: { search: string; hash: string }
-): string {
+export function withSearchAndHash(path: string, location: { search: string; hash: string }): string {
   return `${path}${location.search}${location.hash}`;
 }

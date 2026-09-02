@@ -3,23 +3,24 @@
  * never enters the production module graph.
  */
 
-import type React from 'react';
-import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { MemoryRouter, Router } from 'react-router-dom';
-import { createMemoryHistory, type MemoryHistory } from 'history';
-import { applyMiddleware, createStore, type Store } from 'redux';
-import thunkMiddleware from 'redux-thunk';
-import i18n from 'i18next';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
-import type { Mock } from 'vitest';
+import type React from "react";
+import { I18nextProvider, initReactI18next } from "react-i18next";
+import { Provider } from "react-redux";
+import { MemoryRouter, Router } from "react-router-dom";
 
-import type { AppAction } from './actions/types';
-import rootReducer from './reducers';
-import type { RootState } from './reducers';
-import type { CommonState } from './reducers/common';
-import type { LoginState } from './reducers/login';
-import type { AppDispatch } from './store';
+import { type RenderOptions, type RenderResult, render } from "@testing-library/react";
+import { createMemoryHistory, type MemoryHistory } from "history";
+import i18n from "i18next";
+import { applyMiddleware, createStore, type Store } from "redux";
+import thunkMiddleware from "redux-thunk";
+import type { Mock } from "vitest";
+
+import type { AppAction } from "./actions/types";
+import type { RootState } from "./reducers";
+import rootReducer from "./reducers";
+import type { CommonState } from "./reducers/common";
+import type { LoginState } from "./reducers/login";
+import type { AppDispatch } from "./store";
 
 /*
  * The domain types live with the code that produces them. They are re-exported
@@ -33,10 +34,10 @@ export type {
   ScopeDefinition,
   ScopesMeta,
   Session,
-  StateResponse
-} from './models/api';
-export type { CommonState } from './reducers/common';
-export type { LoginState } from './reducers/login';
+  StateResponse,
+} from "./models/api";
+export type { CommonState } from "./reducers/common";
+export type { LoginState } from "./reducers/login";
 
 /*
  * The common reducer reads the query string at module load, so its slice cannot
@@ -46,16 +47,16 @@ export const defaultCommonState: CommonState = {
   hello: null,
   branding: null,
   error: null,
-  flow: '',
+  flow: "",
   query: {},
-  pathPrefix: '/signin/v1'
+  pathPrefix: "/signin/v1",
 };
 
 export const defaultLoginState: LoginState = {
-  loading: '',
-  username: '',
-  password: '',
-  errors: {}
+  loading: "",
+  username: "",
+  password: "",
+  errors: {},
 };
 
 export interface PreloadedState {
@@ -76,14 +77,10 @@ export type TestStore = Store<RootState, AppAction> & { dispatch: AppDispatch };
 export function makeStore(preloaded: PreloadedState = {}): TestStore {
   const preloadedState: RootState = {
     common: { ...defaultCommonState, ...preloaded.common },
-    login: { ...defaultLoginState, ...preloaded.login }
+    login: { ...defaultLoginState, ...preloaded.login },
   };
 
-  return createStore(
-    rootReducer,
-    preloadedState,
-    applyMiddleware(thunkMiddleware)
-  );
+  return createStore(rootReducer, preloadedState, applyMiddleware(thunkMiddleware));
 }
 
 /*
@@ -99,16 +96,14 @@ let testI18n: typeof i18n | undefined;
 export function getTestI18n(): typeof i18n {
   if (!testI18n) {
     const instance = i18n.createInstance();
-    instance
-      .use(initReactI18next)
-      .init({
-        lng: 'en-GB',
-        fallbackLng: false,
-        supportedLngs: false,
-        resources: {},
-        interpolation: { escapeValue: false },
-        detection: { order: ['navigator'], caches: [] }
-      });
+    instance.use(initReactI18next).init({
+      lng: "en-GB",
+      fallbackLng: false,
+      supportedLngs: false,
+      resources: {},
+      interpolation: { escapeValue: false },
+      detection: { order: ["navigator"], caches: [] },
+    });
     testI18n = instance as unknown as typeof i18n;
   }
   return testI18n;
@@ -122,24 +117,24 @@ export function getTestI18n(): typeof i18n {
 export function setTestLanguages(languages: string[]): () => void {
   const nav = window.navigator;
   const previous = {
-    languages: Object.getOwnPropertyDescriptor(nav, 'languages'),
-    language: Object.getOwnPropertyDescriptor(nav, 'language')
+    languages: Object.getOwnPropertyDescriptor(nav, "languages"),
+    language: Object.getOwnPropertyDescriptor(nav, "language"),
   };
 
-  Object.defineProperty(nav, 'languages', { value: languages, configurable: true });
-  Object.defineProperty(nav, 'language', { value: languages[0], configurable: true });
+  Object.defineProperty(nav, "languages", { value: languages, configurable: true });
+  Object.defineProperty(nav, "language", { value: languages[0], configurable: true });
 
   return () => {
     if (previous.languages) {
-      Object.defineProperty(nav, 'languages', previous.languages);
+      Object.defineProperty(nav, "languages", previous.languages);
     }
     if (previous.language) {
-      Object.defineProperty(nav, 'language', previous.language);
+      Object.defineProperty(nav, "language", previous.language);
     }
   };
 }
 
-export interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
+export interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper"> {
   store?: Store;
   preloaded?: PreloadedState;
   /* Initial URL for the router. Ignored when history is given. */
@@ -159,9 +154,9 @@ export interface RenderWithProvidersResult extends RenderResult {
  */
 export function renderWithProviders(
   ui: React.ReactElement,
-  options: RenderWithProvidersOptions = {}
+  options: RenderWithProvidersOptions = {},
 ): RenderWithProvidersResult {
-  const { store: givenStore, preloaded, route = '/', history, ...rest } = options;
+  const { store: givenStore, preloaded, route = "/", history, ...rest } = options;
   const store = givenStore ?? makeStore(preloaded);
   const instance = getTestI18n();
 
@@ -186,12 +181,12 @@ export function renderWithProviders(
  * newTestHistory returns a memory history. Pass action 'REPLACE' or 'POP' to
  * exercise the code paths which branch on how the user arrived.
  */
-export function newTestHistory(url = '/', action?: 'PUSH' | 'REPLACE' | 'POP'): MemoryHistory {
+export function newTestHistory(url = "/", action?: "PUSH" | "REPLACE" | "POP"): MemoryHistory {
   const h = createMemoryHistory({ initialEntries: [url] });
   if (action) {
     // history sets action from the last operation; force it for the guards
     // which distinguish a client side navigation from a fresh page load.
-    Object.defineProperty(h, 'action', { value: action, configurable: true, writable: true });
+    Object.defineProperty(h, "action", { value: action, configurable: true, writable: true });
   }
   return h;
 }
@@ -207,24 +202,20 @@ export function newTestHistory(url = '/', action?: 'PUSH' | 'REPLACE' | 'POP'): 
  * browser.
  */
 export function stubFetch(): void {
-  vi.stubGlobal('fetch', vi.fn());
+  vi.stubGlobal("fetch", vi.fn());
 }
 
 export function fetchMock(): Mock {
   const stubbed: unknown = globalThis.fetch;
-  if (typeof stubbed !== 'function' || !('mock' in stubbed)) {
-    throw new Error('fetch is not stubbed: call stubFetch() first');
+  if (typeof stubbed !== "function" || !("mock" in stubbed)) {
+    throw new Error("fetch is not stubbed: call stubFetch() first");
   }
   // Checked immediately above, which is all the shape a mock accessor needs.
   const mock = stubbed as Mock;
   return mock;
 }
 
-export function jsonReply(
-  status: number,
-  body: unknown,
-  headers: Record<string, string> = {}
-): Response {
+export function jsonReply(status: number, body: unknown, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
@@ -238,7 +229,7 @@ function sentState(init: RequestInit): string | undefined {
 /* Answers with the given status and body, echoing the request's state nonce. */
 export function replyEchoingState(status: number, body: Record<string, unknown> = {}): void {
   fetchMock().mockImplementation((_url: string, init: RequestInit) =>
-    Promise.resolve(jsonReply(status, { ...body, state: sentState(init) }))
+    Promise.resolve(jsonReply(status, { ...body, state: sentState(init) })),
   );
 }
 
@@ -249,8 +240,8 @@ export function replyNoContentEchoingState(): void {
     return Promise.resolve(
       new Response(null, {
         status: 204,
-        headers: state === undefined ? {} : { 'Kopano-Konnect-State': state }
-      })
+        headers: state === undefined ? {} : { "Kopano-Konnect-State": state },
+      }),
     );
   });
 }

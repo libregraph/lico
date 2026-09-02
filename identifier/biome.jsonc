@@ -17,7 +17,6 @@
       "!dist",
       "!coverage",
       "!releases",
-      "!tests",
       "!src/locales/locales.json",
       "!src/locales/*/translation.json",
       // The SVGs are image assets, reached by URL from CSS and from an img tag,
@@ -31,16 +30,30 @@
   },
 
   "formatter": {
-    // Off deliberately. This project has never had a formatter, so enabling one
-    // would rewrite every file and bury the linter swap in mechanical noise.
-    // The settings below are correct for the codebase, so turning this on is a
-    // one-line decision whenever a reformat is actually wanted.
-    "enabled": false,
-    "useEditorconfig": true,
-    // Biome does not read max_line_length from .editorconfig, so the width has
-    // to live here even with useEditorconfig on. 120 is what the repository's
-    // root ESLint config asked for.
+    "enabled": true,
+    // Stated here rather than read from .editorconfig. Biome only looks for
+    // that file in its own root, which is this directory, and the repository's
+    // copy sits a level up where Biome never sees it; with useEditorconfig on
+    // and nothing found, the default is a tab. These are what the root file
+    // asks for the TypeScript and CSS sources, and what they already used.
+    "indentStyle": "space",
+    "indentWidth": 2,
+    // 120 is what the repository's root ESLint config asked for.
     "lineWidth": 120
+  },
+
+  "javascript": {
+    "formatter": {
+      // Stated rather than left to the default, so the choice survives a change
+      // of Biome's own default.
+      "quoteStyle": "double"
+    }
+  },
+
+  "css": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
   },
 
   "linter": {
@@ -56,8 +69,27 @@
   },
 
   "assist": {
-    // Import sorting would reorder every file's imports, which is the same
-    // mechanical churn as the formatter. Left off for the same reason.
-    "enabled": false
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            // The grouping the sources already followed: react first, then
+            // everything else installed, then MUI, then relative paths, each
+            // separated by a blank line.
+            "groups": [
+              ["react", "react-*", "react-*/**"],
+              ":BLANK_LINE:",
+              [":PACKAGE:", "!@mui/**"],
+              ":BLANK_LINE:",
+              ["@mui/**"],
+              ":BLANK_LINE:",
+              [":PATH:"]
+            ]
+          }
+        }
+      }
+    }
   }
 }

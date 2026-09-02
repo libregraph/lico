@@ -1,8 +1,8 @@
-import { useDispatch, useSelector } from 'react-redux';
-import type { TypedUseSelectorHook } from 'react-redux';
+import type { TypedUseSelectorHook } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import type { AppDispatch } from '../store';
-import type { RootState } from '../reducers';
+import type { RootState } from "../reducers";
+import type { AppDispatch } from "../store";
 
 /*
  * The store aware versions of the two react-redux hooks. Components use these

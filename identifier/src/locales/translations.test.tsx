@@ -1,25 +1,23 @@
+import { screen } from "@testing-library/react";
 
-import { screen } from '@testing-library/react';
-
-import Consent from '../containers/Login/Consent';
+import Consent from "../containers/Login/Consent";
 import {
   type ClientDetails,
-  type HelloResponse,
-  type ScopesMeta,
   fetchMock,
   getTestI18n,
+  type HelloResponse,
   jsonReply,
   newTestHistory,
   renderWithProviders,
-  stubFetch
-} from '../test-utils';
-
-import de from './de/translation.json';
-import es from './es/translation.json';
-import fr from './fr/translation.json';
-import itIT from './it/translation.json';
-import nl from './nl/translation.json';
-import zhCN from './zh-CN/translation.json';
+  type ScopesMeta,
+  stubFetch,
+} from "../test-utils";
+import de from "./de/translation.json";
+import es from "./es/translation.json";
+import fr from "./fr/translation.json";
+import itIT from "./it/translation.json";
+import nl from "./nl/translation.json";
+import zhCN from "./zh-CN/translation.json";
 
 /*
  * These files are generated from i18n/*.po by `make -C identifier/i18n json`,
@@ -39,39 +37,39 @@ const locales: Record<string, Record<string, unknown>> = {
   fr,
   it: itIT,
   nl,
-  'zh-CN': zhCN
+  "zh-CN": zhCN,
 };
 
 const client: ClientDetails = {
-  id: 'playground.js',
-  display_name: 'OIDC Playground',
-  redirect_uri: 'https://example.test/',
-  trusted: false
+  id: "playground.js",
+  display_name: "OIDC Playground",
+  redirect_uri: "https://example.test/",
+  trusted: false,
 };
 
 const scopesMeta: ScopesMeta = {
-  mapping: { openid: 'basic', profile: 'basic', email: 'basic' },
-  definitions: { basic: { priority: 20, id: 'scope_alias_basic' } }
+  mapping: { openid: "basic", profile: "basic", email: "basic" },
+  definitions: { basic: { priority: 20, id: "scope_alias_basic" } },
 };
 
 const hello: HelloResponse = {
-  state: 'echo-nonce',
-  flow: 'oidc',
+  state: "echo-nonce",
+  flow: "oidc",
   success: true,
-  username: 'user1@example.test',
-  displayName: 'User One',
-  next: 'consent',
+  username: "user1@example.test",
+  displayName: "User One",
+  next: "consent",
   scopes: { openid: true, profile: true, email: true },
   client,
-  meta: { scopes: scopesMeta }
+  meta: { scopes: scopesMeta },
 };
 
 const query = {
-  client_id: 'playground.js',
-  redirect_uri: 'https://example.test/',
-  state: 'ref-1',
-  nonce: 'nonce-1',
-  scope: 'openid profile email'
+  client_id: "playground.js",
+  redirect_uri: "https://example.test/",
+  state: "ref-1",
+  nonce: "nonce-1",
+  scope: "openid profile email",
 };
 
 beforeEach(() => {
@@ -83,10 +81,10 @@ beforeEach(() => {
 for (const lng of Object.keys(locales)) {
   it(`renders the client name inside the consent sentences in ${lng}`, async () => {
     const i18n = getTestI18n();
-    i18n.addResourceBundle(lng, 'translation', locales[lng], true, true);
+    i18n.addResourceBundle(lng, "translation", locales[lng], true, true);
     await i18n.changeLanguage(lng);
 
-    const history = newTestHistory('/consent');
+    const history = newTestHistory("/consent");
     const { container } = renderWithProviders(<Consent history={history} />, {
       history,
       preloaded: {
@@ -95,25 +93,25 @@ for (const lng of Object.keys(locales)) {
             state: hello.success,
             username: hello.username,
             displayName: hello.displayName,
-            details: hello
+            details: hello,
           },
-          query
-        }
-      }
+          query,
+        },
+      },
     });
 
-    const text = container.textContent ?? '';
+    const text = container.textContent ?? "";
 
     // No unmapped <Trans> index and no unresolved interpolation may reach the DOM.
     expect(text).not.toMatch(/<\d+>/);
     expect(text).not.toMatch(/\{\{/);
 
     // The client name has to sit inside the wrapping elements of both sentences.
-    const wrapped = [...container.querySelectorAll('em')].map((e) => e.textContent);
-    expect(wrapped.filter((n) => n === 'OIDC Playground').length).toBeGreaterThanOrEqual(2);
+    const wrapped = [...container.querySelectorAll("em")].map((e) => e.textContent);
+    expect(wrapped.filter((n) => n === "OIDC Playground").length).toBeGreaterThanOrEqual(2);
 
     // Allow and Cancel are present, and the headline interpolated the user.
-    expect(screen.getAllByRole('button').length).toBeGreaterThanOrEqual(2);
-    expect(text).toContain('User One');
+    expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(2);
+    expect(text).toContain("User One");
   });
 }

@@ -30,7 +30,9 @@
     "serve": "vite preview",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "biome lint --error-on-warnings .",
+    "lint": "biome check --error-on-warnings .",
+    "format": "biome check --write .",
+    "audit": "bun audit --audit-level=high",
     "licenses": "bun ../scripts/js-license-ranger.cjs"
   },
   "devDependencies": {

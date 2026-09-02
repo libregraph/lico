@@ -1,6 +1,6 @@
-import type React from 'react';
+import type React from "react";
 
-import type { ClientDetails } from '../models/api';
+import type { ClientDetails } from "../models/api";
 
 export interface ClientDisplayNameProps extends React.HTMLAttributes<HTMLSpanElement> {
   client: ClientDetails;

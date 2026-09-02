@@ -1,7 +1,4 @@
-import {
-  ExtendedError,
-  ERROR_HTTP_NETWORK_ERROR
-} from '../errors';
+import { ERROR_HTTP_NETWORK_ERROR, ExtendedError } from "../errors";
 
 export interface PostJSONOptions {
   /* Aborts the request when the caller no longer wants the answer. */
@@ -36,23 +33,19 @@ export interface PostJSONResult {
  * to the user. Parsing never yields null, which keeps a state lookup on the
  * result safe.
  */
-export async function postJSON(
-  path: string,
-  body: unknown,
-  { signal }: PostJSONOptions = {}
-): Promise<PostJSONResult> {
+export async function postJSON(path: string, body: unknown, { signal }: PostJSONOptions = {}): Promise<PostJSONResult> {
   let response: Response;
 
   try {
     response = await fetch(path, {
-      method: 'POST',
-      credentials: 'same-origin',
+      method: "POST",
+      credentials: "same-origin",
       headers: {
-        'Content-Type': 'application/json',
-        'Kopano-Konnect-XSRF': '1'
+        "Content-Type": "application/json",
+        "Kopano-Konnect-XSRF": "1",
       },
       body: JSON.stringify(body),
-      signal
+      signal,
     });
   } catch (error) {
     if (isAbortError(error)) {
@@ -73,7 +66,7 @@ export async function postJSON(
   return {
     status: response.status,
     headers: response.headers,
-    data
+    data,
   };
 }
 
@@ -83,10 +76,5 @@ export async function postJSON(
  * for it: they dispatch nothing and leave the state as it was.
  */
 export function isAbortError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'name' in error &&
-    error.name === 'AbortError'
-  );
+  return typeof error === "object" && error !== null && "name" in error && error.name === "AbortError";
 }

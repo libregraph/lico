@@ -1,6 +1,6 @@
-import { afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import '@testing-library/jest-dom/vitest';
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 /*
  * jsdom implements no media queries at all. Material-UI v4's withWidth, which
@@ -36,11 +36,11 @@ window.matchMedia = (query) => ({
   matches: matchesQuery(String(query), TEST_VIEWPORT_WIDTH),
   media: String(query),
   onchange: null,
-  addListener: () => {},        // Deprecated, still used by Material-UI v4.
+  addListener: () => {}, // Deprecated, still used by Material-UI v4.
   removeListener: () => {},
   addEventListener: () => {},
   removeEventListener: () => {},
-  dispatchEvent: () => false
+  dispatchEvent: () => false,
 });
 
 window.innerWidth = TEST_VIEWPORT_WIDTH;

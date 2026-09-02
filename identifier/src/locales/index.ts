@@ -1,9 +1,9 @@
-import allLocales from './locales.json';
+import allLocales from "./locales.json";
 
 interface Locale {
-  locale: string,
-  name: string,
-  nativeName: string,
+  locale: string;
+  name: string;
+  nativeName: string;
 }
 
 // Every locale listed here is offered, whether or not it is fully translated.
