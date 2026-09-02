@@ -56,10 +56,23 @@ const chunkName = (name: string): string =>
 export default defineConfig((env: ConfigEnv): ViteUserConfig => {
   return {
     resolve: {
-      // react-router and hoist-non-react-statics each resolve a react-is of
-      // their own, which puts three copies of it in the bundle. react-is tracks
-      // the React major, so the one copy to keep is the one matching React.
-      dedupe: ["react-is"],
+      /*
+       * Six packages here reach for a react-is of their own, across three major
+       * versions, and this collapses them to the one at the root. Which one that
+       * is matters more than the count: react-is decides what an element is by
+       * the symbol React stamps on it, and that symbol changed name in React 19,
+       * so a react-is from the wrong major answers no to every element this app
+       * creates. prop-types hands its element check straight to react-is, which
+       * is enough to make every `children` prop in the tree look invalid. The
+       * version is pinned to React's own major by `resolutions` in package.json
+       * and has to move when React does.
+       *
+       * clsx arrives three times over as well, nested under @mui/material,
+       * @mui/system and @mui/utils. Nothing disagrees about the version there —
+       * all three ask for the same range and every install is the same release —
+       * so the copies are an install layout, and one of them will do.
+       */
+      dedupe: ["react-is", "clsx"],
     },
     build: {
       outDir: "build",
