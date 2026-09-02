@@ -4,15 +4,17 @@
  */
 
 import type React from "react";
+import { useEffect, useRef } from "react";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import { Provider } from "react-redux";
-import { MemoryRouter, Router } from "react-router-dom";
+import type { Location, NavigateFunction, NavigationType } from "react-router";
+import { MemoryRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from "react-router";
 
 import { type RenderOptions, type RenderResult, render } from "@testing-library/react";
-import { createMemoryHistory, type MemoryHistory } from "history";
 import i18n from "i18next";
 import type { Mock } from "vitest";
 
+import type { FlowNavigation } from "./hooks/navigation";
 import type { CommonState } from "./reducers/common";
 import type { LoginState } from "./reducers/login";
 import type { AppStore, RootState } from "./store";
@@ -131,18 +133,113 @@ export function setTestLanguages(languages: string[]): () => void {
   };
 }
 
+/*
+ * What the tests assert about navigation. There is no history object to inspect
+ * in react-router 8, so the router itself is asked: every location it settles
+ * on is recorded together with the navigation type that produced it.
+ *
+ * entries reconstructs the stack from those types, which is what makes "this
+ * redirect replaced rather than pushed" assertable: a push grows the stack, a
+ * replace substitutes its last entry. Back and forward are not modelled,
+ * because nothing here drives them.
+ */
+export interface TestNavigation {
+  location: Location;
+  action: `${NavigationType}`;
+  entries: Location[];
+  navigate: NavigateFunction;
+}
+
+/*
+ * The route the harness starts on when a test wants the subject to be reached
+ * by an in-app navigation. It is never recorded, and no route matches it, so it
+ * cannot be mistaken for something the subject did.
+ */
+const ARRIVAL_ROUTE = "/__test-arrival";
+
+class NavigationRecorder implements TestNavigation {
+  entries: Location[] = [];
+  navigate: NavigateFunction = () => {
+    throw new Error("the router has not mounted yet");
+  };
+
+  // Set when the harness has to navigate to reach the subject: recording waits
+  // for that arrival, so the scaffolding stays out of the stack.
+  constructor(private readonly awaiting?: string) {}
+
+  get location(): Location {
+    const last = this.entries[this.entries.length - 1];
+    if (!last) {
+      throw new Error("no location was recorded");
+    }
+    return last;
+  }
+
+  action: `${NavigationType}` = "POP";
+
+  record(location: Location, action: `${NavigationType}`): void {
+    if (this.entries.length === 0 && this.awaiting && location.pathname !== this.awaiting) {
+      return;
+    }
+    if (this.entries.length > 0 && location.key === this.location.key) {
+      return;
+    }
+
+    this.action = action;
+    if (this.entries.length === 0 || action !== "PUSH") {
+      this.entries.splice(Math.max(this.entries.length - 1, 0), 1, location);
+      return;
+    }
+    this.entries.push(location);
+  }
+}
+
+const Recorder = ({ into }: { into: NavigationRecorder }) => {
+  const location = useLocation();
+  const action = useNavigationType();
+  const navigate = useNavigate();
+
+  into.navigate = navigate;
+
+  useEffect(() => {
+    into.record(location, action);
+  }, [into, location, action]);
+
+  return null;
+};
+
+/* Navigates once, so the subject mounts as the target of a real navigation. */
+const Arrival = ({ to, replace }: { to: string; replace: boolean }) => {
+  const navigate = useNavigate();
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (done.current) {
+      return;
+    }
+    done.current = true;
+    navigate(to, { replace });
+  }, [navigate, to, replace]);
+
+  return null;
+};
+
 export interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper"> {
   store?: TestStore;
   preloaded?: PreloadedState;
-  /* Initial URL for the router. Ignored when history is given. */
+  /* Initial URL for the router. */
   route?: string;
-  /* Supply a history to assert on navigation, or to control history.action. */
-  history?: MemoryHistory;
+  /*
+   * Reach `route` by navigating rather than by loading it. The screens which
+   * decide on mount whether they were reached from inside the app read exactly
+   * this difference; a fresh load reports POP, which is the default here.
+   */
+  arriveBy?: "PUSH" | "REPLACE";
 }
 
 export interface RenderWithProvidersResult extends RenderResult {
   store: TestStore;
-  history?: MemoryHistory;
+  nav: TestNavigation;
 }
 
 /*
@@ -153,39 +250,117 @@ export function renderWithProviders(
   ui: React.ReactElement,
   options: RenderWithProvidersOptions = {},
 ): RenderWithProvidersResult {
-  const { store: givenStore, preloaded, route = "/", history, ...rest } = options;
+  const { store: givenStore, preloaded, route = "/", arriveBy, ...rest } = options;
   const store = givenStore ?? makeStore(preloaded);
   const instance = getTestI18n();
+  const nav = new NavigationRecorder(arriveBy ? new URL(route, "http://test").pathname : undefined);
 
-  const wrapper = ({ children }: { children?: React.ReactNode }) => {
-    const routed = history ? (
-      <Router history={history}>{children}</Router>
-    ) : (
-      <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-    );
+  const wrapper = ({ children }: { children?: React.ReactNode }) => (
+    <Provider store={store}>
+      <I18nextProvider i18n={instance}>
+        <MemoryRouter initialEntries={[arriveBy ? ARRIVAL_ROUTE : route]}>
+          <Recorder into={nav} />
+          {arriveBy ? (
+            <Routes>
+              <Route path={ARRIVAL_ROUTE} element={<Arrival to={route} replace={arriveBy === "REPLACE"} />} />
+              <Route path="*" element={children} />
+            </Routes>
+          ) : (
+            children
+          )}
+        </MemoryRouter>
+      </I18nextProvider>
+    </Provider>
+  );
 
-    return (
-      <Provider store={store}>
-        <I18nextProvider i18n={instance}>{routed}</I18nextProvider>
-      </Provider>
-    );
-  };
-
-  return { ...render(ui, { wrapper, ...rest }), store, history };
+  return { ...render(ui, { wrapper, ...rest }), store, nav };
 }
 
 /*
- * newTestHistory returns a memory history. Pass action 'REPLACE' or 'POP' to
- * exercise the code paths which branch on how the user arrived.
+ * For a subject which mounts a router of its own. react-router 8 refuses to
+ * nest one router inside another, so the harness has to stay out of the way and
+ * the subject decides what the location means.
  */
-export function newTestHistory(url = "/", action?: "PUSH" | "REPLACE" | "POP"): MemoryHistory {
-  const h = createMemoryHistory({ initialEntries: [url] });
-  if (action) {
-    // history sets action from the last operation; force it for the guards
-    // which distinguish a client side navigation from a fresh page load.
-    Object.defineProperty(h, "action", { value: action, configurable: true, writable: true });
-  }
-  return h;
+export function renderWithoutRouter(
+  ui: React.ReactElement,
+  options: Omit<RenderWithProvidersOptions, "route" | "arriveBy"> = {},
+): RenderResult & { store: TestStore } {
+  const { store: givenStore, preloaded, ...rest } = options;
+  const store = givenStore ?? makeStore(preloaded);
+  const instance = getTestI18n();
+
+  const wrapper = ({ children }: { children?: React.ReactNode }) => (
+    <Provider store={store}>
+      <I18nextProvider i18n={instance}>{children}</I18nextProvider>
+    </Provider>
+  );
+
+  return { ...render(ui, { wrapper, ...rest }), store };
+}
+
+export interface TestArrival {
+  route: string;
+  arriveBy?: "PUSH" | "REPLACE";
+}
+
+/*
+ * How the subject was reached, spread into renderWithProviders. A fresh page
+ * load is the default because that is what the router reports for one, and it
+ * is the case the mount-time guards are there to catch.
+ */
+export function arriveAt(url = "/", action: `${NavigationType}` = "POP"): TestArrival {
+  return action === "POP" ? { route: url } : { route: url, arriveBy: action };
+}
+
+export interface TestFlowNavigation extends FlowNavigation {
+  /* The stack, so a replace can be told from a push. */
+  entries: Location[];
+}
+
+/*
+ * A navigation for the thunks, which are handed one instead of calling the
+ * router's hooks themselves. It records where it was sent the way the router
+ * would: a push grows the stack, a replace substitutes its last entry.
+ *
+ * navigationType is an input rather than an observation here - it is how the
+ * caller says whether the screen dispatching this was loaded or navigated to,
+ * which is the difference advanceLogonFlow branches on.
+ */
+export function newTestNavigation(url = "/", navigationType: `${NavigationType}` = "POP"): TestFlowNavigation {
+  const at = (to: string): Location => {
+    const parsed = new URL(to, "http://test");
+    return {
+      pathname: parsed.pathname,
+      search: parsed.search,
+      hash: parsed.hash,
+      state: null,
+      key: `${Math.random()}`,
+    };
+  };
+
+  const nav: TestFlowNavigation = {
+    entries: [at(url)],
+    navigationType,
+    get location() {
+      return nav.entries[nav.entries.length - 1];
+    },
+    navigate: ((to: unknown, options?: { replace?: boolean }) => {
+      if (typeof to !== "string") {
+        throw new Error(`the application only navigates to strings, got ${JSON.stringify(to)}`);
+      }
+
+      if (options?.replace) {
+        nav.entries[nav.entries.length - 1] = at(to);
+        nav.navigationType = "REPLACE";
+        return;
+      }
+
+      nav.entries.push(at(to));
+      nav.navigationType = "PUSH";
+    }) as NavigateFunction,
+  };
+
+  return nav;
 }
 
 /*

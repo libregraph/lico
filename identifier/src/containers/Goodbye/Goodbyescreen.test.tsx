@@ -1,17 +1,17 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { MemoryHistory } from "history";
 
 import {
+  arriveAt,
   fetchMock,
   type HelloResponse,
   jsonReply,
-  newTestHistory,
   postedBody,
   postedInit,
   postedUrl,
   renderWithProviders,
   stubFetch,
+  type TestArrival,
 } from "../../test-utils";
 import Goodbyescreen from "./Goodbyescreen";
 
@@ -70,8 +70,8 @@ function signOutSucceeds(): void {
   });
 }
 
-function renderGoodbye(history: MemoryHistory = newTestHistory("/goodbye", "POP")) {
-  return renderWithProviders(<Subject history={history} />, { history });
+function renderGoodbye(arrival: TestArrival = arriveAt("/goodbye", "POP")) {
+  return renderWithProviders(<Subject />, { ...arrival });
 }
 
 function urlsPosted(): string[] {
@@ -125,9 +125,8 @@ describe("Goodbyescreen", () => {
   it("trusts the server over a session it was preloaded with", async () => {
     // The mount time hello resets the stored session first, so a stale signed
     // in state cannot keep the confirmation screen on display.
-    const history = newTestHistory("/goodbye", "POP");
-    renderWithProviders(<Subject history={history} />, {
-      history,
+    renderWithProviders(<Subject />, {
+      ...arriveAt("/goodbye"),
       preloaded: {
         common: {
           hello: {
@@ -145,25 +144,22 @@ describe("Goodbyescreen", () => {
   });
 
   it("does not redirect when arriving by client side navigation", async () => {
-    const history = newTestHistory("/goodbye?flow=oidc#frag", "PUSH");
-
-    renderGoodbye(history);
+    const { nav } = renderGoodbye(arriveAt("/goodbye?flow=oidc#frag", "PUSH"));
 
     await screen.findByText("Goodbye");
-    expect(history.location.pathname).toBe("/goodbye");
-    expect(history.length).toBe(1);
+    expect(nav.location.pathname).toBe("/goodbye");
+    expect(nav.entries.length).toBe(1);
   });
 
   it("does not redirect when arriving by a fresh page load", async () => {
     // This screen has no mount time guard of its own, unlike the login
     // containers; it only refreshes the session.
-    const history = newTestHistory("/goodbye?flow=oidc#frag", "POP");
 
-    renderGoodbye(history);
+    const { nav } = renderGoodbye(arriveAt("/goodbye?flow=oidc#frag", "POP"));
 
     await screen.findByText("Goodbye");
-    expect(history.location.pathname).toBe("/goodbye");
-    expect(history.length).toBe(1);
+    expect(nav.location.pathname).toBe("/goodbye");
+    expect(nav.entries.length).toBe(1);
   });
 
   it("posts to the logoff endpoint with the XSRF header when the sign out is confirmed", async () => {
@@ -180,15 +176,14 @@ describe("Goodbyescreen", () => {
 
   it("re-reads the session and lands on the goodbye page after signing out", async () => {
     signOutSucceeds();
-    const history = newTestHistory("/goodbye", "PUSH");
-    renderGoodbye(history);
+    const { nav } = renderGoodbye(arriveAt("/goodbye", "PUSH"));
 
     await userEvent.click(await screen.findByRole("button", { name: "Sign out" }));
 
     expect(await screen.findByText("Goodbye")).toBeInTheDocument();
     expect(urlsPosted().filter((url) => url === HELLO_URL)).toHaveLength(2);
-    expect(history.location.pathname).toBe("/goodbye");
-    expect(history.length).toBe(2);
+    expect(nav.location.pathname).toBe("/goodbye");
+    expect(nav.entries.length).toBe(2);
   });
 
   it("recovers the confirmation when the server refuses the sign out", async () => {
@@ -199,15 +194,14 @@ describe("Goodbyescreen", () => {
       [HELLO_URL]: () => ({ ...signedIn }),
       [LOGOFF_URL]: () => ({ success: false }),
     });
-    const history = newTestHistory("/goodbye", "PUSH");
-    renderGoodbye(history);
+    const { nav } = renderGoodbye(arriveAt("/goodbye", "PUSH"));
 
     await userEvent.click(await screen.findByRole("button", { name: "Sign out" }));
 
     await waitFor(() => expect(urlsPosted()).toContain(LOGOFF_URL));
 
     expect(await screen.findByRole("button", { name: "Sign out" })).toBeInTheDocument();
-    expect(history.length).toBe(1);
+    expect(nav.entries.length).toBe(1);
     expect(urlsPosted().filter((url) => url === HELLO_URL)).toHaveLength(2);
   });
 });

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { History } from "history";
 // The ESM build, imported by module path. The package root is a CommonJS barrel
 // whose default export is one object literal holding every validator, so nothing
 // can be shaken out of it and the whole library ships: 122 KB to answer one
@@ -25,6 +24,7 @@ import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import { ErrorMessage } from "../../errors";
+import { useFlowNavigation } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectBranding, selectHello, selectQuery } from "../../reducers/common";
 import { selectErrors, selectLoading, selectPassword, selectUsername, updateInput } from "../../reducers/login";
@@ -89,15 +89,9 @@ const wrapperSx = {
   display: "inline-block",
 } as const;
 
-export interface LoginProps {
-  // Supplied by the Route which renders this screen.
-  history: History;
-}
-
-function Login(props: LoginProps) {
-  const { history } = props;
-
+function Login() {
   const dispatch = useAppDispatch();
+  const nav = useFlowNavigation();
 
   const hello = useAppSelector(selectHello);
   const branding = useAppSelector(selectBranding);
@@ -115,16 +109,16 @@ function Login(props: LoginProps) {
   // This effect decides once, on mount, whether an already signed-in visitor
   // should be redirected onwards and whether login_hint should prefill the
   // username. Naming its dependencies would re-run both on every change to the
-  // query, the history or the store, which would fight the user as they type.
+  // query, the location or the store, which would fight the user as they type.
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if (hello?.state && history.action !== "PUSH") {
+    if (hello?.state && nav.navigationType !== "PUSH") {
       if (!query.prompt || query.prompt.indexOf("select_account") === -1) {
-        dispatch(advanceLogonFlow(true, history));
+        dispatch(advanceLogonFlow(true, nav));
         return;
       }
 
-      history.replace(withSearchAndHash("/chooseaccount", history.location));
+      nav.navigate(withSearchAndHash("/chooseaccount", nav.location), { replace: true });
       return;
     }
 
@@ -153,7 +147,7 @@ function Login(props: LoginProps) {
 
     dispatch(executeLogonIfFormValid(withAsciiDomain(username), password, false)).then((response) => {
       if (response.success) {
-        dispatch(advanceLogonFlow(response.success, history));
+        dispatch(advanceLogonFlow(response.success, nav));
       }
     });
   };

@@ -2,12 +2,12 @@ import { screen } from "@testing-library/react";
 
 import Consent from "../containers/Login/Consent";
 import {
+  arriveAt,
   type ClientDetails,
   fetchMock,
   getTestI18n,
   type HelloResponse,
   jsonReply,
-  newTestHistory,
   renderWithProviders,
   type ScopesMeta,
   stubFetch,
@@ -84,9 +84,8 @@ for (const lng of Object.keys(locales)) {
     i18n.addResourceBundle(lng, "translation", locales[lng], true, true);
     await i18n.changeLanguage(lng);
 
-    const history = newTestHistory("/consent");
-    const { container } = renderWithProviders(<Consent history={history} />, {
-      history,
+    const { container } = renderWithProviders(<Consent />, {
+      ...arriveAt("/consent"),
       preloaded: {
         common: {
           hello: {

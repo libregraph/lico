@@ -1,18 +1,18 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { MemoryHistory } from "history";
 
 import { requestLogon } from "../../reducers/login";
 import {
+  arriveAt,
   type Branding,
   fetchMock,
-  newTestHistory,
   postedBody,
   postedInit,
   postedUrl,
   renderWithProviders,
   replyEchoingState,
   stubFetch,
+  type TestArrival,
 } from "../../test-utils";
 import Login from "./Login";
 
@@ -40,19 +40,14 @@ const fieldOf = (label: string): HTMLInputElement => {
 
 const Subject = Login;
 
-const renderLogin = (branding?: Branding, loading = "") => {
-  // Login is rendered by a Route in the application, so it reads history from
-  // its props. Rendered directly it has to be handed one.
-  const history = newTestHistory("/identifier");
-
-  return renderWithProviders(<Subject history={history} />, {
-    history,
+const renderLogin = (branding?: Branding, loading = "") =>
+  renderWithProviders(<Subject />, {
+    ...arriveAt("/identifier"),
     preloaded: {
       common: { hello: null, branding: branding ?? null, query: {} },
       login: { loading },
     },
   });
-};
 
 // No request may escape the test. The stub echoes the client generated state
 // nonce, because the action rejects a response whose state differs.
@@ -194,10 +189,8 @@ describe("Login", () => {
      * valid identity. These pin that judgement, which was previously unpinned.
      */
     const renderWithHint = (hint?: string) => {
-      const history = newTestHistory("/identifier");
-
-      return renderWithProviders(<Subject history={history} />, {
-        history,
+      return renderWithProviders(<Subject />, {
+        ...arriveAt("/identifier"),
         preloaded: {
           common: {
             hello: null,
@@ -286,9 +279,9 @@ describe("Login", () => {
      * advanced onwards, and the parameters of the flow live in the URL, so the
      * query and the fragment have to survive that redirect.
      */
-    const renderSignedIn = (history: MemoryHistory, prompt?: string) =>
-      renderWithProviders(<Subject history={history} />, {
-        history,
+    const renderSignedIn = (arrival: TestArrival, prompt?: string) =>
+      renderWithProviders(<Subject />, {
+        ...arrival,
         preloaded: {
           common: {
             hello: { state: true, username: "u", displayName: "D", details: {} },
@@ -300,25 +293,21 @@ describe("Login", () => {
       });
 
     it("sends the visitor to the account chooser when the request asks to select an account", () => {
-      const history = newTestHistory("/identifier?flow=oidc&client_id=abc#frag", "POP");
+      const { nav } = renderSignedIn(arriveAt("/identifier?flow=oidc&client_id=abc#frag"), "select_account");
 
-      renderSignedIn(history, "select_account");
-
-      expect(history.location.pathname).toBe("/chooseaccount");
-      expect(history.location.search).toBe("?flow=oidc&client_id=abc");
-      expect(history.location.hash).toBe("#frag");
+      expect(nav.location.pathname).toBe("/chooseaccount");
+      expect(nav.location.search).toBe("?flow=oidc&client_id=abc");
+      expect(nav.location.hash).toBe("#frag");
       // It replaces rather than pushes, so going back cannot return here.
-      expect(history.length).toBe(1);
+      expect(nav.entries.length).toBe(1);
     });
 
     it("leaves the form alone when the visitor navigated here themselves", () => {
       // A PUSH is a deliberate in-app navigation onto the form, so an existing
       // session must not bounce the visitor straight back out of it.
-      const history = newTestHistory("/identifier?flow=oidc#frag", "PUSH");
+      const { nav } = renderSignedIn(arriveAt("/identifier?flow=oidc#frag", "PUSH"), "select_account");
 
-      renderSignedIn(history, "select_account");
-
-      expect(history.location.pathname).toBe("/identifier");
+      expect(nav.location.pathname).toBe("/identifier");
     });
   });
 

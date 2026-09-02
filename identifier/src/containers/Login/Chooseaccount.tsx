@@ -1,8 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { History } from "history";
-
 import Avatar from "@mui/material/Avatar";
 import DialogContent from "@mui/material/DialogContent";
 import List from "@mui/material/List";
@@ -14,33 +12,28 @@ import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import { ErrorMessage } from "../../errors";
+import { useFlowNavigation } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectHello } from "../../reducers/common";
 import { selectErrors, selectLoading } from "../../reducers/login";
 import { withSearchAndHash } from "../../utils";
 
-export interface ChooseaccountProps {
-  // Supplied by the Route which renders this screen.
-  history: History;
-}
-
-function Chooseaccount(props: ChooseaccountProps) {
-  const { history } = props;
-
+function Chooseaccount() {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
+  const nav = useFlowNavigation();
   const hello = useAppSelector(selectHello);
   const loading = useAppSelector(selectLoading);
   const errors = useAppSelector(selectErrors);
 
   // This guard sends a visitor without a session back to the sign-in form, once,
-  // on mount. Naming hello or history as dependencies would re-run it whenever
+  // on mount. Naming hello or the location as dependencies would re-run it whenever
   // the session changes and could redirect the visitor mid-flow.
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if (!hello?.state && history.action !== "PUSH") {
-      history.replace(withSearchAndHash("/identifier", history.location));
+    if (!hello?.state && nav.navigationType !== "PUSH") {
+      nav.navigate(withSearchAndHash("/identifier", nav.location), { replace: true });
     }
   }, []);
 
@@ -54,7 +47,7 @@ function Chooseaccount(props: ChooseaccountProps) {
     // rather than this throwing if that ever stops holding.
     dispatch(executeLogonIfFormValid(hello?.username ?? "", "", true)).then((response) => {
       if (response.success) {
-        dispatch(advanceLogonFlow(response.success, history));
+        dispatch(advanceLogonFlow(response.success, nav));
       }
     });
   };
@@ -62,7 +55,7 @@ function Chooseaccount(props: ChooseaccountProps) {
   const handleLogoff = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
-    history.push(withSearchAndHash("/identifier", history.location));
+    nav.navigate(withSearchAndHash("/identifier", nav.location));
   };
 
   let errorMessage = null;

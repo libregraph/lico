@@ -2,15 +2,16 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import {
+  arriveAt,
   fetchMock,
   type HelloResponse,
-  newTestHistory,
   postedBody,
   postedInit,
   postedUrl,
   renderWithProviders,
   replyEchoingState,
   stubFetch,
+  type TestArrival,
 } from "../../test-utils";
 import Welcomescreen from "./Welcomescreen";
 
@@ -32,9 +33,9 @@ const session = {
   details: helloResponse,
 };
 
-function renderWelcome(history = newTestHistory("/welcome", "POP")) {
-  return renderWithProviders(<Subject history={history} />, {
-    history,
+function renderWelcome(arrival: TestArrival = arriveAt("/welcome")) {
+  return renderWithProviders(<Subject />, {
+    ...arrival,
     preloaded: { common: { hello: session } },
   });
 }
@@ -61,7 +62,8 @@ describe("Welcomescreen", () => {
   it("shows the loading state instead of failing when the session is gone", () => {
     // Signing out clears the session before the request completes, so this
     // screen re-renders without one and must not read from it.
-    renderWithProviders(<Subject history={newTestHistory("/welcome", "POP")} />, {
+    renderWithProviders(<Subject />, {
+      ...arriveAt("/welcome"),
       preloaded: { common: { hello: null } },
     });
 
@@ -77,23 +79,20 @@ describe("Welcomescreen", () => {
   });
 
   it("does not redirect when arriving by client side navigation", () => {
-    const history = newTestHistory("/welcome?flow=oidc#frag", "PUSH");
+    const { nav } = renderWelcome(arriveAt("/welcome?flow=oidc#frag", "PUSH"));
 
-    renderWelcome(history);
-
-    expect(history.location.pathname).toBe("/welcome");
-    expect(history.length).toBe(1);
+    expect(nav.location.pathname).toBe("/welcome");
+    expect(nav.entries.length).toBe(1);
   });
 
   it("does not redirect when arriving by a fresh page load", () => {
     // This screen has no mount time guard of its own, unlike the login
     // containers. Access is gated by the PrivateRoute which renders it.
-    const history = newTestHistory("/welcome?flow=oidc#frag", "POP");
 
-    renderWelcome(history);
+    const { nav } = renderWelcome(arriveAt("/welcome?flow=oidc#frag", "POP"));
 
-    expect(history.location.pathname).toBe("/welcome");
-    expect(history.length).toBe(1);
+    expect(nav.location.pathname).toBe("/welcome");
+    expect(nav.entries.length).toBe(1);
   });
 
   it("posts to the logoff endpoint with the XSRF header when signing out", async () => {
@@ -113,22 +112,20 @@ describe("Welcomescreen", () => {
 
   it("sends the user back to the identifier page after a successful sign out", async () => {
     replyWith({ success: true });
-    const history = newTestHistory("/welcome", "PUSH");
-    renderWelcome(history);
+    const { nav } = renderWelcome(arriveAt("/welcome", "PUSH"));
 
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
-    await waitFor(() => expect(history.location.pathname).toBe("/identifier"));
+    await waitFor(() => expect(nav.location.pathname).toBe("/identifier"));
   });
 
   it("stays on the welcome page when the server refuses the sign out", async () => {
     replyWith({ success: false });
-    const history = newTestHistory("/welcome", "PUSH");
-    renderWelcome(history);
+    const { nav } = renderWelcome(arriveAt("/welcome", "PUSH"));
 
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
     await waitFor(() => expect(fetchMock()).toHaveBeenCalledTimes(1));
-    expect(history.location.pathname).toBe("/welcome");
+    expect(nav.location.pathname).toBe("/welcome");
   });
 });
