@@ -34,14 +34,12 @@ import (
 	"github.com/libregraph/lico/utils"
 )
 
-func (i *Identifier) staticHandler(handler http.Handler, cache bool) http.Handler {
+// staticHandler serves the built web app assets. Everything it reaches carries
+// a content hash in its name, so it can be cached indefinitely.
+func (i *Identifier) staticHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		addCommonResponseHeaders(rw.Header())
-		if cache {
-			rw.Header().Set("Cache-Control", "max-age=3153600, public")
-		} else {
-			rw.Header().Set("Cache-Control", "no-cache, max-age=0, public")
-		}
+		rw.Header().Set("Cache-Control", "max-age=3153600, public")
 		if strings.HasSuffix(req.URL.Path, "/") {
 			// Do not serve folder-ish resources.
 			i.ErrorPage(rw, http.StatusNotFound, "", "")
