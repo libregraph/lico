@@ -124,7 +124,6 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
     build: {
       outDir: "build",
       assetsDir,
-      manifest: "asset-manifest.json",
       sourcemap: true,
       // terser is smaller than the default minifier here, and it is already a
       // dependency because plugin-legacy minifies the legacy chunks with it.

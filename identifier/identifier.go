@@ -185,14 +185,12 @@ func (i *Identifier) RegisterManagers(mgrs *managers.Managers) error {
 func (i *Identifier) AddRoutes(ctx context.Context, router *mux.Router) {
 	r := router.PathPrefix(i.pathPrefix).Subrouter()
 
-	r.PathPrefix("/static/").Handler(i.staticHandler(http.StripPrefix(i.pathPrefix, http.FileServer(http.Dir(i.staticFolder))), true))
-	r.Handle("/service-worker.js", i.staticHandler(http.StripPrefix(i.pathPrefix, http.FileServer(http.Dir(i.staticFolder))), false))
+	r.PathPrefix("/static/").Handler(i.staticHandler(http.StripPrefix(i.pathPrefix, http.FileServer(http.Dir(i.staticFolder)))))
 	r.Handle("/identifier", http.HandlerFunc(i.handleIdentifier)).Methods(http.MethodGet).Name("index")
 	r.Handle("/chooseaccount", i).Methods(http.MethodGet).Name("chooseaccount")
 	r.Handle("/consent", i).Methods(http.MethodGet).Name("consent")
 	r.Handle("/welcome", i).Methods(http.MethodGet).Name("welcome")
 	r.Handle("/goodbye", i).Methods(http.MethodGet).Name("goodbye")
-	r.Handle("/index.html", i).Methods(http.MethodGet) // For service worker.
 	r.Handle("/identifier/_/logon", i.secureHandler(http.HandlerFunc(i.handleLogon))).Methods(http.MethodPost)
 	r.Handle("/identifier/_/logoff", i.secureHandler(http.HandlerFunc(i.handleLogoff))).Methods(http.MethodPost)
 	r.Handle("/identifier/_/hello", i.secureHandler(http.HandlerFunc(i.handleHello))).Methods(http.MethodPost)
