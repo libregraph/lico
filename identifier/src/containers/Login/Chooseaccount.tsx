@@ -15,6 +15,8 @@ import Typography from "@mui/material/Typography";
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import { ErrorMessage } from "../../errors";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { selectHello } from "../../reducers/common";
+import { selectErrors, selectLoading } from "../../reducers/login";
 import { withSearchAndHash } from "../../utils";
 
 export interface ChooseaccountProps {
@@ -28,9 +30,9 @@ function Chooseaccount(props: ChooseaccountProps) {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
-  const hello = useAppSelector((state) => state.common.hello);
-  const loading = useAppSelector((state) => state.login.loading);
-  const errors = useAppSelector((state) => state.login.errors);
+  const hello = useAppSelector(selectHello);
+  const loading = useAppSelector(selectLoading);
+  const errors = useAppSelector(selectErrors);
 
   // This guard sends a visitor without a session back to the sign-in form, once,
   // on mount. Naming hello or history as dependencies would re-run it whenever

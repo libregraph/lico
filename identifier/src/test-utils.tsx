@@ -11,16 +11,12 @@ import { MemoryRouter, Router } from "react-router-dom";
 import { type RenderOptions, type RenderResult, render } from "@testing-library/react";
 import { createMemoryHistory, type MemoryHistory } from "history";
 import i18n from "i18next";
-import { applyMiddleware, createStore, type Store } from "redux";
-import thunkMiddleware from "redux-thunk";
 import type { Mock } from "vitest";
 
-import type { AppAction } from "./actions/types";
-import type { RootState } from "./reducers";
-import rootReducer from "./reducers";
 import type { CommonState } from "./reducers/common";
 import type { LoginState } from "./reducers/login";
-import type { AppDispatch } from "./store";
+import type { AppStore, RootState } from "./store";
+import { setupStore } from "./store";
 
 /*
  * The domain types live with the code that produces them. They are re-exported
@@ -29,6 +25,7 @@ import type { AppDispatch } from "./store";
 export type {
   Branding,
   ClientDetails,
+  FieldErrors,
   HelloResponse,
   LogonResponse,
   ScopeDefinition,
@@ -68,7 +65,7 @@ export interface PreloadedState {
  * The store a test drives. Dispatch has to accept the thunks the action
  * creators return, which is what the thunk middleware below contributes.
  */
-export type TestStore = Store<RootState, AppAction> & { dispatch: AppDispatch };
+export type TestStore = AppStore;
 
 /*
  * makeStore builds an isolated store. The application's own store is a module
@@ -80,7 +77,7 @@ export function makeStore(preloaded: PreloadedState = {}): TestStore {
     login: { ...defaultLoginState, ...preloaded.login },
   };
 
-  return createStore(rootReducer, preloadedState, applyMiddleware(thunkMiddleware));
+  return setupStore(preloadedState);
 }
 
 /*
@@ -135,7 +132,7 @@ export function setTestLanguages(languages: string[]): () => void {
 }
 
 export interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper"> {
-  store?: Store;
+  store?: TestStore;
   preloaded?: PreloadedState;
   /* Initial URL for the router. Ignored when history is given. */
   route?: string;
@@ -144,7 +141,7 @@ export interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper
 }
 
 export interface RenderWithProvidersResult extends RenderResult {
-  store: Store;
+  store: TestStore;
   history?: MemoryHistory;
 }
 

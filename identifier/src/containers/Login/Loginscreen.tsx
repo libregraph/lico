@@ -5,14 +5,15 @@ import { executeHello } from "../../actions/common";
 import RedirectWithQuery from "../../components/RedirectWithQuery";
 import ResponsiveScreen from "../../components/ResponsiveScreen";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { selectBranding, selectHello } from "../../reducers/common";
 import Chooseaccount from "./Chooseaccount";
 import Consent from "./Consent";
 import Login from "./Login";
 
 function Loginscreen() {
   const dispatch = useAppDispatch();
-  const branding = useAppSelector((state) => state.common.branding);
-  const hello = useAppSelector((state) => state.common.hello);
+  const branding = useAppSelector(selectBranding);
+  const hello = useAppSelector(selectHello);
 
   // dispatch is stable for the store's lifetime, so this runs once on mount.
   useEffect(() => {

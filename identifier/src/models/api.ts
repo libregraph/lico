@@ -4,6 +4,8 @@
  * and the actions reject a reply whose nonce differs, so state is never optional.
  */
 
+import type { TranslatableError } from "../errors";
+
 export interface Branding {
   bannerLogo?: string;
   bannerLogoHeight?: string;
@@ -77,9 +79,10 @@ export interface Session {
 /*
  * The errors carried in the login slice and rendered by ErrorMessage. The keys
  * are field names, plus http for a failure which belongs to the request rather
- * than to a field.
+ * than to a field. They are plain objects rather than Error instances, because
+ * everything the store keeps has to survive serialisation.
  */
-export type FieldErrors = Record<string, Error>;
+export type FieldErrors = Record<string, TranslatableError>;
 
 /*
  * A logon or consent attempt as the containers see it. Both the server reply

@@ -1,8 +1,10 @@
+import type { PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import queryString from "query-string";
 
-import type { AppAction } from "../actions/types";
-import { RECEIVE_ERROR, RECEIVE_HELLO, RESET_HELLO } from "../actions/types";
-import type { Branding, Session } from "../models/api";
+import type { TranslatableError } from "../errors";
+import type { Branding, HelloResponse, Session } from "../models/api";
+import type { RootState } from "../store";
 
 /*
  * query-string hands back an array when a parameter repeats. Every reader here
@@ -27,13 +29,13 @@ const defaultPathPrefix = (() => {
 export interface CommonState {
   hello: Session | null;
   branding: Branding | null;
-  error: Error | null;
+  error: TranslatableError | null;
   flow: string;
   query: Record<string, string>;
   pathPrefix: string;
 }
 
-const defaultState: CommonState = {
+const initialState: CommonState = {
   hello: null,
   branding: null,
   error: null,
@@ -42,33 +44,41 @@ const defaultState: CommonState = {
   pathPrefix: defaultPathPrefix,
 };
 
-function commonReducer(state: CommonState = defaultState, action: AppAction): CommonState {
-  switch (action.type) {
-    case RECEIVE_ERROR:
-      return Object.assign({}, state, {
-        error: action.error,
-      });
+export const commonSlice = createSlice({
+  name: "common",
+  initialState,
+  reducers: {
+    receiveError: (state, { payload }: PayloadAction<TranslatableError | null>) => {
+      state.error = payload;
+    },
 
-    case RESET_HELLO:
-      return Object.assign({}, state, {
-        hello: null,
-        branding: null,
-      });
+    resetHello: (state) => {
+      state.hello = null;
+      state.branding = null;
+    },
 
-    case RECEIVE_HELLO:
-      return Object.assign({}, state, {
-        hello: {
-          state: action.state,
-          username: action.username,
-          displayName: action.displayName,
-          details: action.hello,
-        },
-        branding: action.hello.branding ? action.hello.branding : state.branding,
-      });
+    receiveHello: (state, { payload }: PayloadAction<Partial<HelloResponse>>) => {
+      state.hello = {
+        state: payload.success === true,
+        username: payload.username,
+        displayName: payload.displayName,
+        details: payload,
+      };
 
-    default:
-      return state;
-  }
-}
+      // A reply carrying no branding leaves what was already there, so the
+      // screens do not lose their logo when a later request answers without it.
+      if (payload.branding) {
+        state.branding = payload.branding;
+      }
+    },
+  },
+});
 
-export default commonReducer;
+export const { receiveError, receiveHello, resetHello } = commonSlice.actions;
+
+export const selectHello = (state: RootState): CommonState["hello"] => state.common.hello;
+export const selectBranding = (state: RootState): CommonState["branding"] => state.common.branding;
+export const selectError = (state: RootState): CommonState["error"] => state.common.error;
+export const selectFlow = (state: RootState): CommonState["flow"] => state.common.flow;
+export const selectQuery = (state: RootState): CommonState["query"] => state.common.query;
+export const selectPathPrefix = (state: RootState): CommonState["pathPrefix"] => state.common.pathPrefix;

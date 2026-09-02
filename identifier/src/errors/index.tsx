@@ -21,23 +21,29 @@ export class ExtendedError extends Error {
 }
 
 /*
- * Narrows a caught value to an Error. Everything raised here and by the
- * transport is already one; anything else could only come from an unexpected
- * failure, and is wrapped rather than stored as-is so the slices that keep it
- * stay honest about what they hold.
- */
-export function asError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
-}
-
-/*
- * What ErrorMessage can be handed. The message is the translation key, and the
- * values are interpolated into it. A plain Error satisfies this, so an error
- * caught from anywhere can go straight in.
+ * What ErrorMessage can be handed, and what the slices keep. The message is the
+ * translation key and the values are interpolated into it.
  */
 export interface TranslatableError {
   message: string;
   values?: Record<string, unknown>;
+}
+
+/*
+ * Turns anything caught into the shape the slices store. An Error satisfies
+ * TranslatableError structurally, but storing the instance itself would put a
+ * non-serialisable value in the state, which the store's own checks reject and
+ * which time-travel debugging cannot carry. So the two fields that matter are
+ * copied out and the instance is left behind.
+ */
+export function asError(value: unknown): TranslatableError {
+  if (value instanceof ExtendedError) {
+    return { message: value.message, values: value.values };
+  }
+  if (value instanceof Error) {
+    return { message: value.message };
+  }
+  return { message: String(value) };
 }
 
 interface ErrorMessageProps {

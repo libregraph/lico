@@ -1,79 +1,94 @@
-import type { AppAction } from "../actions/types";
-import {
-  RECEIVE_CONSENT,
-  RECEIVE_LOGOFF,
-  RECEIVE_LOGON,
-  RECEIVE_VALIDATE_LOGON,
-  REQUEST_CONSENT_ALLOW,
-  REQUEST_CONSENT_CANCEL,
-  REQUEST_LOGON,
-  UPDATE_INPUT,
-} from "../actions/types";
-import type { FieldErrors } from "../models/api";
+import type { PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
+
+import type { AttemptResult, FieldErrors } from "../models/api";
+import type { RootState } from "../store";
 
 export interface LoginState {
-  // Empty when nothing is in flight, otherwise the action type which started
-  // it, so the button that was pressed is the one that shows progress.
+  /*
+   * Empty when nothing is in flight, otherwise the type of the action which
+   * started it, so the button that was pressed is the one that shows progress.
+   * Consumers compare against the creator's own `type`, which is why nothing
+   * here can drift out of step with what the reducer stores.
+   */
   loading: string;
   username: string;
   password: string;
   errors: FieldErrors;
 }
 
-const defaultState: LoginState = {
+const initialState: LoginState = {
   loading: "",
   username: "",
   password: "",
   errors: {},
 };
 
-function loginReducer(state: LoginState = defaultState, action: AppAction): LoginState {
-  switch (action.type) {
-    case RECEIVE_VALIDATE_LOGON:
-      return Object.assign({}, state, {
-        errors: action.errors,
-        loading: "",
-      });
+export const loginSlice = createSlice({
+  name: "login",
+  initialState,
+  reducers: {
+    receiveValidateLogon: (state, { payload }: PayloadAction<FieldErrors>) => {
+      state.errors = payload;
+      state.loading = "";
+    },
 
-    case REQUEST_CONSENT_ALLOW:
-    case REQUEST_CONSENT_CANCEL:
-    case REQUEST_LOGON:
-      return Object.assign({}, state, {
-        loading: action.type,
-        errors: {},
-      });
+    requestLogon: (state, action: PayloadAction<{ username: string; password: string }>) => {
+      state.loading = action.type;
+      state.errors = {};
+    },
 
-    case RECEIVE_CONSENT:
-    case RECEIVE_LOGON:
-      if (!action.success) {
-        return Object.assign({}, state, {
-          errors: action.errors ? action.errors : {},
-          loading: "",
-        });
+    requestConsentAllow: (state, action: PayloadAction<void>) => {
+      state.loading = action.type;
+      state.errors = {};
+    },
+
+    requestConsentCancel: (state, action: PayloadAction<void>) => {
+      state.loading = action.type;
+      state.errors = {};
+    },
+
+    // A successful attempt leaves the state alone: the flow navigates away, and
+    // clearing the fields here would blank the form behind that transition.
+    receiveLogon: (state, { payload }: PayloadAction<AttemptResult>) => {
+      if (!payload.success) {
+        state.errors = payload.errors ?? {};
+        state.loading = "";
       }
-      return state;
+    },
 
-    case RECEIVE_LOGOFF:
-      return Object.assign({}, state, {
-        username: "",
-        password: "",
-      });
+    receiveConsent: (state, { payload }: PayloadAction<AttemptResult>) => {
+      if (!payload.success) {
+        state.errors = payload.errors ?? {};
+        state.loading = "";
+      }
+    },
 
-    case UPDATE_INPUT: {
-      // Editing a field clears the error recorded for it. The previous state
-      // must not be touched, so copy the errors rather than deleting from them.
-      const errors = Object.assign({}, state.errors);
-      delete errors[action.name];
+    receiveLogoff: (state) => {
+      state.username = "";
+      state.password = "";
+    },
 
-      return Object.assign({}, state, {
-        errors,
-        [action.name]: action.value,
-      });
-    }
+    updateInput: (state, { payload }: PayloadAction<{ name: "username" | "password"; value: string }>) => {
+      // Editing a field clears the error recorded for it.
+      delete state.errors[payload.name];
+      state[payload.name] = payload.value;
+    },
+  },
+});
 
-    default:
-      return state;
-  }
-}
+export const {
+  receiveConsent,
+  receiveLogoff,
+  receiveLogon,
+  receiveValidateLogon,
+  requestConsentAllow,
+  requestConsentCancel,
+  requestLogon,
+  updateInput,
+} = loginSlice.actions;
 
-export default loginReducer;
+export const selectLoading = (state: RootState): LoginState["loading"] => state.login.loading;
+export const selectUsername = (state: RootState): LoginState["username"] => state.login.username;
+export const selectPassword = (state: RootState): LoginState["password"] => state.login.password;
+export const selectErrors = (state: RootState): LoginState["errors"] => state.login.errors;

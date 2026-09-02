@@ -12,18 +12,17 @@ import {
 } from "../errors";
 import type { AttemptResult, FieldErrors, HelloResponse } from "../models/api";
 import { newHelloRequest } from "../models/hello";
+import { receiveHello } from "../reducers/common";
+import {
+  receiveConsent,
+  receiveLogon,
+  receiveValidateLogon,
+  requestConsentAllow,
+  requestConsentCancel,
+  requestLogon,
+} from "../reducers/login";
 import type { AppThunk } from "../store";
 import { withClientRequestState, withSearchAndHash } from "../utils";
-import { receiveHello } from "./common";
-import type {
-  ReceiveConsentAction,
-  ReceiveLogonAction,
-  ReceiveValidateLogonAction,
-  RequestConsentAction,
-  RequestLogonAction,
-  UpdateInputAction,
-} from "./types";
-import * as types from "./types";
 import type { PostJSONOptions } from "./utils";
 import { isAbortError, postJSON } from "./utils";
 
@@ -33,55 +32,6 @@ export const ModeLogonUsernamePassword = "1";
 
 export type LogonMode = typeof ModeLogonUsernameEmptyPasswordCookie | typeof ModeLogonUsernamePassword;
 
-export function updateInput(name: string, value: string): UpdateInputAction {
-  return {
-    type: types.UPDATE_INPUT,
-    name,
-    value,
-  };
-}
-
-export function receiveValidateLogon(errors: FieldErrors): ReceiveValidateLogonAction {
-  return {
-    type: types.RECEIVE_VALIDATE_LOGON,
-    errors,
-  };
-}
-
-export function requestLogon(username: string, password: string): RequestLogonAction {
-  return {
-    type: types.REQUEST_LOGON,
-    username,
-    password,
-  };
-}
-
-export function receiveLogon(logon: AttemptResult): ReceiveLogonAction {
-  const { success, errors } = logon;
-
-  return {
-    type: types.RECEIVE_LOGON,
-    success,
-    errors,
-  };
-}
-
-export function requestConsent(allow = false): RequestConsentAction {
-  return {
-    type: allow ? types.REQUEST_CONSENT_ALLOW : types.REQUEST_CONSENT_CANCEL,
-  };
-}
-
-export function receiveConsent(logon: AttemptResult): ReceiveConsentAction {
-  const { success, errors } = logon;
-
-  return {
-    type: types.RECEIVE_CONSENT,
-    success,
-    errors,
-  };
-}
-
 export function executeLogon(
   username: string,
   password: string,
@@ -89,7 +39,7 @@ export function executeLogon(
   options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return async (dispatch, getState): Promise<AttemptResult> => {
-    dispatch(requestLogon(username, password));
+    dispatch(requestLogon({ username, password }));
     dispatch(
       receiveHello({
         username,
@@ -134,7 +84,7 @@ export function executeLogon(
             success: false,
             state: headers.get("Kopano-Konnect-State"),
             errors: {
-              http: new Error(ERROR_LOGIN_FAILED),
+              http: { message: ERROR_LOGIN_FAILED },
             },
           };
           break;
@@ -182,7 +132,7 @@ export function executeConsent(
   options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return async (dispatch, getState): Promise<AttemptResult> => {
-    dispatch(requestConsent(allow));
+    dispatch(allow ? requestConsentAllow() : requestConsentCancel());
 
     const { query } = getState().common;
 
@@ -255,10 +205,10 @@ export function validateUsernamePassword(
     const errors: FieldErrors = {};
 
     if (!username) {
-      errors.username = new Error(ERROR_LOGIN_VALIDATE_MISSINGUSERNAME);
+      errors.username = { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME };
     }
     if (!password && !isSignedIn) {
-      errors.password = new Error(ERROR_LOGIN_VALIDATE_MISSINGPASSWORD);
+      errors.password = { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD };
     }
 
     dispatch(receiveValidateLogon(errors));

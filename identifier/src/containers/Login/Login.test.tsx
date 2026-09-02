@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { MemoryHistory } from "history";
 
-import { REQUEST_LOGON } from "../../actions/types";
+import { requestLogon } from "../../reducers/login";
 import {
   type Branding,
   fetchMock,
@@ -174,7 +174,7 @@ describe("Login", () => {
   });
 
   it("disables the next button and shows progress while a logon is in flight", () => {
-    renderLogin(undefined, REQUEST_LOGON);
+    renderLogin(undefined, requestLogon.type);
 
     expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
     expect(screen.getByRole("progressbar")).toBeInTheDocument();

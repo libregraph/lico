@@ -6,43 +6,12 @@ import {
 } from "../errors";
 import type { AttemptResult, HelloResponse, StateResponse } from "../models/api";
 import { newHelloRequest } from "../models/hello";
+import { receiveError, receiveHello, resetHello } from "../reducers/common";
+import { receiveLogoff } from "../reducers/login";
 import type { AppThunk } from "../store";
 import { withClientRequestState } from "../utils";
-import type {
-  ReceiveErrorAction,
-  ReceiveHelloAction,
-  ReceiveLogoffAction,
-  RequestLogoffAction,
-  ResetHelloAction,
-} from "./types";
-import * as types from "./types";
 import type { PostJSONOptions } from "./utils";
 import { isAbortError, postJSON } from "./utils";
-
-export function receiveError(error: Error | null): ReceiveErrorAction {
-  return {
-    type: types.RECEIVE_ERROR,
-    error,
-  };
-}
-
-export function resetHello(): ResetHelloAction {
-  return {
-    type: types.RESET_HELLO,
-  };
-}
-
-export function receiveHello(hello: Partial<HelloResponse>): ReceiveHelloAction {
-  const { success, username, displayName } = hello;
-
-  return {
-    type: types.RECEIVE_HELLO,
-    state: success === true,
-    username,
-    displayName,
-    hello,
-  };
-}
 
 export function executeHello(options: PostJSONOptions = {}): AppThunk<Promise<HelloResponse | undefined>> {
   return async (dispatch, getState) => {
@@ -87,23 +56,9 @@ export function retryHello(options: PostJSONOptions = {}): AppThunk<Promise<Hell
   };
 }
 
-export function requestLogoff(): RequestLogoffAction {
-  return {
-    type: types.REQUEST_LOGOFF,
-  };
-}
-
-export function receiveLogoff(state: boolean): ReceiveLogoffAction {
-  return {
-    type: types.RECEIVE_LOGOFF,
-    state,
-  };
-}
-
 export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<AttemptResult>> {
   return async (dispatch): Promise<AttemptResult> => {
     dispatch(resetHello());
-    dispatch(requestLogoff());
 
     const r = withClientRequestState({});
     try {
@@ -118,7 +73,7 @@ export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<A
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: result.state });
       }
 
-      dispatch(receiveLogoff(result.success === true));
+      dispatch(receiveLogoff());
       return result;
     } catch (error) {
       // Callers read success off the resolved value, so a failure has to be

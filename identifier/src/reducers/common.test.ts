@@ -1,17 +1,16 @@
-import { receiveError, receiveHello, resetHello } from "../actions/common";
-import type { AppAction } from "../actions/types";
+import type { UnknownAction } from "@reduxjs/toolkit";
+
 import type { Branding, HelloResponse } from "../test-utils";
-import commonReducer from "./common";
+import { commonSlice, receiveError, receiveHello, resetHello } from "./common";
+
+const commonReducer = commonSlice.reducer;
 
 /*
  * Redux dispatches an initialisation action of its own, and a reducer has to
- * survive any action it does not recognise. AppAction is closed over what this
- * application declares, so no member of it can name a foreign type. The cast is
- * the honest way to say that: such actions really do arrive at runtime, and the
- * union is deliberately not widened to admit them.
+ * survive any action it does not recognise.
  */
-function foreignAction(type: string): AppAction {
-  return { type } as AppAction;
+function foreignAction(type: string): UnknownAction {
+  return { type };
 }
 
 const initial = () => commonReducer(undefined, foreignAction("@@INIT"));
@@ -32,11 +31,13 @@ describe("commonReducer", () => {
   });
 
   it("stores a received error", () => {
-    const error = new Error("boom");
+    // What is kept is the translatable shape rather than the caught instance,
+    // so that everything in the store survives serialisation.
+    const error = { message: "boom" };
 
     const state = commonReducer(initial(), receiveError(error));
 
-    expect(state.error).toBe(error);
+    expect(state.error).toEqual(error);
   });
 
   it("records a successful hello as a session", () => {
