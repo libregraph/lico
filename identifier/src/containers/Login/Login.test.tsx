@@ -314,6 +314,37 @@ describe("Login", () => {
       expect(nav.entries.length).toBe(1);
     });
 
+    it("never renders the credential form for a visitor it is only passing on", () => {
+      /*
+       * The redirect is scheduled as non-urgent work, so a form rendered anyway
+       * would be on screen for a frame or two after the address had already
+       * changed. Asserting the absence is what pins that down: a visitor who is
+       * on their way to the chooser is never offered somewhere to type a
+       * password.
+       */
+      renderSignedIn(arriveAt("/identifier?flow=oidc&client_id=abc"), "select_account");
+
+      expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
+      expect(screen.queryByText("Sign in")).not.toBeInTheDocument();
+      // The chooser is one route change away, so there is nothing to wait for.
+      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    });
+
+    it("waits behind an indicator while the flow advances for a visitor who already has a session", () => {
+      /*
+       * This branch may hand off to the client with a full page navigation, and
+       * this document stays on screen until that one arrives. The indicator is
+       * what the visitor waits behind instead of an empty card; it is delayed,
+       * so the branches which are only a route change still show nothing.
+       */
+      renderSignedIn(arriveAt("/identifier?flow=oidc&client_id=abc"));
+
+      expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+      expect(screen.queryByText("Sign in")).not.toBeInTheDocument();
+      expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    });
+
     it("leaves the form alone when the visitor navigated here themselves", () => {
       // A PUSH is a deliberate in-app navigation onto the form, so an existing
       // session must not bounce the visitor straight back out of it.

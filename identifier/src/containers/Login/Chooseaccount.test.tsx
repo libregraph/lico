@@ -110,6 +110,18 @@ describe("Chooseaccount", () => {
     expect(nav.entries.length).toBe(1);
   });
 
+  it("renders no chooser for a visitor it is sending back", () => {
+    /*
+     * The redirect is scheduled as non-urgent work, so a chooser rendered
+     * anyway would be on screen for a frame or two after the address had
+     * already changed. A visitor with no session never sees a list of accounts.
+     */
+    renderChooseaccount(arriveAt("/chooseaccount?flow=oidc", "POP"));
+
+    expect(screen.queryByText("Choose an account")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Use another account/ })).not.toBeInTheDocument();
+  });
+
   it("redirects on a fresh page load when the session says not signed in", () => {
     const { nav } = renderChooseaccount(arriveAt("/chooseaccount"), {
       common: { hello: { state: false, details: { ...helloResponse, success: false } } },

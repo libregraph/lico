@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Location, NavigateFunction, NavigationType } from "react-router";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
 
@@ -45,14 +45,26 @@ export const useFlowNavigation = (): FlowNavigation => {
  * Naming them as dependencies would re-run it whenever the session or the
  * location changed, which is exactly what it must not do: the screens change
  * both themselves.
+ *
+ * It reports whether it is sending the visitor away, because the caller has to
+ * render nothing in that case. The navigation is scheduled as non-urgent work,
+ * so a screen which painted its own content anyway would be left on display for
+ * a frame or two while the address had already changed underneath it. Doing the
+ * navigating before the paint instead is not an option: react-router ignores a
+ * navigate call made before its own mount effect has marked the router active.
  */
-export function useRedirectUnlessPushed(when: boolean, target = "/identifier"): void {
+export function useRedirectUnlessPushed(when: boolean, target = "/identifier"): boolean {
   const { navigate, location, navigationType } = useFlowNavigation();
+
+  // The initialiser runs on mount only, which is what freezes the decision.
+  const [redirecting] = useState(() => when && navigationType !== "PUSH");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if (when && navigationType !== "PUSH") {
+    if (redirecting) {
       navigate(withSearchAndHash(target, location), { replace: true });
     }
   }, []);
+
+  return redirecting;
 }

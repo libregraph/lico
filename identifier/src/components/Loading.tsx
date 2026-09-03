@@ -2,6 +2,7 @@ import type React from "react";
 import { useTranslation } from "react-i18next";
 
 import Button from "@mui/material/Button";
+import Fade from "@mui/material/Fade";
 import Grid from "@mui/material/Grid";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
@@ -17,7 +18,18 @@ import { selectError } from "../reducers/common";
  */
 const legacyAlign = { align: "center" };
 
-function Loading() {
+export interface LoadingProps {
+  /*
+   * Milliseconds to wait before the bar fades in. A wait which ends inside that
+   * window shows nothing at all, which is what keeps a screen that is only
+   * being passed through from flashing a progress bar for two frames. The
+   * failure below is never delayed, because by then there is nothing left to
+   * wait for.
+   */
+  delay?: number;
+}
+
+function Loading({ delay = 0 }: LoadingProps) {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
@@ -28,6 +40,8 @@ function Loading() {
 
     dispatch(retryHello());
   };
+
+  const bar = <LinearProgress sx={{ height: "4px", width: "100px" }} />;
 
   return (
     <Grid
@@ -47,7 +61,13 @@ function Loading() {
     >
       <Grid {...legacyAlign}>
         {error === null ? (
-          <LinearProgress sx={{ height: "4px", width: "100px" }} />
+          delay > 0 ? (
+            <Fade in style={{ transitionDelay: `${delay}ms` }}>
+              {bar}
+            </Fade>
+          ) : (
+            bar
+          )
         ) : (
           <div>
             <Typography variant="h5" gutterBottom align="center">

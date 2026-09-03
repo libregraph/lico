@@ -27,7 +27,7 @@ function Chooseaccount() {
   const errors = useAppSelector(selectErrors);
 
   // A visitor without a session has nothing to choose between.
-  useRedirectUnlessPushed(!hello?.state);
+  const redirecting = useRedirectUnlessPushed(!hello?.state);
 
   // Both the form and the account entry reach this, so the event is only ever
   // used to stop the default submission.
@@ -50,10 +50,12 @@ function Chooseaccount() {
     nav.navigate(withSearchAndHash("/identifier", nav.location));
   };
 
-  let username = "";
-  if (hello?.state) {
-    username = hello.username ?? "";
+  // Nothing to show while the guard above is sending the visitor away.
+  if (redirecting) {
+    return null;
   }
+
+  const username = hello?.state ? (hello.username ?? "") : "";
 
   return (
     <DialogContent sx={{ overflowY: "visible" }}>
