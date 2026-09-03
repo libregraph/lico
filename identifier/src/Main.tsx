@@ -4,11 +4,12 @@ import Box from "@mui/material/Box";
 
 import { useAppSelector } from "./hooks/redux";
 import Routes from "./Routes";
-import { selectHello, selectPathPrefix } from "./reducers/common";
+import { selectHello } from "./reducers/common";
+import { usePathPrefix } from "./request";
 
 function Main() {
   const hello = useAppSelector(selectHello);
-  const pathPrefix = useAppSelector(selectPathPrefix);
+  const pathPrefix = usePathPrefix();
 
   return (
     <Box sx={{ position: "relative", display: "flex", flex: 1 }}>

@@ -86,6 +86,7 @@ for (const lng of Object.keys(locales)) {
 
     const { container } = renderWithProviders(<Consent />, {
       ...arriveAt("/consent"),
+      request: { query },
       preloaded: {
         common: {
           hello: {
@@ -94,7 +95,6 @@ for (const lng of Object.keys(locales)) {
             displayName: hello.displayName,
             details: hello,
           },
-          query,
         },
       },
     });

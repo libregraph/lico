@@ -38,15 +38,15 @@ export function executeLogon(
   mode: LogonMode = ModeLogonUsernamePassword,
   options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
-  return async (dispatch, getState): Promise<AttemptResult> => {
-    dispatch(requestLogon({ username, password }));
+  return async (dispatch, _getState, request): Promise<AttemptResult> => {
+    dispatch(requestLogon());
     dispatch(
       receiveHello({
         username,
       }),
     ); // Reset any hello state on logon.
 
-    const { flow, query } = getState().common;
+    const { flow, query } = request;
 
     // Prepare params based on mode.
     const params: string[] = [];
@@ -131,10 +131,10 @@ export function executeConsent(
   scope = "",
   options: PostJSONOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
-  return async (dispatch, getState): Promise<AttemptResult> => {
+  return async (dispatch, _getState, request): Promise<AttemptResult> => {
     dispatch(allow ? requestConsentAllow() : requestConsentCancel());
 
-    const { query } = getState().common;
+    const { query } = request;
 
     const r = withClientRequestState({
       allow,
@@ -243,12 +243,13 @@ export function advanceLogonFlow(
   done = false,
   extraQuery: Record<string, string | null | undefined> = {},
 ): AppThunk {
-  return (dispatch, getState) => {
+  return (dispatch, getState, request) => {
     if (!success) {
       return;
     }
 
-    const { flow, query, hello } = getState().common;
+    const { flow, query } = request;
+    const { hello } = getState().common;
     const q: Record<string, string | null | undefined> = Object.assign({}, query, extraQuery);
 
     switch (flow) {
