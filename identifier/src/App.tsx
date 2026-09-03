@@ -6,7 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import "./App.css";
 import "./fancy-background.css";
 
-import Spinner from "./components/Spinner";
+import ProgressStrip from "./components/ProgressStrip";
 import theme from "./theme";
 import * as version from "./version";
 
@@ -23,7 +23,7 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<ProgressStrip />}>
         <LazyMain />
       </Suspense>
     </ThemeProvider>
