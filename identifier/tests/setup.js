@@ -1,6 +1,16 @@
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach } from "vitest";
 import "@testing-library/jest-dom/vitest";
+
+/*
+ * The library waits one second by default. The widest waits here mount the
+ * whole app, and a single query then covers the lazily imported Main chunk
+ * being transformed and evaluated, i18next starting, and the first request to
+ * the server: over a second of work on an idle machine, and the first thing to
+ * run out of room on a busy one. Raising the budget costs nothing when a query
+ * succeeds, because these resolve as soon as the element appears.
+ */
+configure({ asyncUtilTimeout: 3000 });
 
 /*
  * jsdom implements no media queries at all. Material-UI v4's withWidth, which

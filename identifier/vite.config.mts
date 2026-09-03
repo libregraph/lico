@@ -192,6 +192,12 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
       globals: true,
       environment: "jsdom",
       setupFiles: "./tests/setup.js",
+      /*
+       * Above the library's own wait budget, which setup.js raises, so a test
+       * which is genuinely stuck fails with the DOM that testing-library prints
+       * rather than with a bare timeout from here.
+       */
+      testTimeout: 10000,
     },
   };
 });
