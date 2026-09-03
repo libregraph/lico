@@ -20,6 +20,8 @@ import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import BusyButton from "../../components/BusyButton";
+import Loading from "../../components/Loading";
+import RedirectWithQuery from "../../components/RedirectWithQuery";
 import RequestError from "../../components/RequestError";
 import { ErrorMessage } from "../../errors";
 import { useFlowNavigation } from "../../hooks/navigation";
@@ -27,7 +29,6 @@ import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectBranding, selectHello } from "../../reducers/common";
 import { clearFieldError, selectErrors, selectLoading } from "../../reducers/login";
 import { useSignInRequest } from "../../request";
-import { withSearchAndHash } from "../../utils";
 
 /*
  * login_hint decides only whether the username field is prefilled. The server
@@ -91,19 +92,27 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // This effect decides once, on mount, whether an already signed-in visitor
-  // should be redirected onwards and whether login_hint should prefill the
-  // username. Naming its dependencies would re-run both on every change to the
+  /*
+   * Whether this visitor is only passing through, decided on mount. The
+   * initialiser is what freezes it: this screen's own form fills the store and
+   * moves the location, and re-deciding later would take a visitor off a screen
+   * they are legitimately using.
+   */
+  const [passingThrough] = useState(() => !!hello?.state && nav.navigationType !== "PUSH");
+  const [selectAccount] = useState(() => !!query.prompt && query.prompt.indexOf("select_account") !== -1);
+
+  // The other half of the mount decision, which is a prefill rather than a
+  // departure. Naming its dependencies would re-run it on every change to the
   // query, the location or the store, which would fight the user as they type.
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
   useEffect(() => {
-    if (hello?.state && nav.navigationType !== "PUSH") {
-      if (!query.prompt || query.prompt.indexOf("select_account") === -1) {
+    if (passingThrough) {
+      // Asking to select an account is answered by the redirect rendered below,
+      // so only the flow advancing has anything to dispatch here.
+      if (!selectAccount) {
         dispatch(advanceLogonFlow(true, nav));
-        return;
       }
 
-      nav.navigate(withSearchAndHash("/chooseaccount", nav.location), { replace: true });
       return;
     }
 
@@ -162,6 +171,22 @@ function Login() {
 
     return t("konnect.login.usernameField.placeholder.username", "Username");
   }, [branding, t]);
+
+  /*
+   * A visitor who is only passing through is never shown a credential form.
+   * Asking to select an account is a route change and is rendered as one, so
+   * nothing is painted before the router follows it.
+   *
+   * The flow advancing is not a route change in every case: it may hand off to
+   * the client with a full page navigation, and until that document arrives
+   * this one stays on screen. The delay is what tells those two apart without
+   * having to ask which it will be. A route change resolves inside it and shows
+   * nothing; a hand-off outlives it and the visitor gets an indicator instead of
+   * a card with a logo and no content. 800ms is the delay Spinner uses.
+   */
+  if (passingThrough) {
+    return selectAccount ? <RedirectWithQuery target="/chooseaccount" /> : <Loading delay={800} />;
+  }
 
   return (
     <DialogContent>
