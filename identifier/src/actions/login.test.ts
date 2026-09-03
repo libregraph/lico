@@ -217,6 +217,23 @@ describe("executeLogon", () => {
     });
   });
 
+  it("synthesises a hello when the reply carries an explicit null one", async () => {
+    /*
+     * The endpoint's own type says hello is nullable, because the server sends
+     * a pointer and an absent one marshals to null rather than to nothing. The
+     * synthesised stand-in has to cover that as well as an omitted field.
+     */
+    replyEchoingState(200, { success: true, hello: null });
+    const { store, actions } = newHarness();
+
+    await store.dispatch(executeLogon("user1@example.com", "secret"));
+
+    expect(actions[2]).toEqual({
+      type: receiveHello.type,
+      payload: { success: true, username: "user1@example.com" },
+    });
+  });
+
   it("treats a 204 as a failed logon and echoes the state from the header", async () => {
     // This is what a wrong password looks like on the wire.
     replyNoContentEchoingState();
