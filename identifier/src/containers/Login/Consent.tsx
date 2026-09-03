@@ -1,44 +1,21 @@
 import { useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import { green } from "@mui/material/colors";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import type { SxProps, Theme } from "@mui/material/styles";
 import type { TooltipProps as BaseTooltipProps } from "@mui/material/Tooltip";
 import BaseTooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeConsent } from "../../actions/login";
+import BusyButton from "../../components/BusyButton";
 import ClientDisplayName from "../../components/ClientDisplayName";
+import RequestError from "../../components/RequestError";
 import ScopesList from "../../components/ScopesList";
-import { ErrorMessage } from "../../errors";
 import { useFlowNavigation, useRedirectUnlessPushed } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectHello } from "../../reducers/common";
 import { receiveValidateLogon, requestConsentAllow, selectErrors, selectLoading } from "../../reducers/login";
-
-// Both action buttons share the same wrapper, which positions the progress
-// indicator over them.
-const wrapperSx: SxProps<Theme> = {
-  mt: 2,
-  position: "relative",
-  display: "inline-block",
-};
-
-// The negative offsets centre the 24px indicator on the button. In spacing
-// units -1.5 is the former -12px.
-const buttonProgressSx: SxProps<Theme> = {
-  color: green[500],
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  mt: -1.5,
-  ml: -1.5,
-};
 
 /*
  * The base tooltip takes a single element, which is exactly what this wrapper
@@ -158,39 +135,30 @@ function Consent() {
       </Typography>
 
       <form action="" onSubmit={action(undefined, scopes)}>
-        <DialogActions>
-          <Box sx={wrapperSx}>
-            <Button
-              color="secondary"
-              variant="outlined"
-              sx={{ m: 1, minWidth: 100 }}
-              disabled={!!loading}
-              onClick={action(false, scopes)}
-            >
-              {t("konnect.consent.cancelButton.label", "Cancel")}
-            </Button>
-            {loading && loading !== requestConsentAllow.type && <CircularProgress size={24} sx={buttonProgressSx} />}
-          </Box>
-          <Box sx={wrapperSx}>
-            <Button
-              type="submit"
-              color="primary"
-              variant="contained"
-              sx={{ m: 1, minWidth: 100 }}
-              disabled={!!loading}
-              onClick={action(true, scopes)}
-            >
-              {t("konnect.consent.allowButton.label", "Allow")}
-            </Button>
-            {loading === requestConsentAllow.type && <CircularProgress size={24} sx={buttonProgressSx} />}
-          </Box>
+        {/* The margin belongs to the row, not to each button. */}
+        <DialogActions sx={{ mt: 2 }}>
+          <BusyButton
+            color="secondary"
+            variant="outlined"
+            disabled={!!loading}
+            busy={!!loading && loading !== requestConsentAllow.type}
+            onClick={action(false, scopes)}
+          >
+            {t("konnect.consent.cancelButton.label", "Cancel")}
+          </BusyButton>
+          <BusyButton
+            type="submit"
+            color="primary"
+            variant="contained"
+            disabled={!!loading}
+            busy={loading === requestConsentAllow.type}
+            onClick={action(true, scopes)}
+          >
+            {t("konnect.consent.allowButton.label", "Allow")}
+          </BusyButton>
         </DialogActions>
 
-        {errors.http && (
-          <Typography variant="subtitle2" color="error" sx={{ mt: 2, mb: 2 }}>
-            <ErrorMessage error={errors.http}></ErrorMessage>
-          </Typography>
-        )}
+        <RequestError error={errors.http} />
       </form>
     </DialogContent>
   );

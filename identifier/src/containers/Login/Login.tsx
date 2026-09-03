@@ -11,10 +11,6 @@ import isEmail from "validator/es/lib/isEmail";
 
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import { green } from "@mui/material/colors";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import IconButton from "@mui/material/IconButton";
@@ -23,6 +19,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
+import BusyButton from "../../components/BusyButton";
+import RequestError from "../../components/RequestError";
 import { ErrorMessage } from "../../errors";
 import { useFlowNavigation } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
@@ -70,25 +68,6 @@ function withAsciiDomain(username: string): string {
     return username;
   }
 }
-
-/*
- * The progress ring sits centred on top of the button that started the request.
- * The offsets are half its 24px size, so they are pixel values divided by the
- * 8px spacing unit rather than spacing steps of their own.
- */
-const buttonProgressSx = {
-  color: green[500],
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  mt: -1.5,
-  ml: -1.5,
-} as const;
-
-const wrapperSx = {
-  position: "relative",
-  display: "inline-block",
-} as const;
 
 function Login() {
   const dispatch = useAppDispatch();
@@ -241,26 +220,19 @@ function Login() {
           }}
         />
         <DialogActions>
-          <Box sx={wrapperSx}>
-            <Button
-              type="submit"
-              color="primary"
-              variant="contained"
-              sx={{ m: 1, minWidth: 100 }}
-              disabled={!!loading}
-              onClick={handleNextClick}
-            >
-              {t("konnect.login.nextButton.label", "Next")}
-            </Button>
-            {loading && <CircularProgress size={24} sx={buttonProgressSx} />}
-          </Box>
+          <BusyButton
+            type="submit"
+            color="primary"
+            variant="contained"
+            disabled={!!loading}
+            busy={!!loading}
+            onClick={handleNextClick}
+          >
+            {t("konnect.login.nextButton.label", "Next")}
+          </BusyButton>
         </DialogActions>
 
-        {errors.http && (
-          <Typography variant="subtitle2" color="error" sx={{ mt: 2, mb: 2 }}>
-            <ErrorMessage error={errors.http}></ErrorMessage>
-          </Typography>
-        )}
+        <RequestError error={errors.http} />
 
         {branding?.signinPageText && <Typography variant="body2">{branding.signinPageText}</Typography>}
       </form>

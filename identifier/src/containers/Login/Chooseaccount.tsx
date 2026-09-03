@@ -10,7 +10,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
-import { ErrorMessage } from "../../errors";
+import RequestError from "../../components/RequestError";
 import { useFlowNavigation, useRedirectUnlessPushed } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectHello } from "../../reducers/common";
@@ -50,15 +50,6 @@ function Chooseaccount() {
     nav.navigate(withSearchAndHash("/identifier", nav.location));
   };
 
-  let errorMessage = null;
-  if (errors.http) {
-    errorMessage = (
-      <Typography color="error" sx={{ mt: 2 }}>
-        <ErrorMessage error={errors.http}></ErrorMessage>
-      </Typography>
-    );
-  }
-
   let username = "";
   if (hello?.state) {
     username = hello.username ?? "";
@@ -93,7 +84,7 @@ function Chooseaccount() {
           </ListItem>
         </List>
 
-        {errorMessage}
+        <RequestError error={errors.http} />
       </form>
     </DialogContent>
   );
