@@ -4392,9 +4392,9 @@ __metadata:
   linkType: hard
 
 "@xmldom/xmldom@npm:^0.8.0":
-  version: 0.8.5
-  resolution: "@xmldom/xmldom@npm:0.8.5"
-  checksum: f21ed33e84329fb70f60d5decb621e5e72a067fa69ea6e2861f2de5263a79d4bcbb8e9a558ecf37fda5731ffe0603a4faac539341a874931aa6be53bae84fbc0
+  version: 0.8.15
+  resolution: "@xmldom/xmldom@npm:0.8.15"
+  checksum: 521d8e5a9798a47dddb28237d112e47637d638e4f3d60ce1eefa1f397d2439af5a00f781c956b5affc251ef8a1bbc1f8325161d32f7b27c89aacf5ff84f14cf7
   languageName: node
   linkType: hard
 
