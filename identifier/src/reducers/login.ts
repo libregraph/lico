@@ -12,15 +12,22 @@ export interface LoginState {
    * here can drift out of step with what the reducer stores.
    */
   loading: string;
-  username: string;
-  password: string;
   errors: FieldErrors;
 }
 
+/*
+ * Neither credential is here, and no action carries one either. Anything
+ * dispatched is recorded by the devtools alongside the state it produced, so a
+ * password in either place outlives the request it was typed for, and a
+ * username is the form's business for exactly as long as the form is on screen.
+ * Both fields live in the component; the thunks are handed their values.
+ *
+ * What does belong here is what the server and the validator said about them:
+ * `errors` is rendered by the form, and cleared field by field as they are
+ * edited.
+ */
 const initialState: LoginState = {
   loading: "",
-  username: "",
-  password: "",
   errors: {},
 };
 
@@ -33,7 +40,9 @@ export const loginSlice = createSlice({
       state.loading = "";
     },
 
-    requestLogon: (state, action: PayloadAction<{ username: string; password: string }>) => {
+    // The payload the credentials used to travel in is gone: the reducer never
+    // read it, and the devtools log every action.
+    requestLogon: (state, action: PayloadAction<void>) => {
       state.loading = action.type;
       state.errors = {};
     },
@@ -64,31 +73,26 @@ export const loginSlice = createSlice({
       }
     },
 
-    receiveLogoff: (state) => {
-      state.username = "";
-      state.password = "";
-    },
-
-    updateInput: (state, { payload }: PayloadAction<{ name: "username" | "password"; value: string }>) => {
-      // Editing a field clears the error recorded for it.
-      delete state.errors[payload.name];
-      state[payload.name] = payload.value;
+    /*
+     * Both field values are the component's, so this only withdraws the
+     * complaint about one of them. Without it a stale "enter your password"
+     * would stay on screen while the user is typing one.
+     */
+    clearFieldError: (state, { payload }: PayloadAction<"username" | "password">) => {
+      delete state.errors[payload];
     },
   },
 });
 
 export const {
+  clearFieldError,
   receiveConsent,
-  receiveLogoff,
   receiveLogon,
   receiveValidateLogon,
   requestConsentAllow,
   requestConsentCancel,
   requestLogon,
-  updateInput,
 } = loginSlice.actions;
 
 export const selectLoading = (state: RootState): LoginState["loading"] => state.login.loading;
-export const selectUsername = (state: RootState): LoginState["username"] => state.login.username;
-export const selectPassword = (state: RootState): LoginState["password"] => state.login.password;
 export const selectErrors = (state: RootState): LoginState["errors"] => state.login.errors;

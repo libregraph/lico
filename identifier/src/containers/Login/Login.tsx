@@ -26,8 +26,9 @@ import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import { ErrorMessage } from "../../errors";
 import { useFlowNavigation } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
-import { selectBranding, selectHello, selectQuery } from "../../reducers/common";
-import { selectErrors, selectLoading, selectPassword, selectUsername, updateInput } from "../../reducers/login";
+import { selectBranding, selectHello } from "../../reducers/common";
+import { clearFieldError, selectErrors, selectLoading } from "../../reducers/login";
+import { useSignInRequest } from "../../request";
 import { withSearchAndHash } from "../../utils";
 
 /*
@@ -92,17 +93,22 @@ const wrapperSx = {
 function Login() {
   const dispatch = useAppDispatch();
   const nav = useFlowNavigation();
+  const { query } = useSignInRequest();
 
   const hello = useAppSelector(selectHello);
   const branding = useAppSelector(selectBranding);
-  const query = useAppSelector(selectQuery);
   const loading = useAppSelector(selectLoading);
   const errors = useAppSelector(selectErrors);
-  const username = useAppSelector(selectUsername);
-  const password = useAppSelector(selectPassword);
 
   const { t } = useTranslation();
 
+  /*
+   * Both fields stay here rather than in the store, so they are gone with this
+   * screen and are never recorded by the devtools. The thunks which post them
+   * take their values as arguments.
+   */
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
@@ -124,7 +130,7 @@ function Login() {
 
     // Prefill the username from login_hint when it looks like an identity.
     if (query?.login_hint && looksLikeIdentity(query.login_hint)) {
-      dispatch(updateInput({ name: "username", value: query.login_hint }));
+      setUsername(query.login_hint);
 
       // Move focus on to the password once the field above has its value. The
       // timer is cleared on unmount, because otherwise the callback runs against
@@ -137,9 +143,18 @@ function Login() {
     }
   }, []);
 
+  /*
+   * The store still holds what the validator or the server said about a field,
+   * so editing one withdraws that complaint. The value itself never leaves
+   * this component.
+   */
   const handleChange =
-    (name: "username" | "password") => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      dispatch(updateInput({ name, value: event.target.value }));
+    (name: "username" | "password", set: (value: string) => void) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      set(event.target.value);
+      if (errors[name]) {
+        dispatch(clearFieldError(name));
+      }
     };
 
   const handleNextClick = (event: React.SyntheticEvent) => {
@@ -189,7 +204,7 @@ function Login() {
             },
           }}
           value={username}
-          onChange={handleChange("username")}
+          onChange={handleChange("username", setUsername)}
           autoComplete="kopano-account username"
           variant="outlined"
           sx={{ mt: 1, mb: 1.5 }}
@@ -201,7 +216,7 @@ function Login() {
           error={!!errors.password}
           helperText={<ErrorMessage error={errors.password}></ErrorMessage>}
           fullWidth
-          onChange={handleChange("password")}
+          onChange={handleChange("password", setPassword)}
           autoComplete="kopano-account current-password"
           variant="outlined"
           slotProps={{

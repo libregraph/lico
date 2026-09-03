@@ -30,6 +30,7 @@ import {
   postedUrl,
   replyEchoingState,
   replyNoContentEchoingState,
+  type SignInRequest,
   stubFetch,
 } from "../test-utils";
 import {
@@ -59,8 +60,8 @@ function receiveHelloAction(action: UnknownAction) {
  * thunk dispatches. A wrapping reducer sees every plain action in order. This
  * helper is local on purpose, since src/test-utils.tsx is shared.
  */
-function newHarness(preloaded: PreloadedState = {}) {
-  const store = makeStore(preloaded);
+function newHarness(preloaded: PreloadedState = {}, request: Partial<SignInRequest> = {}) {
+  const store = makeStore(preloaded, request);
   const actions: UnknownAction[] = [];
 
   store.replaceReducer((state, action) => {
@@ -97,6 +98,19 @@ describe("executeLogon", () => {
     });
   });
 
+  it("leaves the password out of every action it dispatches", async () => {
+    // The devtools record each action with its payload, so a credential in one
+    // outlives the request it was typed for. This is the whole reason the
+    // password is not in the store and requestLogon carries no payload.
+    replyEchoingState(200, { success: true });
+    const { store, actions } = newHarness();
+
+    await store.dispatch(executeLogon("user1@example.com", "hunter2"));
+
+    expect(actions.length).toBeGreaterThan(0);
+    expect(JSON.stringify(actions)).not.toContain("hunter2");
+  });
+
   it("posts to a page relative endpoint with the XSRF header", async () => {
     replyEchoingState(200, { success: true });
     const { store } = newHarness();
@@ -131,8 +145,9 @@ describe("executeLogon", () => {
 
   it("includes a hello request built from the flow and query", async () => {
     replyEchoingState(200, { success: true });
-    const { store } = newHarness({
-      common: {
+    const { store } = newHarness(
+      {},
+      {
         flow: "oidc",
         query: {
           scope: "openid profile",
@@ -140,7 +155,7 @@ describe("executeLogon", () => {
           redirect_uri: "https://app.test/callback",
         },
       },
-    });
+    );
 
     await store.dispatch(executeLogon("user1", "secret"));
 
@@ -162,7 +177,7 @@ describe("executeLogon", () => {
       next: "consent",
     };
     replyEchoingState(200, { success: true, hello });
-    const { store, actions } = newHarness({ common: { flow: "oidc" } });
+    const { store, actions } = newHarness({}, { flow: "oidc" });
 
     const response = await store.dispatch(executeLogon("user1@example.com", "secret"));
 
@@ -306,8 +321,9 @@ describe("executeLogon", () => {
 describe("executeConsent", () => {
   it("posts the scope and the client details from the query", async () => {
     replyEchoingState(200, { success: true });
-    const { store } = newHarness({
-      common: {
+    const { store } = newHarness(
+      {},
+      {
         flow: "consent",
         query: {
           client_id: "playground.js",
@@ -316,7 +332,7 @@ describe("executeConsent", () => {
           nonce: "caller-nonce",
         },
       },
-    });
+    );
 
     await store.dispatch(executeConsent(true, "openid profile email"));
 
@@ -542,7 +558,7 @@ describe("executeLogonIfFormValid", () => {
 
 describe("advanceLogonFlow", () => {
   it("does nothing when the logon did not succeed", () => {
-    const { store, actions } = newHarness({ common: { flow: "oidc" } });
+    const { store, actions } = newHarness({}, { flow: "oidc" });
     const nav = newTestNavigation("/?client_id=playground.js");
 
     store.dispatch(advanceLogonFlow(false, nav));
@@ -558,9 +574,10 @@ describe("advanceLogonFlow", () => {
       success: true,
       next: "consent",
     };
-    const { store, actions } = newHarness({
-      common: { flow: "oidc", hello: { state: true, username: "user1", details } },
-    });
+    const { store, actions } = newHarness(
+      { common: { hello: { state: true, username: "user1", details } } },
+      { flow: "oidc" },
+    );
     const nav = newTestNavigation("/?client_id=playground.js#frag");
 
     store.dispatch(advanceLogonFlow(true, nav));
@@ -582,9 +599,10 @@ describe("advanceLogonFlow", () => {
       success: true,
       next: "consent",
     };
-    const { store, actions } = newHarness({
-      common: { flow: "oidc", hello: { state: true, username: "user1", details } },
-    });
+    const { store, actions } = newHarness(
+      { common: { hello: { state: true, username: "user1", details } } },
+      { flow: "oidc" },
+    );
     const nav = newTestNavigation("/?client_id=playground.js");
 
     store.dispatch(advanceLogonFlow(true, nav, true));
@@ -603,9 +621,7 @@ describe("advanceLogonFlow", () => {
       success: true,
       next: "consent",
     };
-    const { store } = newHarness({
-      common: { flow: "oidc", hello: { state: true, username: "user1", details } },
-    });
+    const { store } = newHarness({ common: { hello: { state: true, username: "user1", details } } }, { flow: "oidc" });
     const nav = newTestNavigation("/?client_id=playground.js");
 
     store.dispatch(advanceLogonFlow(true, nav));
@@ -638,9 +654,7 @@ describe("advanceLogonFlow", () => {
   });
 
   it("refuses a legacy continue which points off origin", () => {
-    const { store } = newHarness({
-      common: { query: { continue: "https://elsewhere.test/app" } },
-    });
+    const { store } = newHarness({}, { query: { continue: "https://elsewhere.test/app" } });
     const nav = newTestNavigation("/");
 
     store.dispatch(advanceLogonFlow(true, nav));

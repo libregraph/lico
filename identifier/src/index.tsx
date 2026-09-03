@@ -13,7 +13,8 @@ import "@fontsource/roboto/700.css";
 import "./i18n";
 
 import App from "./App";
-import store from "./store";
+import { PathPrefixProvider, readPathPrefix, readSignInRequest, SignInRequestProvider } from "./request";
+import { setupStore } from "./store";
 
 /*
  * The nonce the server wrote into the document. Emotion does not look for this
@@ -48,12 +49,26 @@ if (!container) {
   throw new Error("no #root element to render into");
 }
 
+/*
+ * The one read of each: what this request asks for, off the URL it arrived on,
+ * and where the webapp is served from, out of the element the server
+ * substituted the prefix into. Everything downstream is handed the results
+ * rather than reaching for the document again.
+ */
+const request = readSignInRequest(document.location.search);
+const pathPrefix = readPathPrefix(container);
+const store = setupStore(request);
+
 createRoot(container).render(
   <React.StrictMode>
     <CacheProvider value={cache}>
-      <Provider store={store}>
-        <App />
-      </Provider>
+      <SignInRequestProvider value={request}>
+        <PathPrefixProvider value={pathPrefix}>
+          <Provider store={store}>
+            <App />
+          </Provider>
+        </PathPrefixProvider>
+      </SignInRequestProvider>
     </CacheProvider>
   </React.StrictMode>,
 );

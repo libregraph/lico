@@ -44,7 +44,7 @@ const renderLogin = (branding?: Branding, loading = "") =>
   renderWithProviders(<Subject />, {
     ...arriveAt("/identifier"),
     preloaded: {
-      common: { hello: null, branding: branding ?? null, query: {} },
+      common: { hello: null, branding: branding ?? null },
       login: { loading },
     },
   });
@@ -155,6 +155,21 @@ describe("Login", () => {
     expect(fetchMock()).not.toHaveBeenCalled();
   });
 
+  it("withdraws the complaint about the password as soon as one is typed", async () => {
+    // The value lives in the component now, so clearing the error the store
+    // still holds is the component's job. Without it a stale "enter your
+    // password" stays on screen while the user is typing one.
+    renderLogin();
+
+    await userEvent.type(fieldOf("Username"), "user1@example.test");
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => expect(screen.getByText("Enter your password.")).toBeInTheDocument());
+
+    await userEvent.type(fieldOf("Password"), "s");
+
+    expect(screen.queryByText("Enter your password.")).not.toBeInTheDocument();
+  });
+
   it("hides the password until the visibility toggle is used", async () => {
     renderLogin();
 
@@ -192,13 +207,10 @@ describe("Login", () => {
       return renderWithProviders(<Subject />, {
         ...arriveAt("/identifier"),
         preloaded: {
-          common: {
-            hello: null,
-            branding: null,
-            query: hint === undefined ? {} : { login_hint: hint },
-          },
+          common: { hello: null, branding: null },
           login: { loading: "" },
         },
+        request: { query: hint === undefined ? {} : { login_hint: hint } },
       });
     };
 
@@ -286,10 +298,10 @@ describe("Login", () => {
           common: {
             hello: { state: true, username: "u", displayName: "D", details: {} },
             branding: null,
-            query: prompt === undefined ? {} : { prompt },
           },
           login: { loading: "" },
         },
+        request: { query: prompt === undefined ? {} : { prompt } },
       });
 
     it("sends the visitor to the account chooser when the request asks to select an account", () => {

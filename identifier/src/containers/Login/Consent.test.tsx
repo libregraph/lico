@@ -84,7 +84,8 @@ const renderConsent = (details: HelloResponse = helloResponse()) => {
 
   return renderWithProviders(<Subject />, {
     ...arriveAt("/consent"),
-    preloaded: { common: { hello, query } },
+    preloaded: { common: { hello } },
+    request: { query },
   });
 };
 
@@ -264,7 +265,8 @@ describe("Consent", () => {
 
     const { nav } = renderWithProviders(<Subject />, {
       ...arriveAt("/consent?client_id=demo#frag"),
-      preloaded: { common: { hello: null, query } },
+      preloaded: { common: { hello: null } },
+      request: { query },
     });
 
     expect(nav.location.pathname).toBe("/identifier");
@@ -279,7 +281,8 @@ describe("Consent", () => {
 
     const { nav } = renderWithProviders(<Subject />, {
       ...arriveAt("/consent"),
-      preloaded: { common: { hello, query } },
+      preloaded: { common: { hello } },
+      request: { query },
     });
 
     expect(nav.location.pathname).toBe("/identifier");
@@ -291,7 +294,8 @@ describe("Consent", () => {
 
     const { container, nav } = renderWithProviders(<Subject />, {
       ...arriveAt("/consent", "PUSH"),
-      preloaded: { common: { hello: null, query } },
+      preloaded: { common: { hello: null } },
+      request: { query },
     });
 
     expect(nav.location.pathname).toBe("/consent");

@@ -7,17 +7,16 @@ import {
 import type { AttemptResult, HelloResponse, StateResponse } from "../models/api";
 import { newHelloRequest } from "../models/hello";
 import { receiveError, receiveHello, resetHello } from "../reducers/common";
-import { receiveLogoff } from "../reducers/login";
 import type { AppThunk } from "../store";
 import { withClientRequestState } from "../utils";
 import type { PostJSONOptions } from "./utils";
 import { isAbortError, postJSON } from "./utils";
 
 export function executeHello(options: PostJSONOptions = {}): AppThunk<Promise<HelloResponse | undefined>> {
-  return async (dispatch, getState) => {
+  return async (dispatch, _getState, request) => {
     dispatch(resetHello());
 
-    const { flow, query } = getState().common;
+    const { flow, query } = request;
 
     const r = withClientRequestState(newHelloRequest(flow, query));
     try {
@@ -73,7 +72,6 @@ export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<A
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: result.state });
       }
 
-      dispatch(receiveLogoff());
       return result;
     } catch (error) {
       // Callers read success off the resolved value, so a failure has to be

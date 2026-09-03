@@ -7,7 +7,6 @@ import {
   type TranslatableError,
 } from "../errors";
 import { receiveError, receiveHello, resetHello } from "../reducers/common";
-import { receiveLogoff } from "../reducers/login";
 import { rootReducer } from "../store";
 import {
   fetchMock,
@@ -20,6 +19,7 @@ import {
   postedUrl,
   replyEchoingState,
   replyNoContentEchoingState,
+  type SignInRequest,
   type StateResponse,
   stubFetch,
 } from "../test-utils";
@@ -31,8 +31,8 @@ import { executeHello, executeLogoff, retryHello } from "./common";
  * thunk dispatches. A wrapping reducer sees every plain action in order. This
  * helper is local on purpose, since src/test-utils.tsx is shared.
  */
-function newHarness(preloaded: PreloadedState = {}) {
-  const store = makeStore(preloaded);
+function newHarness(preloaded: PreloadedState = {}, request: Partial<SignInRequest> = {}) {
+  const store = makeStore(preloaded, request);
   const actions: UnknownAction[] = [];
 
   store.replaceReducer((state, action) => {
@@ -53,13 +53,6 @@ function newHarness(preloaded: PreloadedState = {}) {
 function receiveErrorAction(action: UnknownAction) {
   if (!receiveError.match(action)) {
     throw new Error(`expected ${receiveError.type}, dispatched was ${action.type}`);
-  }
-  return action;
-}
-
-function receiveLogoffAction(action: UnknownAction) {
-  if (!receiveLogoff.match(action)) {
-    throw new Error(`expected ${receiveLogoff.type}, dispatched was ${action.type}`);
   }
   return action;
 }
@@ -121,8 +114,9 @@ describe("executeHello", () => {
 
   it("builds the posted body from the flow and query held in the store", async () => {
     replyEchoingState(200, { success: false });
-    const { store } = newHarness({
-      common: {
+    const { store } = newHarness(
+      {},
+      {
         flow: "oidc",
         query: {
           scope: "openid profile",
@@ -131,7 +125,7 @@ describe("executeHello", () => {
           prompt: "consent",
         },
       },
-    });
+    );
 
     await store.dispatch(executeHello());
 
@@ -163,7 +157,7 @@ describe("executeHello", () => {
       next: "consent",
     };
     replyEchoingState(200, { ...hello });
-    const { store, actions } = newHarness({ common: { flow: "oidc" } });
+    const { store, actions } = newHarness({}, { flow: "oidc" });
 
     const response = await store.dispatch(executeHello());
 
@@ -176,7 +170,7 @@ describe("executeHello", () => {
     // The server answers a hello for an anonymous visitor with 200 and
     // success false, never with a 204.
     replyEchoingState(200, { success: false, flow: "oidc" });
-    const { store, actions } = newHarness({ common: { flow: "oidc" } });
+    const { store, actions } = newHarness({}, { flow: "oidc" });
 
     const response = await store.dispatch(executeHello());
 
@@ -301,7 +295,7 @@ describe("executeLogoff", () => {
 
   it("posts nothing but the state nonce to a page relative endpoint", async () => {
     replyEchoingState(200, { success: true });
-    const { store } = newHarness({ common: { flow: "oidc", query: { scope: "openid" } } });
+    const { store } = newHarness({}, { flow: "oidc", query: { scope: "openid" } });
 
     await store.dispatch(executeLogoff());
 
@@ -314,30 +308,30 @@ describe("executeLogoff", () => {
     expect(postedBody()).toEqual({ state: expect.any(String) });
   });
 
-  it("dispatches a successful logoff and resolves with the response", async () => {
+  it("clears the session and resolves with the response on a successful logoff", async () => {
     const reply: Omit<StateResponse, "state"> = { success: true };
     replyEchoingState(200, { ...reply });
-    const { store, actions } = newHarness({ login: { username: "user1", password: "secret" } });
+    const { store, actions } = newHarness({ common: { hello: { state: true, username: "user1", details: {} } } });
 
     const response = await store.dispatch(executeLogoff());
 
-    expect(actions.map((a) => a.type)).toEqual([resetHello.type, receiveLogoff.type]);
-    receiveLogoffAction(actions[1]); // the reply's success is read off the resolved value, not the action
+    // Nothing in the login slice answers a logoff any more: the form's fields
+    // belong to the screen and go with it, so resetting the session is all
+    // there is to do.
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type]);
     expect(response).toEqual({ success: true, state: postedBody().state });
-    // The login reducer forgets the credentials once logoff is received.
-    expect(store.getState().login.username).toBe("");
-    expect(store.getState().login.password).toBe("");
+    expect(store.getState().common.hello).toBeNull();
   });
 
   it("ends the session even when the logoff reply is unsuccessful", async () => {
     replyEchoingState(200, { success: false });
-    const { store, actions } = newHarness();
+    const { store, actions } = newHarness({ common: { hello: { state: true, username: "user1", details: {} } } });
 
     await store.dispatch(executeLogoff());
 
     // A 200 answered the request, so the flag the reply carries changes nothing.
-    expect(actions[1].type).toBe(receiveLogoff.type);
-    expect(store.getState().login.username).toBe("");
+    expect(actions.map((a) => a.type)).toEqual([resetHello.type]);
+    expect(store.getState().common.hello).toBeNull();
   });
 
   it("treats a 204 as an unexpected status, unlike logon and consent", async () => {

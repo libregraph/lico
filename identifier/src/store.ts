@@ -3,6 +3,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 
 import { commonSlice } from "./reducers/common";
 import { loginSlice } from "./reducers/login";
+import type { SignInRequest } from "./request";
 
 /*
  * The state shape is derived from the reducers rather than from the store, so
@@ -24,15 +25,22 @@ export type RootState = ReturnType<typeof rootReducer>;
 /*
  * Builds a store. Tests call this for an isolated one per case instead of
  * sharing the singleton below, which is what the application uses.
+ *
+ * The sign-in request is a dependency rather than state, so it is handed to
+ * the thunks as their extra argument instead of being put in a slice where a
+ * reducer could appear to change it.
  */
-export const setupStore = (preloadedState?: Partial<RootState>) =>
+export const setupStore = (request: SignInRequest, preloadedState?: Partial<RootState>) =>
   configureStore({
     reducer: rootReducer,
     preloadedState,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({ thunk: { extraArgument: request } }),
   });
 
-export const store = setupStore();
-
+/*
+ * There is no store at module scope: one cannot be built before the request
+ * has been read off the URL, and index.tsx is where that happens.
+ */
 export type AppStore = ReturnType<typeof setupStore>;
 
 /*
@@ -44,10 +52,7 @@ export type AppDispatch = AppStore["dispatch"];
 
 /*
  * The return type of a thunk is whatever its caller awaits, so it stays a
- * parameter. The third argument is `undefined` rather than `unknown`, because
- * no thunk here is given an extra argument and saying so keeps reaching for one
- * a type error.
+ * parameter. The third argument is the sign-in request: the parameters every
+ * thunk that talks to the server needs, and which none of them may change.
  */
-export type AppThunk<R = void> = ThunkAction<R, RootState, undefined, UnknownAction>;
-
-export default store;
+export type AppThunk<R = void> = ThunkAction<R, RootState, SignInRequest, UnknownAction>;

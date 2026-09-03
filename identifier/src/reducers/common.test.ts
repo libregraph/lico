@@ -24,12 +24,6 @@ describe("commonReducer", () => {
     expect(state.error).toBeNull();
   });
 
-  it("falls back to the default path prefix when the placeholder was not substituted", () => {
-    // The server replaces __PATH_PREFIX__ in index.html. In a test nothing does,
-    // so the reducer must use its own default rather than the literal.
-    expect(initial().pathPrefix).toBe("/signin/v1");
-  });
-
   it("stores a received error", () => {
     // What is kept is the translatable shape rather than the caught instance,
     // so that everything in the store survives serialisation.

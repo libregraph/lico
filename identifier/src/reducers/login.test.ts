@@ -7,15 +7,14 @@ import {
 } from "../errors";
 import type { FieldErrors, LoginState } from "../test-utils";
 import {
+  clearFieldError,
   loginSlice,
   receiveConsent,
-  receiveLogoff,
   receiveLogon,
   receiveValidateLogon,
   requestConsentAllow,
   requestConsentCancel,
   requestLogon,
-  updateInput,
 } from "./login";
 
 const loginReducer = loginSlice.reducer;
@@ -33,11 +32,9 @@ const initial = (): LoginState => loginReducer(undefined, foreignAction("@@INIT"
 // The reducer is driven with the real action creators so that a rename or a
 // changed payload shape on either side breaks the test.
 describe("loginReducer", () => {
-  it("starts idle with empty credentials and no errors", () => {
+  it("starts idle with no errors", () => {
     expect(initial()).toEqual({
       loading: "",
-      username: "",
-      password: "",
       errors: {},
     });
   });
@@ -47,7 +44,7 @@ describe("loginReducer", () => {
       username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME },
       password: { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD },
     };
-    const pending = loginReducer(initial(), requestLogon({ username: "user1", password: "secret" }));
+    const pending = loginReducer(initial(), requestLogon());
 
     const state = loginReducer(pending, receiveValidateLogon(errors));
 
@@ -58,7 +55,7 @@ describe("loginReducer", () => {
   it("marks a logon request as loading with its own action type", () => {
     // Components render their spinner by comparing loading against the
     // imported constant, so the stored value has to be that exact string.
-    const state = loginReducer(initial(), requestLogon({ username: "user1", password: "secret" }));
+    const state = loginReducer(initial(), requestLogon());
 
     expect(state.loading).toBe(requestLogon.type);
   });
@@ -81,7 +78,7 @@ describe("loginReducer", () => {
       receiveValidateLogon({ username: { message: ERROR_LOGIN_VALIDATE_MISSINGUSERNAME } }),
     );
 
-    expect(loginReducer(failed, requestLogon({ username: "user1", password: "secret" })).errors).toEqual({});
+    expect(loginReducer(failed, requestLogon()).errors).toEqual({});
     expect(loginReducer(failed, requestConsentAllow()).errors).toEqual({});
     expect(loginReducer(failed, requestConsentCancel()).errors).toEqual({});
   });
@@ -90,7 +87,7 @@ describe("loginReducer", () => {
     const errors: FieldErrors = {
       http: { message: ERROR_LOGIN_FAILED },
     };
-    const pending = loginReducer(initial(), requestLogon({ username: "user1", password: "wrong" }));
+    const pending = loginReducer(initial(), requestLogon());
 
     const state = loginReducer(pending, receiveLogon({ success: false, errors }));
 
@@ -99,7 +96,7 @@ describe("loginReducer", () => {
   });
 
   it("falls back to an empty error map when a failed logon reports no errors", () => {
-    const pending = loginReducer(initial(), requestLogon({ username: "user1", password: "wrong" }));
+    const pending = loginReducer(initial(), requestLogon());
 
     const state = loginReducer(pending, receiveLogon({ success: false }));
 
@@ -110,7 +107,7 @@ describe("loginReducer", () => {
   it("leaves the state untouched on a successful logon", () => {
     // The success path navigates away, so the loading flag is kept on purpose
     // and the state object must not be replaced.
-    const pending = loginReducer(initial(), requestLogon({ username: "user1", password: "secret" }));
+    const pending = loginReducer(initial(), requestLogon());
 
     expect(loginReducer(pending, receiveLogon({ success: true }))).toBe(pending);
   });
@@ -149,24 +146,16 @@ describe("loginReducer", () => {
     expect(receiveConsent({ success: true }).type).toBe("login/receiveConsent");
   });
 
-  it("forgets the credentials after a logoff", () => {
-    const typed = loginReducer(
-      loginReducer(initial(), updateInput({ name: "username", value: "user1@example.com" })),
-      updateInput({ name: "password", value: "secret" }),
-    );
-    // Signing out clears the fields whatever the reply said, which is why the
-    // action carries no payload.
-    const state = loginReducer(typed, receiveLogoff());
+  it("holds neither credential, and no action carries one", () => {
+    // Both fields belong to the form. Nothing here may keep them, and nothing
+    // dispatched may carry them, because the devtools record state and actions
+    // alike and both outlive the request the credentials were typed for.
+    const state = loginReducer(loginReducer(initial(), requestLogon()), clearFieldError("username"));
 
-    expect(state.username).toBe("");
-    expect(state.password).toBe("");
-  });
-
-  it("records the value typed into a named field", () => {
-    const state = loginReducer(initial(), updateInput({ name: "username", value: "user1@example.com" }));
-
-    expect(state.username).toBe("user1@example.com");
-    expect(state.password).toBe("");
+    expect(state).not.toHaveProperty("password");
+    expect(state).not.toHaveProperty("username");
+    expect(requestLogon()).toEqual({ type: requestLogon.type, payload: undefined });
+    expect(Object.keys(state)).toEqual(["loading", "errors"]);
   });
 
   it("clears the error of a field as soon as it is edited", () => {
@@ -180,7 +169,7 @@ describe("loginReducer", () => {
       }),
     );
 
-    const state: LoginState = loginReducer(invalid, updateInput({ name: "username", value: "u" }));
+    const state: LoginState = loginReducer(invalid, clearFieldError("username"));
 
     expect(state.errors.username).toBeUndefined();
     expect(state.errors.password).toBeDefined();
@@ -197,7 +186,7 @@ describe("loginReducer", () => {
       }),
     );
 
-    const state: LoginState = loginReducer(invalid, updateInput({ name: "username", value: "u" }));
+    const state: LoginState = loginReducer(invalid, clearFieldError("username"));
 
     expect(invalid.errors.username).toBeDefined();
     expect(state.errors).not.toBe(invalid.errors);

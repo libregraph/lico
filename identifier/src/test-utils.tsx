@@ -17,6 +17,8 @@ import type { Mock } from "vitest";
 import type { FlowNavigation } from "./hooks/navigation";
 import type { CommonState } from "./reducers/common";
 import type { LoginState } from "./reducers/login";
+import type { SignInRequest } from "./request";
+import { DEFAULT_PATH_PREFIX, PathPrefixProvider, SignInRequestProvider } from "./request";
 import type { AppStore, RootState } from "./store";
 import { setupStore } from "./store";
 
@@ -37,25 +39,26 @@ export type {
 } from "./models/api";
 export type { CommonState } from "./reducers/common";
 export type { LoginState } from "./reducers/login";
+export type { SignInRequest } from "./request";
 
-/*
- * The common reducer reads the query string at module load, so its slice cannot
- * be influenced from a test by touching location. Tests preload it instead.
- */
 export const defaultCommonState: CommonState = {
   hello: null,
   branding: null,
   error: null,
-  flow: "",
-  query: {},
-  pathPrefix: "/signin/v1",
 };
 
 export const defaultLoginState: LoginState = {
   loading: "",
-  username: "",
-  password: "",
   errors: {},
+};
+
+/*
+ * What the request would have asked for. This is a dependency rather than
+ * state, so a test hands it in whole instead of preloading it into a slice.
+ */
+export const defaultSignInRequest: SignInRequest = {
+  flow: "",
+  query: {},
 };
 
 export interface PreloadedState {
@@ -70,16 +73,15 @@ export interface PreloadedState {
 export type TestStore = AppStore;
 
 /*
- * makeStore builds an isolated store. The application's own store is a module
- * level singleton, which would leak state between tests.
+ * makeStore builds an isolated store, so state cannot leak between tests.
  */
-export function makeStore(preloaded: PreloadedState = {}): TestStore {
+export function makeStore(preloaded: PreloadedState = {}, request: Partial<SignInRequest> = {}): TestStore {
   const preloadedState: RootState = {
     common: { ...defaultCommonState, ...preloaded.common },
     login: { ...defaultLoginState, ...preloaded.login },
   };
 
-  return setupStore(preloadedState);
+  return setupStore({ ...defaultSignInRequest, ...request }, preloadedState);
 }
 
 /*
@@ -229,6 +231,8 @@ export interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper
   preloaded?: PreloadedState;
   /* Initial URL for the router. */
   route?: string;
+  /* What the screen was asked to sign in for, which is not state. */
+  request?: Partial<SignInRequest>;
   /*
    * Reach `route` by navigating rather than by loading it. The screens which
    * decide on mount whether they were reached from inside the app read exactly
@@ -250,27 +254,32 @@ export function renderWithProviders(
   ui: React.ReactElement,
   options: RenderWithProvidersOptions = {},
 ): RenderWithProvidersResult {
-  const { store: givenStore, preloaded, route = "/", arriveBy, ...rest } = options;
-  const store = givenStore ?? makeStore(preloaded);
+  const { store: givenStore, preloaded, request, route = "/", arriveBy, ...rest } = options;
+  const store = givenStore ?? makeStore(preloaded, request);
+  const wholeRequest: SignInRequest = { ...defaultSignInRequest, ...request };
   const instance = getTestI18n();
   const nav = new NavigationRecorder(arriveBy ? new URL(route, "http://test").pathname : undefined);
 
   const wrapper = ({ children }: { children?: React.ReactNode }) => (
-    <Provider store={store}>
-      <I18nextProvider i18n={instance}>
-        <MemoryRouter initialEntries={[arriveBy ? ARRIVAL_ROUTE : route]}>
-          <Recorder into={nav} />
-          {arriveBy ? (
-            <Routes>
-              <Route path={ARRIVAL_ROUTE} element={<Arrival to={route} replace={arriveBy === "REPLACE"} />} />
-              <Route path="*" element={children} />
-            </Routes>
-          ) : (
-            children
-          )}
-        </MemoryRouter>
-      </I18nextProvider>
-    </Provider>
+    <SignInRequestProvider value={wholeRequest}>
+      <PathPrefixProvider value={DEFAULT_PATH_PREFIX}>
+        <Provider store={store}>
+          <I18nextProvider i18n={instance}>
+            <MemoryRouter initialEntries={[arriveBy ? ARRIVAL_ROUTE : route]}>
+              <Recorder into={nav} />
+              {arriveBy ? (
+                <Routes>
+                  <Route path={ARRIVAL_ROUTE} element={<Arrival to={route} replace={arriveBy === "REPLACE"} />} />
+                  <Route path="*" element={children} />
+                </Routes>
+              ) : (
+                children
+              )}
+            </MemoryRouter>
+          </I18nextProvider>
+        </Provider>
+      </PathPrefixProvider>
+    </SignInRequestProvider>
   );
 
   return { ...render(ui, { wrapper, ...rest }), store, nav };
@@ -285,14 +294,18 @@ export function renderWithoutRouter(
   ui: React.ReactElement,
   options: Omit<RenderWithProvidersOptions, "route" | "arriveBy"> = {},
 ): RenderResult & { store: TestStore } {
-  const { store: givenStore, preloaded, ...rest } = options;
-  const store = givenStore ?? makeStore(preloaded);
+  const { store: givenStore, preloaded, request, ...rest } = options;
+  const store = givenStore ?? makeStore(preloaded, request);
   const instance = getTestI18n();
 
   const wrapper = ({ children }: { children?: React.ReactNode }) => (
-    <Provider store={store}>
-      <I18nextProvider i18n={instance}>{children}</I18nextProvider>
-    </Provider>
+    <SignInRequestProvider value={{ ...defaultSignInRequest, ...request }}>
+      <PathPrefixProvider value={DEFAULT_PATH_PREFIX}>
+        <Provider store={store}>
+          <I18nextProvider i18n={instance}>{children}</I18nextProvider>
+        </Provider>
+      </PathPrefixProvider>
+    </SignInRequestProvider>
   );
 
   return { ...render(ui, { wrapper, ...rest }), store };
