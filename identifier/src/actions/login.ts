@@ -9,7 +9,7 @@ import {
   ExtendedError,
 } from "../errors";
 import type { FlowNavigation } from "../hooks/navigation";
-import type { AttemptResult, FieldErrors, HelloResponse } from "../models/api";
+import type { AttemptResult, FieldErrors, HelloResponse, LogonResponse, StateResponse } from "../models/api";
 import { newHelloRequest } from "../models/hello";
 import { receiveHello } from "../reducers/common";
 import {
@@ -73,8 +73,14 @@ export function executeLogon(
       let response: AttemptResult;
       switch (status) {
         case 200:
-          // success.
-          response = data as AttemptResult;
+          /*
+           * Parsed as the shape this endpoint sends, not as the union the
+           * containers read. The two differ: a locally built refusal also
+           * arrives as an AttemptResult, and only replies come through here, so
+           * a field the server starts sending lands in one place that has to
+           * account for it.
+           */
+          response = data as LogonResponse;
           break;
         case 204:
           // login failed. The state travels in a header, because there is no
@@ -147,8 +153,9 @@ export function executeConsent(
       let response: AttemptResult;
       switch (status) {
         case 200:
-          // success.
-          response = data as AttemptResult;
+          // This endpoint answers with the outcome and the nonce and no more,
+          // so it is parsed as that rather than as the wider union.
+          response = data as StateResponse;
           break;
         case 204:
           // cancel reply. The state travels in a header, because there is no
