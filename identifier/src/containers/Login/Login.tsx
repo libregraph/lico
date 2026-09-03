@@ -182,7 +182,7 @@ function Login() {
    * this one stays on screen. The delay is what tells those two apart without
    * having to ask which it will be. A route change resolves inside it and shows
    * nothing; a hand-off outlives it and the visitor gets an indicator instead of
-   * a card with a logo and no content. 800ms is the delay Spinner uses.
+   * a card with a logo and no content. 800ms is the delay ProgressStrip uses.
    */
   if (passingThrough) {
     return selectAccount ? <RedirectWithQuery target="/chooseaccount" /> : <Loading delay={800} />;
