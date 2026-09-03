@@ -2,7 +2,6 @@ import queryString from "query-string";
 
 import {
   asError,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
   ERROR_LOGIN_FAILED,
   ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
@@ -22,7 +21,7 @@ import {
   requestLogon,
 } from "../reducers/login";
 import type { AppThunk } from "../store";
-import { withClientRequestState, withSearchAndHash } from "../utils";
+import { assertEchoedState, withClientRequestState, withSearchAndHash } from "../utils";
 import type { PostJSONOptions } from "./utils";
 import { isAbortError, postJSON } from "./utils";
 
@@ -92,9 +91,7 @@ export function executeLogon(
           throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
 
-      if (response.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: response.state });
-      }
+      assertEchoedState(r, response);
 
       // A reply without a hello of its own still has to leave a session behind,
       // so the outcome and the name that was tried stand in for one.
@@ -165,9 +162,7 @@ export function executeConsent(
           throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
 
-      if (response.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: response.state });
-      }
+      assertEchoedState(r, response);
 
       dispatch(receiveConsent(response));
       return response;

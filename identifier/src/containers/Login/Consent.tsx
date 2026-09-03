@@ -16,11 +16,10 @@ import { advanceLogonFlow, executeConsent } from "../../actions/login";
 import ClientDisplayName from "../../components/ClientDisplayName";
 import ScopesList from "../../components/ScopesList";
 import { ErrorMessage } from "../../errors";
-import { useFlowNavigation } from "../../hooks/navigation";
+import { useFlowNavigation, useRedirectUnlessPushed } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectHello } from "../../reducers/common";
 import { receiveValidateLogon, requestConsentAllow, selectErrors, selectLoading } from "../../reducers/login";
-import { withSearchAndHash } from "../../utils";
 
 // Both action buttons share the same wrapper, which positions the progress
 // indicator over them.
@@ -73,15 +72,11 @@ function Consent() {
   // it must not be given an empty object which would read as one being present.
   const client = hello?.details ? hello.details.client : undefined;
 
-  // The guard runs once, on mount. Naming hello or client as dependencies would
-  // re-run it whenever the session changes and could redirect the visitor away
-  // in the middle of deciding.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
-  useEffect(() => {
-    if ((!hello?.state || !client) && nav.navigationType !== "PUSH") {
-      nav.navigate(withSearchAndHash("/identifier", nav.location), { replace: true });
-    }
+  // Nothing to consent to without a session and a client asking for one.
+  useRedirectUnlessPushed(!hello?.state || !client);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design
+  useEffect(() => {
     dispatch(receiveValidateLogon({})); // XXX(longsleep): hack to reset loading and errors.
   }, []);
 
