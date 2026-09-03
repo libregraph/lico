@@ -1,14 +1,9 @@
-import {
-  asError,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
-  ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
-  ExtendedError,
-} from "../errors";
+import { asError, ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, ExtendedError } from "../errors";
 import type { AttemptResult, HelloResponse, StateResponse } from "../models/api";
 import { newHelloRequest } from "../models/hello";
 import { receiveError, receiveHello, resetHello } from "../reducers/common";
 import type { AppThunk } from "../store";
-import { withClientRequestState } from "../utils";
+import { assertEchoedState, withClientRequestState } from "../utils";
 import type { PostJSONOptions } from "./utils";
 import { isAbortError, postJSON } from "./utils";
 
@@ -30,9 +25,7 @@ export function executeHello(options: PostJSONOptions = {}): AppThunk<Promise<He
       // The body is whatever the endpoint sent; the nonce comparison below is
       // what establishes that this reply answers this request.
       const hello = data as HelloResponse;
-      if (hello.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: hello.state });
-      }
+      assertEchoedState(r, hello);
 
       dispatch(receiveHello(hello));
       return hello;
@@ -67,10 +60,7 @@ export function executeLogoff(options: PostJSONOptions = {}): AppThunk<Promise<A
         throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS, { status });
       }
 
-      const result = data as StateResponse;
-      if (result.state !== r.state) {
-        throw new ExtendedError(ERROR_HTTP_UNEXPECTED_RESPONSE_STATE, { state: result.state });
-      }
+      const result = assertEchoedState(r, data as StateResponse);
 
       return result;
     } catch (error) {

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import Avatar from "@mui/material/Avatar";
@@ -12,7 +11,7 @@ import Typography from "@mui/material/Typography";
 
 import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
 import { ErrorMessage } from "../../errors";
-import { useFlowNavigation } from "../../hooks/navigation";
+import { useFlowNavigation, useRedirectUnlessPushed } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { selectHello } from "../../reducers/common";
 import { selectErrors, selectLoading } from "../../reducers/login";
@@ -27,15 +26,8 @@ function Chooseaccount() {
   const loading = useAppSelector(selectLoading);
   const errors = useAppSelector(selectErrors);
 
-  // This guard sends a visitor without a session back to the sign-in form, once,
-  // on mount. Naming hello or the location as dependencies would re-run it whenever
-  // the session changes and could redirect the visitor mid-flow.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only by design, see above
-  useEffect(() => {
-    if (!hello?.state && nav.navigationType !== "PUSH") {
-      nav.navigate(withSearchAndHash("/identifier", nav.location), { replace: true });
-    }
-  }, []);
+  // A visitor without a session has nothing to choose between.
+  useRedirectUnlessPushed(!hello?.state);
 
   // Both the form and the account entry reach this, so the event is only ever
   // used to stop the default submission.
