@@ -1,4 +1,4 @@
-import { DEFAULT_PATH_PREFIX, readPathPrefix, readSignInRequest } from "./request";
+import { DEFAULT_PATH_PREFIX, readBackgroundImage, readPathPrefix, readSignInRequest } from "./request";
 
 /* Stands in for the element identifier.go substitutes the prefix into. */
 function root(pathPrefix: string | null): Element | null {
@@ -65,5 +65,40 @@ describe("readPathPrefix", () => {
 
   it("falls back to the default when there is no element at all", () => {
     expect(readPathPrefix(null)).toBe(DEFAULT_PATH_PREFIX);
+  });
+});
+
+describe("readBackgroundImage", () => {
+  /* Stands in for the same element, carrying the other attribute. */
+  const withImage = (name: string | null): Element | null => {
+    if (name === null) {
+      return null;
+    }
+    const element = document.createElement("div");
+    element.setAttribute("data-background-image", name);
+    return element;
+  };
+
+  it("names the image a deployment dropped in", () => {
+    expect(readBackgroundImage(withImage("background.png"))).toBe("background.png");
+  });
+
+  it("reports none when the server substituted an empty value", () => {
+    // Which is what it writes when no such file is beside the deployment.
+    expect(readBackgroundImage(withImage(""))).toBeNull();
+  });
+
+  it("reports none when the placeholder was not substituted", () => {
+    // A dev server leaves it alone, and treating the literal as a filename
+    // would ask for an image by that name and paint nothing until it 404s.
+    expect(readBackgroundImage(withImage("__BACKGROUND_IMAGE__"))).toBeNull();
+  });
+
+  it("reports none when the element carries no such attribute", () => {
+    expect(readBackgroundImage(document.createElement("div"))).toBeNull();
+  });
+
+  it("reports none when there is no element at all", () => {
+    expect(readBackgroundImage(null)).toBeNull();
   });
 });

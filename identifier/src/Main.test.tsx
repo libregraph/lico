@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 
 import App from "./App";
 import { postedBody, postedInit, postedUrl, renderWithoutRouter, replyEchoingState, stubFetch } from "./test-utils";
+import { makeTheme } from "./theme";
 
 /*
  * App mounts the router itself, with the deployment's path prefix as its
@@ -12,6 +13,9 @@ import { postedBody, postedInit, postedUrl, renderWithoutRouter, replyEchoingSta
  */
 const PATH_PREFIX = "/signin/v1";
 
+/* Built with the same prefix the document below is served from. */
+const theme = makeTheme(PATH_PREFIX);
+
 describe("App", () => {
   beforeEach(() => {
     window.history.replaceState({}, "", `${PATH_PREFIX}/identifier`);
@@ -21,7 +25,7 @@ describe("App", () => {
   });
 
   it("takes a visitor who is not signed in to the sign in screen", async () => {
-    renderWithoutRouter(<App />);
+    renderWithoutRouter(<App theme={theme} />);
 
     // Main is loaded lazily behind a Suspense boundary, so the spinner shows
     // first. Awaiting the query is what makes this assert the real tree.
@@ -30,7 +34,7 @@ describe("App", () => {
   });
 
   it("asks the server who the visitor is while it starts up", async () => {
-    renderWithoutRouter(<App />);
+    renderWithoutRouter(<App theme={theme} />);
 
     await screen.findByText("Sign in");
 

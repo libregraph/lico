@@ -83,6 +83,51 @@ const preloadFirstPaintFontsPlugin = (): Plugin => {
   };
 };
 
+/*
+ * Vite ships index.html as written, so the notes explaining the loading state
+ * would be served to every visitor. They are for whoever edits the file, so
+ * they are dropped here along with the indentation of the style block that
+ * paints it.
+ *
+ * The one comment that stays is the placeholder the server replaces with the
+ * background preload. It is a comment so that it stays invisible when nothing
+ * substitutes it, which makes it the one piece of this document whose survival
+ * is load-bearing, hence the check rather than trust.
+ *
+ * Collapsing the style's whitespace is safe only while none of its declarations
+ * carry a string where spacing counts, which today means an empty `content`.
+ */
+const trimIndexHTMLPlugin = (): Plugin => {
+  const preloadPlaceholder = "__BACKGROUND_PRELOAD__";
+
+  return {
+    name: "trim-index-html",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(htmlData: string) {
+        const trimmed = htmlData
+          .replace(/<!--[\s\S]*?-->/g, (comment) => (comment.includes(preloadPlaceholder) ? comment : ""))
+          .replace(
+            /<style([^>]*)>([\s\S]*?)<\/style>/g,
+            (_all, attributes: string, css: string) =>
+              `<style${attributes}>${css
+                .replace(/\/\*[\s\S]*?\*\//g, "")
+                .replace(/\s+/g, " ")
+                .trim()}</style>`,
+          )
+          .replace(/^[ \t]*\r?\n/gm, "");
+
+        if (!trimmed.includes(preloadPlaceholder)) {
+          throw new Error(`trim-index-html: ${preloadPlaceholder} did not survive, the background preload is dead`);
+        }
+
+        return trimmed;
+      },
+    },
+  };
+};
+
 // Where the build writes everything it emits, named once because the file name
 // templates below have to repeat it: they replace the whole path, not just the
 // name, so `assetsDir` alone no longer decides where a chunk lands.
@@ -187,6 +232,8 @@ export default defineConfig((env: ConfigEnv): ViteUserConfig => {
         }),
       addScriptCSPNoncePlaceholderPlugin(),
       preloadFirstPaintFontsPlugin(),
+      // Last, so it trims the document every plugin above has finished with.
+      trimIndexHTMLPlugin(),
     ],
     test: {
       globals: true,

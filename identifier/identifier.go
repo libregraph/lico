@@ -96,6 +96,31 @@ type Identifier struct {
 	router *mux.Router
 }
 
+// backgroundImageName is the file a deployment drops into the webapp's static
+// folder to take the sign-in page's background over. It is looked for once, at
+// startup, because the answer is substituted into the document: the webapp has
+// to know before it paints anything, or it shows its own background until the
+// image arrives and then replaces it.
+const backgroundImageName = "background.png"
+
+// substituteWebappIndexHTML fills in the placeholders the built document
+// carries. The background preload is a comment in the source so that it stays
+// invisible when nothing substitutes it, which is what the dev server does.
+func substituteWebappIndexHTML(document []byte, pathPrefix string, hasBackgroundImage bool) []byte {
+	background := ""
+	preload := ""
+	if hasBackgroundImage {
+		background = backgroundImageName
+		preload = fmt.Sprintf(`<link rel="preload" as="image" href="./static/%s">`, backgroundImageName)
+	}
+
+	document = bytes.Replace(document, []byte("__PATH_PREFIX__"), []byte(pathPrefix), 1)
+	document = bytes.Replace(document, []byte("__BACKGROUND_IMAGE__"), []byte(background), 1)
+	document = bytes.Replace(document, []byte("<!--__BACKGROUND_PRELOAD__-->"), []byte(preload), 1)
+
+	return document
+}
+
 // NewIdentifier returns a new Identifier.
 func NewIdentifier(c *Config) (*Identifier, error) {
 	staticFolder := c.StaticFolder
@@ -110,7 +135,9 @@ func NewIdentifier(c *Config) (*Identifier, error) {
 		if readErr != nil {
 			return nil, fmt.Errorf("identifier failed to read client index.html: %w", readErr)
 		}
-		webappIndexHTML = bytes.Replace(readData, []byte("__PATH_PREFIX__"), []byte(c.PathPrefix), 1)
+
+		_, bgErr := os.Stat(staticFolder + "/static/" + backgroundImageName)
+		webappIndexHTML = substituteWebappIndexHTML(readData, c.PathPrefix, bgErr == nil)
 	}
 
 	oauth2CbEndpointURI, _ := url.Parse(c.BaseURI.String())

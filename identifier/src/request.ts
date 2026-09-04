@@ -56,6 +56,23 @@ export function readPathPrefix(root: Element | null): string {
   return !prefix || prefix === "__PATH_PREFIX__" ? DEFAULT_PATH_PREFIX : prefix;
 }
 
+/*
+ * The name of the image a deployment dropped in to take the page's background
+ * over, or null when it left the page to draw its own.
+ *
+ * The server answers this in the document rather than the webapp looking for
+ * the file, because the answer has to be known before anything is painted: a
+ * page which drew its own background first would show it until the image
+ * arrived and then replace it.
+ */
+export function readBackgroundImage(root: Element | null): string | null {
+  const name = root?.getAttribute("data-background-image");
+
+  // Absent, empty, or an unsubstituted placeholder all mean the same thing:
+  // nobody put an image there.
+  return !name || name === "__BACKGROUND_IMAGE__" ? null : name;
+}
+
 const SignInRequestContext = createContext<SignInRequest | null>(null);
 
 export const SignInRequestProvider = SignInRequestContext.Provider;
