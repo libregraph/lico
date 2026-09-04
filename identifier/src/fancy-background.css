@@ -1,8 +1,10 @@
 /* not so fancy background */
 
-#bg {
-  background-color: white;
-}
+/*
+ * The element this sits on has no height of its own, because its only child is
+ * taken out of flow below, so the colour of the page comes from the theme by
+ * way of CssBaseline rather than from here.
+ */
 
 #bg > div {
   position: fixed;

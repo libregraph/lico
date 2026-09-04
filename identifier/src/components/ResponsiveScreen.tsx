@@ -163,7 +163,18 @@ const ResponsiveScreen = (props: ResponsiveScreenProps) => {
              * is the borderless standard variant v4 used, which is also what
              * disableUnderline applies to.
              */}
-            <LocaleSelect variant="standard" disableUnderline locales={branding?.locales} />
+            <LocaleSelect
+              variant="standard"
+              disableUnderline
+              locales={branding?.locales}
+              /*
+               * The language name is a utility control rather than content, so
+               * it takes the smaller size. It has to be set here: the size
+               * would otherwise come from the same place the username and
+               * password fields take theirs, and those want the body size.
+               */
+              sx={{ fontSize: "0.8125rem" }}
+            />
           </DialogActions>
         )}
       </ResponsiveDialog>
