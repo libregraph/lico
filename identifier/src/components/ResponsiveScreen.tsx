@@ -108,8 +108,14 @@ const ResponsiveScreen = (props: ResponsiveScreenProps) => {
         hideBackdrop
         {...DialogProps}
         slotProps={{
-          // v4 reached the same width by overriding the paperWidthSm class.
-          paper: { elevation: 4, sx: { maxWidth: 440 } },
+          /*
+           * v4 reached the same width by overriding the paperWidthSm class.
+           *
+           * The elevation is low because the dialog has no backdrop: the shadow
+           * is the only thing separating the card from the page, so it has to
+           * read as a lift rather than as a weight sitting on a pale field.
+           */
+          paper: { elevation: 2, sx: { maxWidth: 440 } },
           container: {
             sx: (theme) => ({
               /*

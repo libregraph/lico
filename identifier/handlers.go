@@ -34,12 +34,19 @@ import (
 	"github.com/libregraph/lico/utils"
 )
 
-// staticHandler serves the built web app assets. Everything it reaches carries
-// a content hash in its name, so it can be cached indefinitely.
+// staticHandler serves the built web app assets. Everything under the assets
+// folder carries a content hash in its name, so it can be cached indefinitely.
+// The rest of the static folder is addressed by a stable name a deployment is
+// meant to be able to replace, so it gets a lifetime short enough that a
+// replacement is picked up without a rebuild, a restart or a cache clear.
 func (i *Identifier) staticHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		addCommonResponseHeaders(rw.Header())
-		rw.Header().Set("Cache-Control", "max-age=3153600, public")
+		if strings.Contains(req.URL.Path, "/static/assets/") {
+			rw.Header().Set("Cache-Control", "max-age=3153600, public")
+		} else {
+			rw.Header().Set("Cache-Control", "max-age=300, public")
+		}
 		if strings.HasSuffix(req.URL.Path, "/") {
 			// Do not serve folder-ish resources.
 			i.ErrorPage(rw, http.StatusNotFound, "", "")

@@ -13,8 +13,16 @@ import "@fontsource/roboto/700.css";
 import "./i18n";
 
 import App from "./App";
-import { PathPrefixProvider, readPathPrefix, readSignInRequest, SignInRequestProvider } from "./request";
+import { loadBackgroundImage } from "./boot";
+import {
+  PathPrefixProvider,
+  readBackgroundImage,
+  readPathPrefix,
+  readSignInRequest,
+  SignInRequestProvider,
+} from "./request";
 import { setupStore } from "./store";
+import { makeTheme } from "./theme";
 
 /*
  * The nonce the server wrote into the document. Emotion does not look for this
@@ -57,7 +65,9 @@ if (!container) {
  */
 const request = readSignInRequest(document.location.search);
 const pathPrefix = readPathPrefix(container);
+const backgroundImage = readBackgroundImage(container);
 const store = setupStore(request);
+const theme = makeTheme(pathPrefix, backgroundImage);
 
 createRoot(container).render(
   <React.StrictMode>
@@ -65,10 +75,16 @@ createRoot(container).render(
       <SignInRequestProvider value={request}>
         <PathPrefixProvider value={pathPrefix}>
           <Provider store={store}>
-            <App />
+            <App theme={theme} />
           </Provider>
         </PathPrefixProvider>
       </SignInRequestProvider>
     </CacheProvider>
   </React.StrictMode>,
 );
+
+/*
+ * Starts the background fetch behind the loading state. The state itself is
+ * released from ./boot once this and the app are both ready.
+ */
+loadBackgroundImage(pathPrefix, backgroundImage);
