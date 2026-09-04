@@ -33,7 +33,7 @@ describe("ScopesList", () => {
   it("names offline access with its own wording", () => {
     renderWithProviders(<ScopesList scopes={{ offline_access: true }} meta={meta} />);
 
-    expect(screen.getByText("Keep the allowed access persistently and forever")).toBeInTheDocument();
+    expect(screen.getByText("Maintain access to data you have given it access to")).toBeInTheDocument();
   });
 
   it("uses the definition description when the scope has no special wording", () => {
@@ -66,7 +66,7 @@ describe("ScopesList", () => {
     renderWithProviders(<ScopesList scopes={{ openid: true, offline_access: false }} meta={meta} />);
 
     expect(screen.getByText("Verify your identity")).toBeInTheDocument();
-    expect(screen.queryByText("Keep the allowed access persistently and forever")).not.toBeInTheDocument();
+    expect(screen.queryByText("Maintain access to data you have given it access to")).not.toBeInTheDocument();
   });
 
   it("renders nothing at all when no scope was granted", () => {
@@ -75,15 +75,25 @@ describe("ScopesList", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 
-  it("marks every listed scope as granted and not changeable", () => {
+  it("states each scope rather than drawing a control for it", () => {
     renderWithProviders(<ScopesList scopes={{ profile: true, openid: true, offline_access: true }} meta={meta} />);
 
-    const checkboxes = screen.getAllByRole("checkbox");
+    // A checked and disabled checkbox claimed these were choices already made
+    // and locked. Nothing here is a choice: the grant is every requested scope
+    // or none, and this list is never read back.
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
 
-    expect(checkboxes).toHaveLength(3);
-    checkboxes.forEach((checkbox) => {
-      expect(checkbox).toBeChecked();
-      expect(checkbox).toBeDisabled();
-    });
+  it("states offline access last, whatever order the scopes arrive in", () => {
+    // The server marshals the scopes as a JSON object, so their keys arrive
+    // sorted rather than in any order this screen chose. How long the grant
+    // lasts belongs after the data it outlives.
+    renderWithProviders(<ScopesList scopes={{ offline_access: true, openid: true, profile: true }} meta={meta} />);
+
+    const rows = screen.getAllByRole("listitem").map((row) => row.textContent);
+
+    expect(rows).toHaveLength(3);
+    expect(rows[2]).toBe("Maintain access to data you have given it access to");
   });
 });

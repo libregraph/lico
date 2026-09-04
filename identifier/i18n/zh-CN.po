@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
-"POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
-"PO-Revision-Date: 2026-08-27 12:00+0200\n"
+"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
+"PO-Revision-Date: 2026-09-04 19:02+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: none\n"
 "Language: zh-CN\n"
@@ -13,8 +13,8 @@ msgstr ""
 
 #. From: konnect##consent##message
 #: konnect##consent##message
-msgid "<0><0><0></0></0></0> wants to"
-msgstr "<0><0><0></0></0></0> 希望执行以下操作"
+msgid "<0><0></0></0> wants to:"
+msgstr "<0><0></0></0> 希望执行以下操作："
 
 #. From: konnect##chooseaccount##useOther##persona##label
 #: konnect##chooseaccount##useOther##persona##label
@@ -31,16 +31,6 @@ msgstr "访问您的基本账户信息"
 msgid "Allow"
 msgstr "允许"
 
-#. From: konnect##consent##question
-#: konnect##consent##question
-msgid "Allow <1><0></0></1> to do this?"
-msgstr "允许 <1><0></0></1> 执行这些操作吗？"
-
-#. From: konnect##consent##consequence
-#: konnect##consent##consequence
-msgid "By clicking Allow, you allow this app to use your information."
-msgstr "点击“允许”，即表示您允许此应用使用您的信息。"
-
 #. From: konnect##consent##cancelButton##label
 #: konnect##consent##cancelButton##label
 msgid "Cancel"
@@ -51,10 +41,10 @@ msgstr "取消"
 msgid "Choose an account"
 msgstr "选择账户"
 
-#. From: konnect##consent##tooltip##client
-#: konnect##consent##tooltip##client
-msgid "Clicking \"Allow\" will redirect you to: {{redirectURI}}"
-msgstr "点击\"允许\"后，您将被重定向至：{{redirectURI}}"
+#. From: konnect##consent##redirect
+#: konnect##consent##redirect
+msgid "Clicking \"Allow\" will redirect you to {{host}}"
+msgstr "点击\"允许\"后，您将被重定向至：{{host}}"
 
 #. From: konnect##login##usernameField##placeholder##email
 #: konnect##login##usernameField##placeholder##email
@@ -96,15 +86,15 @@ msgstr "您好，{{displayName}}"
 msgid "Identity"
 msgstr "身份标识"
 
-#. From: konnect##scopeDescription##offlineAccess
-#: konnect##scopeDescription##offlineAccess
-msgid "Keep the allowed access persistently and forever"
-msgstr "永久保留已授予的访问权限"
-
 #. From: konnect##error##login##failed
 #: konnect##error##login##failed
 msgid "Logon failed. Please verify your credentials and try again."
 msgstr "登录失败。请检查您的登录凭据后重试。"
+
+#. From: konnect##scopeDescription##offlineAccess
+#: konnect##scopeDescription##offlineAccess
+msgid "Maintain access to data you have given it access to"
+msgstr "保留对您已授权数据的访问权限"
 
 #. From: konnect##error##http##networkError
 #: konnect##error##http##networkError
@@ -115,6 +105,11 @@ msgstr "网络错误。请检查您的网络连接后重试。"
 #: konnect##login##nextButton##label
 msgid "Next"
 msgstr "下一步"
+
+#. From: konnect##consent##nothingShared
+#: konnect##consent##nothingShared
+msgid "Nothing is shared until you click Allow."
+msgstr "在您点击“允许”之前，不会共享任何内容。"
 
 #. From: konnect##login##passwordField##label
 #: konnect##login##passwordField##label
@@ -197,3 +192,15 @@ msgstr "用于登录"
 #: konnect##goodbye##subHeader
 msgid "you have been signed out from your account"
 msgstr "您已退出登录"
+
+#~ msgid "Allow <1><0></0></1> to do this?"
+#~ msgstr "允许 <1><0></0></1> 执行这些操作吗？"
+
+#~ msgid "By clicking Allow, you allow this app to use your information."
+#~ msgstr "点击“允许”，即表示您允许此应用使用您的信息。"
+
+#~ msgid "Keep the allowed access persistently and forever"
+#~ msgstr "永久保留已授予的访问权限"
+
+#~ msgid "Then you will be returned to <0>{{host}}</0>"
+#~ msgstr "点击\"允许\"后，您将被重定向至：<0>{{host}}</0>"
