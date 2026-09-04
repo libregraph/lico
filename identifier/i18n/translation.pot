@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
+"POT-Creation-Date: 2026-09-04T18:39:04.647Z\n"
 "MIME-Version: 1.0\n"
 
 #. From: konnect##loading##error##headline
@@ -106,11 +106,6 @@ msgstr ""
 #. From: konnect##chooseaccount##subHeader
 #: konnect##chooseaccount##subHeader
 msgid "to sign in"
-msgstr ""
-
-#. From: konnect##chooseaccount##useOther##persona##label
-#: konnect##chooseaccount##useOther##persona##label
-msgid "?"
 msgstr ""
 
 #. From: konnect##chooseaccount##useOther##label

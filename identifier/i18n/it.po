@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
-"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
+"POT-Creation-Date: 2026-09-04T18:39:04.647Z\n"
 "PO-Revision-Date: 2026-09-04 19:02+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: none\n"
@@ -15,11 +15,6 @@ msgstr ""
 #: konnect##consent##message
 msgid "<0><0></0></0> wants to:"
 msgstr "<0><0></0></0> desidera:"
-
-#. From: konnect##chooseaccount##useOther##persona##label
-#: konnect##chooseaccount##useOther##persona##label
-msgid "?"
-msgstr "?"
 
 #. From: konnect##scopeDescription##aliasBasic
 #: konnect##scopeDescription##aliasBasic
@@ -192,6 +187,9 @@ msgstr "da usare per l'accesso"
 #: konnect##goodbye##subHeader
 msgid "you have been signed out from your account"
 msgstr "la disconnessione dal Suo account è stata effettuata"
+
+#~ msgid "?"
+#~ msgstr "?"
 
 #~ msgid "Allow <1><0></0></1> to do this?"
 #~ msgstr "Consentire a <1><0></0></1> di fare questo?"
