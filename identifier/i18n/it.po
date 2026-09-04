@@ -1,21 +1,20 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
-"POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
-"PO-Revision-Date: 2026-08-27 12:00+0200\n"
+"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
+"PO-Revision-Date: 2026-09-04 19:02+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
-"Language-Team: \n"
+"Language-Team: none\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.3\n"
 
 #. From: konnect##consent##message
 #: konnect##consent##message
-msgid "<0><0><0></0></0></0> wants to"
-msgstr "<0><0><0></0></0></0> desidera"
+msgid "<0><0></0></0> wants to:"
+msgstr "<0><0></0></0> desidera:"
 
 #. From: konnect##chooseaccount##useOther##persona##label
 #: konnect##chooseaccount##useOther##persona##label
@@ -32,16 +31,6 @@ msgstr "Accedere alle informazioni di base del Suo account"
 msgid "Allow"
 msgstr "Acconsento"
 
-#. From: konnect##consent##question
-#: konnect##consent##question
-msgid "Allow <1><0></0></1> to do this?"
-msgstr "Consentire a <1><0></0></1> di fare questo?"
-
-#. From: konnect##consent##consequence
-#: konnect##consent##consequence
-msgid "By clicking Allow, you allow this app to use your information."
-msgstr "Facendo clic su Acconsento, consente a questa app di utilizzare le Sue informazioni."
-
 #. From: konnect##consent##cancelButton##label
 #: konnect##consent##cancelButton##label
 msgid "Cancel"
@@ -52,10 +41,10 @@ msgstr "Annulla"
 msgid "Choose an account"
 msgstr "Scegliere un account"
 
-#. From: konnect##consent##tooltip##client
-#: konnect##consent##tooltip##client
-msgid "Clicking \"Allow\" will redirect you to: {{redirectURI}}"
-msgstr "Facendo clic su \"Acconsento\" verrà reindirizzato a: {{redirectURI}}"
+#. From: konnect##consent##redirect
+#: konnect##consent##redirect
+msgid "Clicking \"Allow\" will redirect you to {{host}}"
+msgstr "Facendo clic su \"Acconsento\" verrà reindirizzato a: {{host}}"
 
 #. From: konnect##login##usernameField##placeholder##email
 #: konnect##login##usernameField##placeholder##email
@@ -97,15 +86,15 @@ msgstr "Salve {{displayName}}"
 msgid "Identity"
 msgstr "Identità"
 
-#. From: konnect##scopeDescription##offlineAccess
-#: konnect##scopeDescription##offlineAccess
-msgid "Keep the allowed access persistently and forever"
-msgstr "Mantenere l'accesso consentito in modo permanente e senza scadenza"
-
 #. From: konnect##error##login##failed
 #: konnect##error##login##failed
 msgid "Logon failed. Please verify your credentials and try again."
 msgstr "Accesso non riuscito. Verificare le proprie credenziali e riprovare."
+
+#. From: konnect##scopeDescription##offlineAccess
+#: konnect##scopeDescription##offlineAccess
+msgid "Maintain access to data you have given it access to"
+msgstr "Mantenere l'accesso ai dati a cui ha concesso l'accesso"
 
 #. From: konnect##error##http##networkError
 #: konnect##error##http##networkError
@@ -116,6 +105,11 @@ msgstr "Errore di rete. Controllare la connessione e riprovare."
 #: konnect##login##nextButton##label
 msgid "Next"
 msgstr "Avanti"
+
+#. From: konnect##consent##nothingShared
+#: konnect##consent##nothingShared
+msgid "Nothing is shared until you click Allow."
+msgstr "Non viene condiviso nulla finché non fa clic su Acconsento."
 
 #. From: konnect##login##passwordField##label
 #: konnect##login##passwordField##label
@@ -198,3 +192,15 @@ msgstr "da usare per l'accesso"
 #: konnect##goodbye##subHeader
 msgid "you have been signed out from your account"
 msgstr "la disconnessione dal Suo account è stata effettuata"
+
+#~ msgid "Allow <1><0></0></1> to do this?"
+#~ msgstr "Consentire a <1><0></0></1> di fare questo?"
+
+#~ msgid "By clicking Allow, you allow this app to use your information."
+#~ msgstr "Facendo clic su Acconsento, consente a questa app di utilizzare le Sue informazioni."
+
+#~ msgid "Keep the allowed access persistently and forever"
+#~ msgstr "Mantenere l'accesso consentito in modo permanente e senza scadenza"
+
+#~ msgid "Then you will be returned to <0>{{host}}</0>"
+#~ msgstr "Facendo clic su \"Acconsento\" verrà reindirizzato a: <0>{{host}}</0>"

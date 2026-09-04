@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
+"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
 "MIME-Version: 1.0\n"
 
 #. From: konnect##loading##error##headline
@@ -53,7 +53,7 @@ msgstr ""
 
 #. From: konnect##scopeDescription##offlineAccess
 #: konnect##scopeDescription##offlineAccess
-msgid "Keep the allowed access persistently and forever"
+msgid "Maintain access to data you have given it access to"
 msgstr ""
 
 #. From: konnect##scopeDescription##scope
@@ -125,22 +125,17 @@ msgstr ""
 
 #. From: konnect##consent##message
 #: konnect##consent##message
-msgid "<0><0><0></0></0></0> wants to"
+msgid "<0><0></0></0> wants to:"
 msgstr ""
 
-#. From: konnect##consent##tooltip##client
-#: konnect##consent##tooltip##client
-msgid "Clicking \"Allow\" will redirect you to: {{redirectURI}}"
+#. From: konnect##consent##nothingShared
+#: konnect##consent##nothingShared
+msgid "Nothing is shared until you click Allow."
 msgstr ""
 
-#. From: konnect##consent##question
-#: konnect##consent##question
-msgid "Allow <1><0></0></1> to do this?"
-msgstr ""
-
-#. From: konnect##consent##consequence
-#: konnect##consent##consequence
-msgid "By clicking Allow, you allow this app to use your information."
+#. From: konnect##consent##redirect
+#: konnect##consent##redirect
+msgid "Clicking \"Allow\" will redirect you to {{host}}"
 msgstr ""
 
 #. From: konnect##consent##cancelButton##label

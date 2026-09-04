@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
-"POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
-"PO-Revision-Date: 2026-08-27 12:00+0200\n"
+"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
+"PO-Revision-Date: 2026-09-04 19:02+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: none\n"
 "Language: es\n"
@@ -13,8 +13,8 @@ msgstr ""
 
 #. From: konnect##consent##message
 #: konnect##consent##message
-msgid "<0><0><0></0></0></0> wants to"
-msgstr "<0><0><0></0></0></0> quiere"
+msgid "<0><0></0></0> wants to:"
+msgstr "<0><0></0></0> quiere:"
 
 #. From: konnect##chooseaccount##useOther##persona##label
 #: konnect##chooseaccount##useOther##persona##label
@@ -31,16 +31,6 @@ msgstr "Acceder a la información básica de su cuenta"
 msgid "Allow"
 msgstr "Permitir"
 
-#. From: konnect##consent##question
-#: konnect##consent##question
-msgid "Allow <1><0></0></1> to do this?"
-msgstr "¿Permitir que <1><0></0></1> haga esto?"
-
-#. From: konnect##consent##consequence
-#: konnect##consent##consequence
-msgid "By clicking Allow, you allow this app to use your information."
-msgstr "Al hacer clic en Permitir, autoriza a esta aplicación a usar su información."
-
 #. From: konnect##consent##cancelButton##label
 #: konnect##consent##cancelButton##label
 msgid "Cancel"
@@ -51,10 +41,10 @@ msgstr "Cancelar"
 msgid "Choose an account"
 msgstr "Elija una cuenta"
 
-#. From: konnect##consent##tooltip##client
-#: konnect##consent##tooltip##client
-msgid "Clicking \"Allow\" will redirect you to: {{redirectURI}}"
-msgstr "Al hacer clic en \"Permitir\" se le redirigirá a: {{redirectURI}}"
+#. From: konnect##consent##redirect
+#: konnect##consent##redirect
+msgid "Clicking \"Allow\" will redirect you to {{host}}"
+msgstr "Al hacer clic en \"Permitir\" se le redirigirá a: {{host}}"
 
 #. From: konnect##login##usernameField##placeholder##email
 #: konnect##login##usernameField##placeholder##email
@@ -96,15 +86,15 @@ msgstr "Hola {{displayName}}"
 msgid "Identity"
 msgstr "Identidad"
 
-#. From: konnect##scopeDescription##offlineAccess
-#: konnect##scopeDescription##offlineAccess
-msgid "Keep the allowed access persistently and forever"
-msgstr "Mantener el acceso concedido de forma permanente e indefinida"
-
 #. From: konnect##error##login##failed
 #: konnect##error##login##failed
 msgid "Logon failed. Please verify your credentials and try again."
 msgstr "Error al iniciar sesión. Compruebe sus credenciales e inténtelo de nuevo."
+
+#. From: konnect##scopeDescription##offlineAccess
+#: konnect##scopeDescription##offlineAccess
+msgid "Maintain access to data you have given it access to"
+msgstr "Mantener el acceso a los datos a los que le ha concedido acceso"
 
 #. From: konnect##error##http##networkError
 #: konnect##error##http##networkError
@@ -115,6 +105,11 @@ msgstr "Error de red. Compruebe su conexión e inténtelo de nuevo."
 #: konnect##login##nextButton##label
 msgid "Next"
 msgstr "Siguiente"
+
+#. From: konnect##consent##nothingShared
+#: konnect##consent##nothingShared
+msgid "Nothing is shared until you click Allow."
+msgstr "No se comparte nada hasta que haga clic en Permitir."
 
 #. From: konnect##login##passwordField##label
 #: konnect##login##passwordField##label
@@ -197,3 +192,15 @@ msgstr "para iniciar sesión"
 #: konnect##goodbye##subHeader
 msgid "you have been signed out from your account"
 msgstr "se ha cerrado la sesión de su cuenta"
+
+#~ msgid "Allow <1><0></0></1> to do this?"
+#~ msgstr "¿Permitir que <1><0></0></1> haga esto?"
+
+#~ msgid "By clicking Allow, you allow this app to use your information."
+#~ msgstr "Al hacer clic en Permitir, autoriza a esta aplicación a usar su información."
+
+#~ msgid "Keep the allowed access persistently and forever"
+#~ msgstr "Mantener el acceso concedido de forma permanente e indefinida"
+
+#~ msgid "Then you will be returned to <0>{{host}}</0>"
+#~ msgstr "Al hacer clic en \"Permitir\" se le redirigirá a: <0>{{host}}</0>"

@@ -107,16 +107,25 @@ describe("Consent", () => {
   it("names the client which asks for consent", () => {
     renderConsent();
 
-    // The sentences are assembled by Trans, so the client name sits in a child
+    // The sentence is assembled by Trans, so the client name sits in a child
     // element and the assertion has to look at the whole line.
-    expect(screen.getByText(/wants to/)).toHaveTextContent("OIDC Playground wants to");
-    expect(screen.getByText(/to do this\?/)).toHaveTextContent("Allow OIDC Playground to do this?");
+    expect(screen.getByText(/wants to/)).toHaveTextContent("OIDC Playground wants to:");
   });
 
   it("falls back to the client id when the client has no display name", () => {
     renderConsent(helloResponse({ client: { ...client, display_name: "" } }));
 
-    expect(screen.getByText(/to do this\?/)).toHaveTextContent("Allow playground.js to do this?");
+    expect(screen.getByText(/wants to/)).toHaveTextContent("playground.js wants to:");
+  });
+
+  it("asks nothing the buttons already answer", () => {
+    renderConsent();
+
+    // Two sentences used to sit under the list: one asking what Allow answers,
+    // the other restating it in lower contrast. The tail of the second is what
+    // identifies it, because the destination line also names the Allow button.
+    expect(screen.queryByText(/to do this\?/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/use your information/)).not.toBeInTheDocument();
   });
 
   it("lists the requested scopes once per scope alias", () => {
@@ -139,16 +148,69 @@ describe("Consent", () => {
       }),
     );
 
-    expect(screen.queryByText("Keep the allowed access persistently and forever")).not.toBeInTheDocument();
+    expect(screen.queryByText("Maintain access to data you have given it access to")).not.toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 
-  it("shows where allowing will send the browser", () => {
+  it("reports that nothing has been shared yet", () => {
     renderConsent();
 
-    // The tooltip publishes its text as the child's accessible label rather
-    // than as a title attribute, so that is what identifies it here.
-    expect(screen.getByLabelText('Clicking "Allow" will redirect you to: https://example.test/')).toBeInTheDocument();
+    // The list above is a proposal, which is the one thing on this screen a
+    // visitor cannot see for themselves, and the reason Cancel is safe.
+    expect(screen.getByText(/Nothing is shared until you click Allow\./)).toBeInTheDocument();
+  });
+
+  it("keeps the whole redirect URI off the page", () => {
+    renderConsent();
+
+    // Too technical to read, and for a native client it is a custom scheme or
+    // a loopback port. Only the domain survives, behind the icon.
+    expect(screen.queryByText(/https:\/\//)).not.toBeInTheDocument();
+    expect(screen.getByTitle('Clicking "Allow" will redirect you to example.test')).toBeInTheDocument();
+  });
+
+  it("carries the hover on its own indicator rather than the whole sentence", () => {
+    renderConsent();
+
+    // A line of prose is a large accidental hover target, and it leaves the
+    // tooltip with nothing to announce that it exists.
+    const hover = screen.getByTitle('Clicking "Allow" will redirect you to example.test');
+
+    expect(hover.textContent).toBe("");
+    expect(hover).not.toHaveTextContent("Nothing is shared");
+  });
+
+  it.each([
+    ["https://example.test/cb", "example.test"],
+    ["https://reporting.example.test:8443/oauth2/cb?session=9f3a", "reporting.example.test:8443"],
+    ["http://web.example.test/cb", "web.example.test"],
+  ])("names the domain of a web client behind the icon, %s", (redirect_uri, host) => {
+    renderConsent(helloResponse({ client: { ...client, redirect_uri } }));
+
+    expect(screen.getByTitle(`Clicking "Allow" will redirect you to ${host}`)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["msauth://com.microsoft.Office.Outlook/cb"],
+    ["custom://callback.example.net"],
+    ["http://localhost:53682/"],
+    ["http://127.0.0.1:53682/"],
+    ["urn:ietf:wg:oauth:2.0:oob"],
+    ["not a url"],
+    [""],
+  ])("offers no indicator when there is no domain worth naming, %s", (redirect_uri) => {
+    renderConsent(helloResponse({ client: { ...client, redirect_uri } }));
+
+    /*
+     * A native client returns to itself through a custom scheme or a loopback
+     * port, which names nothing a visitor knows. The registry guarantees those
+     * are the only shapes a non-web client can register.
+     */
+    expect(screen.queryByText(/redirect you to/)).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/redirect you to/)).not.toBeInTheDocument();
+
+    // The instruction is not conditional on any of that.
+    expect(screen.getByText(/Nothing is shared until you click Allow\./)).toBeInTheDocument();
   });
 
   it("grants the requested scopes when allow is clicked", async () => {

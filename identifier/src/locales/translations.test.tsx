@@ -22,14 +22,15 @@ import zhCN from "./zh-CN/translation.json";
 /*
  * These files are generated from i18n/*.po by `make -C identifier/i18n json`,
  * the same way src/locales/locales.json is, which the locale tests already rely
- * on. The consent screen is the strictest consumer of them: it builds two
- * sentences with <Trans>, wrapping the client application's name in nested
- * elements, and the translations carry that nesting as <0><0><0></0></0></0>
- * and <1><0></0></1>. A translator who drops or reorders one of those tags
- * leaves i18next unable to map the child, and the application's name silently
- * disappears from the sentence asking the user to grant it access. The word
- * order around the tags legitimately differs per language, so this asserts the
- * rendered result rather than the shape of the string.
+ * on. The consent screen is the strictest consumer of them. It builds the
+ * sentence naming the client application with <Trans>, wrapping that name in an
+ * element the translations carry as <0></0>: a translator who drops it leaves
+ * i18next unable to map the child, and the name of the application being
+ * granted access silently disappears from the sentence asking to grant it. The
+ * domain the browser will be sent to is interpolated into a tooltip instead, so
+ * that one is checked for an unresolved placeholder. The word order around both
+ * legitimately differs per language, so this asserts the rendered result rather
+ * than the shape of the string.
  */
 const locales: Record<string, Record<string, unknown>> = {
   de,
@@ -105,9 +106,16 @@ for (const lng of Object.keys(locales)) {
     expect(text).not.toMatch(/<\d+>/);
     expect(text).not.toMatch(/\{\{/);
 
-    // The client name has to sit inside the wrapping elements of both sentences.
-    const wrapped = [...container.querySelectorAll("em")].map((e) => e.textContent);
-    expect(wrapped.filter((n) => n === "OIDC Playground").length).toBeGreaterThanOrEqual(2);
+    // The client name has to survive the mapping. Its wrapper is a span, so
+    // this looks for an element whose whole content is the name.
+    const wrapped = [...container.querySelectorAll("span")].map((e) => e.textContent);
+    expect(wrapped).toContain("OIDC Playground");
+
+    // The domain reaches the visitor through the indicator's tooltip, which
+    // textContent cannot see, so the interpolation is checked on the attribute.
+    const hover = container.querySelector("[title]")?.getAttribute("title") ?? "";
+    expect(hover).toContain("example.test");
+    expect(hover).not.toMatch(/\{\{|<\d+>/);
 
     // Allow and Cancel are present, and the headline interpolated the user.
     expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(2);

@@ -1,21 +1,20 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"POT-Creation-Date: 2022-03-09T19:33:04.641Z\n"
-"PO-Revision-Date: 2026-08-27 12:00+0200\n"
+"Project-Id-Version: LibreGraph Connect Identifier\n"
+"POT-Creation-Date: 2026-09-04T17:22:13.004Z\n"
+"PO-Revision-Date: 2026-09-04 19:02+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
-"Language-Team: French <http://translate.kopano.io/projects/kopano/konnect/fr/>\n"
+"Language-Team: none\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Poedit 2.3\n"
 
 #. From: konnect##consent##message
 #: konnect##consent##message
-msgid "<0><0><0></0></0></0> wants to"
-msgstr "<0><0><0></0></0></0> souhaite"
+msgid "<0><0></0></0> wants to:"
+msgstr "<0><0></0></0> souhaite :"
 
 #. From: konnect##chooseaccount##useOther##persona##label
 #: konnect##chooseaccount##useOther##persona##label
@@ -32,16 +31,6 @@ msgstr "Consulter les informations de base de votre compte"
 msgid "Allow"
 msgstr "Autoriser"
 
-#. From: konnect##consent##question
-#: konnect##consent##question
-msgid "Allow <1><0></0></1> to do this?"
-msgstr "Autoriser <1><0></0></1> à faire cela?"
-
-#. From: konnect##consent##consequence
-#: konnect##consent##consequence
-msgid "By clicking Allow, you allow this app to use your information."
-msgstr "En cliquant, vous autoriser l'app à accéder à vos informations."
-
 #. From: konnect##consent##cancelButton##label
 #: konnect##consent##cancelButton##label
 msgid "Cancel"
@@ -52,10 +41,10 @@ msgstr "Annuler"
 msgid "Choose an account"
 msgstr "Choisir un compte"
 
-#. From: konnect##consent##tooltip##client
-#: konnect##consent##tooltip##client
-msgid "Clicking \"Allow\" will redirect you to: {{redirectURI}}"
-msgstr "En cliquant \"Autoriser\" vous serez redirigé vers: {{redirectURI}}"
+#. From: konnect##consent##redirect
+#: konnect##consent##redirect
+msgid "Clicking \"Allow\" will redirect you to {{host}}"
+msgstr "En cliquant \"Autoriser\" vous serez redirigé vers: {{host}}"
 
 #. From: konnect##login##usernameField##placeholder##email
 #: konnect##login##usernameField##placeholder##email
@@ -97,15 +86,15 @@ msgstr "Bonjour {{displayName}}"
 msgid "Identity"
 msgstr "Identité"
 
-#. From: konnect##scopeDescription##offlineAccess
-#: konnect##scopeDescription##offlineAccess
-msgid "Keep the allowed access persistently and forever"
-msgstr "Conserver les autorisations d'accès à l'avenir"
-
 #. From: konnect##error##login##failed
 #: konnect##error##login##failed
 msgid "Logon failed. Please verify your credentials and try again."
 msgstr "Echec de connexion. Vérifier vos identifiants et essayer à nouveau."
+
+#. From: konnect##scopeDescription##offlineAccess
+#: konnect##scopeDescription##offlineAccess
+msgid "Maintain access to data you have given it access to"
+msgstr "Conserver l'accès aux données auxquelles vous avez donné accès"
 
 #. From: konnect##error##http##networkError
 #: konnect##error##http##networkError
@@ -116,6 +105,11 @@ msgstr "Erreur réseau. Vérifier votre connexion, et réessayer."
 #: konnect##login##nextButton##label
 msgid "Next"
 msgstr "Suivant"
+
+#. From: konnect##consent##nothingShared
+#: konnect##consent##nothingShared
+msgid "Nothing is shared until you click Allow."
+msgstr "Rien n'est partagé tant que vous n'avez pas cliqué sur Autoriser."
 
 #. From: konnect##login##passwordField##label
 #: konnect##login##passwordField##label
@@ -199,17 +193,29 @@ msgstr "identification"
 msgid "you have been signed out from your account"
 msgstr "vous avez été déconnecté"
 
+#~ msgid "Allow <1><0></0></1> to do this?"
+#~ msgstr "Autoriser <1><0></0></1> à faire cela?"
+
 #~ msgctxt "konnect.consent.question"
 #~ msgid "Allow {clientDisplayName} to do this?"
 #~ msgstr "Autoriser {clientDisplayName} à faire cela ?"
+
+#~ msgid "By clicking Allow, you allow this app to use your information."
+#~ msgstr "En cliquant, vous autoriser l'app à accéder à vos informations."
 
 #~ msgctxt "konnect.error.login.validate.missingUsername"
 #~ msgid "Enter an username"
 #~ msgstr "Saisir un identifiant"
 
+#~ msgid "Keep the allowed access persistently and forever"
+#~ msgstr "Conserver les autorisations d'accès à l'avenir"
+
 #~ msgctxt "konnect.welcome.signoutButton.label"
 #~ msgid "Sign out"
 #~ msgstr "Quitter"
+
+#~ msgid "Then you will be returned to <0>{{host}}</0>"
+#~ msgstr "En cliquant \"Autoriser\" vous serez redirigé vers: <0>{{host}}</0>"
 
 #~ msgctxt "konnect.chooseaccount.subHeader"
 #~ msgid "to sign in to Kopano"
