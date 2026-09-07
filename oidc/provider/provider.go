@@ -51,8 +51,9 @@ type Provider struct {
 
 	issuerIdentifier string
 	metadata         *oidc.WellKnown
+	metadataDocument *konnectoidc.ProviderMetadata
 
-	wellKnownPath          string
+	wellKnownPaths         map[string]bool
 	jwksPath               string
 	authorizationPath      string
 	tokenPath              string
@@ -93,7 +94,7 @@ func NewProvider(c *Config) (*Provider, error) {
 		Config: c,
 
 		issuerIdentifier:       c.IssuerIdentifier,
-		wellKnownPath:          c.WellKnownPath,
+		wellKnownPaths:         makePathSet(c.WellKnownPath, c.WellKnownAliasPaths),
 		jwksPath:               c.JwksPath,
 		authorizationPath:      c.AuthorizationPath,
 		tokenPath:              c.TokenPath,
@@ -392,6 +393,7 @@ func (p *Provider) InitializeMetadata() error {
 			oidc.ScopeOpenID,
 		}, p.identityManager.ScopesSupported(nil)...)),
 		ResponseTypesSupported: []string{
+			oidc.ResponseTypeCode,
 			oidc.ResponseTypeIDTokenToken,
 			oidc.ResponseTypeIDToken,
 			oidc.ResponseTypeCodeIDToken,
@@ -432,9 +434,34 @@ func (p *Provider) InitializeMetadata() error {
 	}
 	p.metadata.TokenEndpointAuthMethodsSupported = []string{
 		oidc.AuthMethodClientSecretBasic,
+		oidc.AuthMethodClientSecretPost,
 		oidc.AuthMethodNone,
 	}
 	p.metadata.TokenEndpointAuthSigningAlgValuesSupported = p.metadata.IDTokenSigningAlgValuesSupported
+
+	// Create the extended document which is what gets served. It is a view onto
+	// the document above, adding the OAuth 2.0 Authorization Server Metadata
+	// (RFC 8414) fields this provider supports.
+	p.metadataDocument = &konnectoidc.ProviderMetadata{
+		WellKnown: p.metadata,
+
+		// Only the grant types the token endpoint implements. Leaving this out
+		// means authorization_code and implicit per OpenID Connect Discovery
+		// 1.0, which is not what it does.
+		GrantTypesSupported: []string{
+			oidc.GrantTypeAuthorizationCode,
+			oidc.GrantTypeRefreshToken,
+		},
+		ResponseModesSupported: []string{
+			oidc.ResponseModeQuery,
+			oidc.ResponseModeFragment,
+		},
+		// Plain is deliberately absent, it is not accepted, see
+		// payload.AuthenticationRequest.Validate.
+		CodeChallengeMethodsSupported: []string{
+			oidc.S256CodeChallengeMethod,
+		},
+	}
 
 	return nil
 }
@@ -442,7 +469,7 @@ func (p *Provider) InitializeMetadata() error {
 // ServerHTTP implements the http.HandlerFunc interface.
 func (p *Provider) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	switch path := req.URL.Path; {
-	case path == p.wellKnownPath:
+	case p.wellKnownPaths[path]:
 		cors.Default().ServeHTTP(rw, req, p.WellKnownHandler)
 	case path == p.jwksPath:
 		cors.Default().ServeHTTP(rw, req, p.JwksHandler)

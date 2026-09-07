@@ -42,6 +42,20 @@ func uniqueStrings(s []string) []string {
 	return res
 }
 
+// makePathSet returns a set of the provided paths, skipping empty ones. It is
+// used for endpoints which are served under more than one path.
+func makePathSet(path string, alias []string) map[string]bool {
+	set := make(map[string]bool, len(alias)+1)
+	for _, p := range append([]string{path}, alias...) {
+		if p == "" {
+			continue
+		}
+		set[p] = true
+	}
+
+	return set
+}
+
 func getRequestURL(req *http.Request, isTrustedSource bool) *url.URL {
 	u, _ := url.Parse(req.URL.String())
 

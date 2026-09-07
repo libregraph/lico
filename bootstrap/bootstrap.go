@@ -478,11 +478,14 @@ func (bs *bootstrap) setupOIDCProvider(ctx context.Context) (*oidcProvider.Provi
 		registrationPath = bs.MakeURIPath(APITypeKonnect, "/register")
 	}
 
+	wellKnownPath, wellKnownAliasPaths := getWellKnownPaths(bs.config.IssuerIdentifierURI.EscapedPath())
+
 	provider, err := oidcProvider.NewProvider(&oidcProvider.Config{
 		Config: bs.config.Config,
 
 		IssuerIdentifier:       bs.config.IssuerIdentifierURI.String(),
-		WellKnownPath:          "/.well-known/openid-configuration",
+		WellKnownPath:          wellKnownPath,
+		WellKnownAliasPaths:    wellKnownAliasPaths,
 		JwksPath:               bs.MakeURIPath(APITypeKonnect, "/jwks.json"),
 		AuthorizationPath:      bs.config.AuthorizationEndpointURI.EscapedPath(),
 		TokenPath:              bs.MakeURIPath(APITypeKonnect, "/token"),
