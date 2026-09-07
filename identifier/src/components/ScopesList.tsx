@@ -7,6 +7,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import { styled } from "@mui/material/styles";
 
+import { bestSupportedLocale } from "../locales";
 import type { ScopesMeta } from "../models/api";
 
 /*
@@ -45,7 +46,16 @@ export interface ScopesListProps extends ListProps {
 const ScopesList = ({ scopes, meta, ...rest }: ScopesListProps) => {
   const { mapping, definitions } = meta;
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  /*
+   * The whole resolution chain rather than the active language alone, so a
+   * definition which has nothing for it can still be served by one of the
+   * fallbacks. The chain ends at en-GB, which makes an `en` translation the
+   * fallback for every language the definition does not cover; the plain
+   * description is what is left when it carries none either.
+   */
+  const languages = i18n.languages ?? [i18n.language];
 
   const rows: React.ReactElement[] = [];
   let persistentRow: React.ReactElement | null = null;
@@ -82,6 +92,17 @@ const ScopesList = ({ scopes, meta, ...rest }: ScopesListProps) => {
           label = t("konnect.scopeDescription.offlineAccess", "Maintain access to data you have given it access to");
           break;
         default:
+      }
+      /*
+       * An id means the app owns the wording, so its own catalog wins over
+       * anything the operator configured. Everything below is operator
+       * configuration, translated where it reaches this visitor's language.
+       */
+      if (!label && definition.descriptions) {
+        const locale = bestSupportedLocale(languages, Object.keys(definition.descriptions));
+        if (locale) {
+          label = definition.descriptions[locale];
+        }
       }
       if (!label) {
         label = definition.description;

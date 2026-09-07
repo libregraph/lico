@@ -1,6 +1,6 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 
-import { renderWithProviders, type ScopesMeta } from "../test-utils";
+import { getTestI18n, renderWithProviders, type ScopesMeta } from "../test-utils";
 import ScopesList from "./ScopesList";
 
 /*
@@ -23,7 +23,35 @@ const meta: ScopesMeta = {
   },
 };
 
+/*
+ * Operator configured scopes, shaped as scopes.yaml delivers them: no id, so
+ * their wording comes from the file rather than from the app's own catalog.
+ * The server sends every translation it holds, because the language is picked
+ * here and can change without another hello.
+ */
+const translated: ScopesMeta = {
+  mapping: {},
+  definitions: {
+    calendar: {
+      priority: 100,
+      description: "Access your calendar",
+      descriptions: { de: "Auf Ihren Kalender zugreifen", "fr-CA": "Accéder à votre agenda" },
+    },
+    files: { description: "Access your files" },
+    only_translated: { descriptions: { de: "Nur auf Deutsch" } },
+    aliased: { id: "scope_alias_basic", descriptions: { "en-GB": "Operator wording" } },
+  },
+};
+
 describe("ScopesList", () => {
+  /*
+   * getTestI18n hands out a process wide instance, so a case which changes the
+   * language has to put it back or it silently retunes every case after it.
+   */
+  afterEach(async () => {
+    await getTestI18n().changeLanguage("en-GB");
+  });
+
   it("names the basic account alias with its own wording", () => {
     renderWithProviders(<ScopesList scopes={{ profile: true }} meta={meta} />);
 
@@ -95,5 +123,62 @@ describe("ScopesList", () => {
 
     expect(rows).toHaveLength(3);
     expect(rows[2]).toBe("Maintain access to data you have given it access to");
+  });
+
+  it("renders the translation for the active language", async () => {
+    await act(() => getTestI18n().changeLanguage("de"));
+
+    renderWithProviders(<ScopesList scopes={{ calendar: true }} meta={translated} />);
+
+    expect(screen.getByText("Auf Ihren Kalender zugreifen")).toBeInTheDocument();
+  });
+
+  it("serves a region variant to a request for the plain language", async () => {
+    // Only fr-CA is configured, and the visitor's language is fr.
+    await act(() => getTestI18n().changeLanguage("fr"));
+
+    renderWithProviders(<ScopesList scopes={{ calendar: true }} meta={translated} />);
+
+    expect(screen.getByText("Accéder à votre agenda")).toBeInTheDocument();
+  });
+
+  it("falls back to the plain description when no translation fits", async () => {
+    await act(() => getTestI18n().changeLanguage("nl"));
+
+    renderWithProviders(<ScopesList scopes={{ calendar: true, files: true }} meta={translated} />);
+
+    expect(screen.getByText("Access your calendar")).toBeInTheDocument();
+    expect(screen.getByText("Access your files")).toBeInTheDocument();
+  });
+
+  it("shows the raw scope name when the translations miss and there is no description", async () => {
+    await act(() => getTestI18n().changeLanguage("nl"));
+
+    renderWithProviders(<ScopesList scopes={{ only_translated: true }} meta={translated} />);
+
+    expect(screen.getByText("Scope: only_translated")).toBeInTheDocument();
+  });
+
+  it("follows a language change without another hello", async () => {
+    // The consent screen renders from the store and nothing refetches hello
+    // when the visitor uses the language picker, so the translations have to
+    // arrive whole and be chosen here.
+    await act(() => getTestI18n().changeLanguage("de"));
+
+    renderWithProviders(<ScopesList scopes={{ calendar: true }} meta={translated} />);
+
+    await act(() => getTestI18n().changeLanguage("fr"));
+
+    expect(screen.getByText("Accéder à votre agenda")).toBeInTheDocument();
+    expect(screen.queryByText("Auf Ihren Kalender zugreifen")).not.toBeInTheDocument();
+  });
+
+  it("keeps the app's own wording for a definition which carries an id", () => {
+    // An id means the app owns that sentence, so operator translations of it
+    // are ignored rather than merged.
+    renderWithProviders(<ScopesList scopes={{ aliased: true }} meta={translated} />);
+
+    expect(screen.getByText("Access your basic account information")).toBeInTheDocument();
+    expect(screen.queryByText("Operator wording")).not.toBeInTheDocument();
   });
 });

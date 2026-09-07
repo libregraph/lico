@@ -1709,7 +1709,21 @@ components:
           description: Display ordering.
         description:
           type: string
-          description: Literal description, when the definition supplies one instead of an `id`.
+          description: |
+            Literal description, when the definition supplies one instead of an `id`. Used
+            whenever `descriptions` carries nothing for the active locale, so it doubles as
+            the fallback.
+        descriptions:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            Per locale translations of `description`, keyed by locale tag, e.g.
+            `{"de": "…", "zh-CN": "…"}`. Configured per scope in the
+            `--identifier-scopes-conf` file. Every translation the server holds for the
+            scopes of this request is sent, because the web app picks the locale itself and
+            lets the visitor change it without another request. Omitted when the definition
+            has none; blank entries are dropped at load.
         id:
           type: string
           description: |
