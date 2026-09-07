@@ -24,10 +24,13 @@ import (
 	"encoding/pem"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/libregraph/oidc-go"
 	"github.com/sirupsen/logrus"
 
 	"github.com/libregraph/lico/config"
@@ -36,6 +39,7 @@ import (
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/identity/clients"
 	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/resources"
 	codeManagers "github.com/libregraph/lico/oidc/code/managers"
 )
 
@@ -80,16 +84,89 @@ func init() {
 	rsaPrivateKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
+const (
+	// testResource is registered in the test provider's resource registry with
+	// testResourceScope, and with testResourceImplicitScope which it is granted
+	// whether a client asks for it or not. testOtherScope is supported but not
+	// accepted by it, and testImplicitScope is added to every request by the
+	// test client's own registration.
+	testResource              = "https://mcp.example.com/mcp"
+	testResourceScope         = "UnitTest.Mcp.Tools"
+	testResourceImplicitScope = "UnitTest.Mcp.Injected"
+	testOtherScope            = "UnitTest.Other"
+	testImplicitScope         = "UnitTest.Implicit"
+)
+
+func newTestResourceRegistry(ctx context.Context, t *testing.T) *resources.Registry {
+	fn := filepath.Join(t.TempDir(), "identifier-registration.yaml")
+	conf := "resources:\n" +
+		"  - id: " + testResource + "\n" +
+		"    name: Unit test MCP server\n" +
+		"    scopes:\n" +
+		"      - " + testResourceScope + "\n" +
+		"    implicit_scopes:\n" +
+		"      - " + testResourceImplicitScope + "\n"
+	if err := os.WriteFile(fn, []byte(conf), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	registry, err := resources.NewRegistry(ctx, fn, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return registry
+}
+
+func newTestClientRegistry(ctx context.Context, t *testing.T) *clients.Registry {
+	trustedURI, _ := url.Parse("http://localhost:8777")
+	registry, err := clients.NewRegistry(ctx, trustedURI, "", false, 0, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A public native client, as used by the tests which run a full flow.
+	err = registry.Register(&clients.ClientRegistration{
+		ID:              "unittestclient",
+		Name:            "Unit test client",
+		ApplicationType: oidc.ApplicationTypeNative,
+		RedirectURIs:    []string{"http://localhost/callback"},
+		ImplicitScopes:  []string{testImplicitScope},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return registry
+}
+
 func NewTestProvider(ctx context.Context, t *testing.T) (*httptest.Server, *Provider, http.Handler, *Config) {
 	mgrs := managers.New()
 	mgrs.Set("identity", identityManagers.NewDummyIdentityManager(
-		&identity.Config{},
+		&identity.Config{
+			ScopesSupported: []string{
+				oidc.ScopeProfile,
+				oidc.ScopeEmail,
+				testResourceScope,
+				testOtherScope,
+				testImplicitScope,
+				testResourceImplicitScope,
+			},
+		},
 		"unittestuser",
 	))
 	mgrs.Set("code", codeManagers.NewMemoryMapManager(ctx))
-	encryptionManager, _ := identityManagers.NewEncryptionManager(nil)
+	encryptionManager, err := identityManagers.NewEncryptionManager(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A key is required as soon as a handler creates a client session.
+	if err := encryptionManager.SetKey([]byte("0123456789abcdef0123456789abcdef")); err != nil {
+		t.Fatal(err)
+	}
 	mgrs.Set("encryption", encryptionManager)
-	mgrs.Set("clients", &clients.Registry{})
+	mgrs.Set("clients", newTestClientRegistry(ctx, t))
+	mgrs.Set("resources", newTestResourceRegistry(ctx, t))
 
 	cfg := &Config{
 		Config: &config.Config{

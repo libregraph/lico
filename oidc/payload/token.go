@@ -27,6 +27,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/libregraph/oidc-go"
 
+	"github.com/libregraph/lico/identity/resources"
 	konnectoidc "github.com/libregraph/lico/oidc"
 )
 
@@ -47,9 +48,15 @@ type TokenRequest struct {
 
 	CodeVerifier string `schema:"code_verifier"`
 
+	// RawResources holds the resource indicators of
+	// https://www.rfc-editor.org/rfc/rfc8707.html, one per occurrence of the
+	// parameter. Resource is the single normalized value, if any.
+	RawResources []string `schema:"resource"`
+
 	RedirectURI  *url.URL        `schema:"-"`
 	RefreshToken *jwt.Token      `schema:"-"`
 	Scopes       map[string]bool `schema:"-"`
+	Resource     string          `schema:"-"`
 }
 
 // DecodeTokenRequest return a TokenRequest holding the provided
@@ -153,6 +160,21 @@ func (tr *TokenRequest) Validate(keyFunc jwt.Keyfunc, claims jwt.Claims) error {
 		return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2UnsupportedGrantType, "unsupported grant_type value")
 	}
 
+	// Resource indicator validation.
+	// https://www.rfc-editor.org/rfc/rfc8707.html#section-2
+	if len(tr.RawResources) > 0 {
+		if len(tr.RawResources) > 1 {
+			// An access token carries exactly one audience value, see
+			// konnect.AccessTokenClaims.
+			return konnectoidc.NewOAuth2Error(konnectoidc.ErrorCodeOAuth2InvalidTarget, "only a single resource is supported")
+		}
+		resource, err := resources.NormalizeResourceID(tr.RawResources[0])
+		if err != nil {
+			return konnectoidc.NewOAuth2Error(konnectoidc.ErrorCodeOAuth2InvalidTarget, "resource "+err.Error())
+		}
+		tr.Resource = resource
+	}
+
 	return nil
 }
 
@@ -165,4 +187,8 @@ type TokenSuccess struct {
 	IDToken      string `json:"id_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 	ExpiresIn    int64  `json:"expires_in,omitempty"`
+
+	// Scope is set when the granted scope differs from the requested one, as
+	// required by https://datatracker.ietf.org/doc/html/rfc6749#section-5.1.
+	Scope string `json:"scope,omitempty"`
 }

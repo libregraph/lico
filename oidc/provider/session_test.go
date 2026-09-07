@@ -43,7 +43,7 @@ func TestGetUserIDAndSessionRefFromClaims(t *testing.T) {
 	}
 
 	t.Run("with session claims", func(t *testing.T) {
-		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(registeredClaims, &konnectoidc.SessionClaims{
+		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(registeredClaims, "", &konnectoidc.SessionClaims{
 			SessionID: "backend-session-1",
 		}, identityClaims)
 
@@ -66,7 +66,7 @@ func TestGetUserIDAndSessionRefFromClaims(t *testing.T) {
 			"empty": {},
 		} {
 			t.Run(name, func(t *testing.T) {
-				userID, sessionRef := p.getUserIDAndSessionRefFromClaims(registeredClaims, sessionClaims, identityClaims)
+				userID, sessionRef := p.getUserIDAndSessionRefFromClaims(registeredClaims, "", sessionClaims, identityClaims)
 
 				if userID != "unittestuser" {
 					t.Errorf("user ID was incorrect, got %s, want unittestuser", userID)
@@ -78,6 +78,27 @@ func TestGetUserIDAndSessionRefFromClaims(t *testing.T) {
 					t.Errorf("session ref was incorrect, got %s, want %s", *sessionRef, generated)
 				}
 			})
+		}
+	})
+
+	// A token bound to a resource carries the client in azp, and the session
+	// ref must stay the one of that client rather than following the audience.
+	t.Run("with authorized party", func(t *testing.T) {
+		want := *identity.GetSessionRef(p.identityManager.Name(), "unittestclient", "unittestuser")
+		resourceClaims := &jwt.RegisteredClaims{
+			Audience: jwt.ClaimStrings{"https://mcp.example.com/mcp"},
+		}
+
+		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(resourceClaims, "unittestclient", nil, identityClaims)
+
+		if userID != "unittestuser" {
+			t.Errorf("user ID was incorrect, got %s, want unittestuser", userID)
+		}
+		if sessionRef == nil {
+			t.Fatal("no session ref returned")
+		}
+		if *sessionRef != want {
+			t.Errorf("session ref was incorrect, got %s, want %s", *sessionRef, want)
 		}
 	})
 }

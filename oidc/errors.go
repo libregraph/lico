@@ -24,6 +24,14 @@ import (
 	"github.com/libregraph/lico/utils"
 )
 
+const (
+	// ErrorCodeOAuth2InvalidTarget is the OAuth2 error code for a resource
+	// indicator naming a resource this provider cannot issue a token for, as
+	// defined in https://www.rfc-editor.org/rfc/rfc8707.html#section-2. It is
+	// not defined by oidc-go.
+	ErrorCodeOAuth2InvalidTarget = "invalid_target"
+)
+
 // OAuth2Error defines a general OAuth2 error with id and decription.
 type OAuth2Error struct {
 	ErrorID          string `json:"error"`

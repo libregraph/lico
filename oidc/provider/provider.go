@@ -39,6 +39,7 @@ import (
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/identity/clients"
 	identityManagers "github.com/libregraph/lico/identity/managers"
+	"github.com/libregraph/lico/identity/resources"
 	"github.com/libregraph/lico/managers"
 	konnectoidc "github.com/libregraph/lico/oidc"
 	"github.com/libregraph/lico/oidc/code"
@@ -67,6 +68,7 @@ type Provider struct {
 	codeManager       code.Manager
 	encryptionManager *identityManagers.EncryptionManager
 	clients           *clients.Registry
+	resources         *resources.Registry
 
 	signingKeys          map[jwt.SigningMethod]*SigningKey
 	signingMethodDefault jwt.SigningMethod
@@ -166,6 +168,11 @@ func (p *Provider) RegisterManagers(mgrs *managers.Managers) error {
 		p.guestManager.OnUnsetLogon(onUnsetLogon)
 	}
 
+	// Add resource registry if any can be found.
+	if resourceRegistry, _ := mgrs.Get("resources"); resourceRegistry != nil {
+		p.resources = resourceRegistry.(*resources.Registry)
+	}
+
 	if p.Config.RegistrationPath != "" {
 		// NOTE(longsleep): This is hackish. Find a better way to propagate our
 		// provides JWT stuff to the client registry.
@@ -174,6 +181,17 @@ func (p *Provider) RegisterManagers(mgrs *managers.Managers) error {
 	}
 
 	return nil
+}
+
+// getResource returns the registered protected resource for the provided
+// resource identifier. Nothing is registered when no registry was set up, in
+// which case no resource indicator can be honored.
+func (p *Provider) getResource(resourceID string) (*resources.Resource, bool) {
+	if p.resources == nil {
+		return nil, false
+	}
+
+	return p.resources.Get(resourceID)
 }
 
 func (p *Provider) makeIssURL(path string) string {

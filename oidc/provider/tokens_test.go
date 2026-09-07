@@ -77,7 +77,7 @@ func makeTestRefreshTokenClaims(t *testing.T, p *Provider, user identity.PublicU
 	auth := identity.NewAuthRecord(p.identityManager, "unittestuser", nil, nil, nil)
 	auth.SetUser(user)
 
-	refreshTokenString, err := p.makeRefreshToken(context.Background(), "unittestclient", auth, nil, tokenID)
+	refreshTokenString, err := p.makeRefreshToken(context.Background(), "unittestclient", "", auth, nil, tokenID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,4 +165,95 @@ func TestMakeRefreshTokenTokenID(t *testing.T) {
 			t.Errorf("token ID was not unique, got %s twice", claims.ID)
 		}
 	})
+}
+
+// TestMakeAccessTokenResourceBinding covers the audience binding of RFC 8707:
+// a token requested for a resource names that resource as its audience and the
+// client in azp, and one requested without stays bound to the client.
+func TestMakeAccessTokenResourceBinding(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, p, _, _ := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	makeClaims := func(t *testing.T, resource string) *konnect.AccessTokenClaims {
+		t.Helper()
+
+		auth := identity.NewAuthRecord(p.identityManager, "unittestuser", nil, nil, nil)
+		auth.SetUser(&testUser{sub: "unittestuser"})
+
+		accessTokenString, err := p.makeAccessToken(ctx, "unittestclient", resource, auth, nil, nil, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		claims := &konnect.AccessTokenClaims{}
+		if _, err := jwt.ParseWithClaims(accessTokenString, claims, p.validateJWT); err != nil {
+			t.Fatal(err)
+		}
+
+		return claims
+	}
+
+	t.Run("with resource", func(t *testing.T) {
+		resource := "https://mcp.example.com/mcp"
+		claims := makeClaims(t, resource)
+
+		if len(claims.Audience) != 1 || claims.Audience[0] != resource {
+			t.Errorf("audience was incorrect, got %v, want [%s]", claims.Audience, resource)
+		}
+		if claims.AuthorizedParty != "unittestclient" {
+			t.Errorf("azp was incorrect, got %s, want unittestclient", claims.AuthorizedParty)
+		}
+		if party := claims.AuthorizedPartyOrAudience(); party != "unittestclient" {
+			t.Errorf("authorized party was incorrect, got %s, want unittestclient", party)
+		}
+	})
+
+	t.Run("without resource", func(t *testing.T) {
+		claims := makeClaims(t, "")
+
+		if len(claims.Audience) != 1 || claims.Audience[0] != "unittestclient" {
+			t.Errorf("audience was incorrect, got %v, want [unittestclient]", claims.Audience)
+		}
+		if claims.AuthorizedParty != "" {
+			t.Errorf("azp was set, got %s", claims.AuthorizedParty)
+		}
+		if party := claims.AuthorizedPartyOrAudience(); party != "unittestclient" {
+			t.Errorf("authorized party was incorrect, got %s, want unittestclient", party)
+		}
+	})
+}
+
+// TestMakeRefreshTokenResource covers that a refresh token stays bound to the
+// client while remembering the resource, which is what lets a refreshed access
+// token keep its audience.
+func TestMakeRefreshTokenResource(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, p, _, _ := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	auth := identity.NewAuthRecord(p.identityManager, "unittestuser", nil, nil, nil)
+	auth.SetUser(&testUser{sub: "unittestuser"})
+
+	resource := "https://mcp.example.com/mcp"
+	refreshTokenString, err := p.makeRefreshToken(ctx, "unittestclient", resource, auth, nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	claims := &konnect.RefreshTokenClaims{}
+	if _, err := jwt.ParseWithClaims(refreshTokenString, claims, p.validateJWT); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(claims.Audience) != 1 || claims.Audience[0] != "unittestclient" {
+		t.Errorf("audience was incorrect, got %v, want [unittestclient]", claims.Audience)
+	}
+	if claims.Resource != resource {
+		t.Errorf("resource was incorrect, got %s, want %s", claims.Resource, resource)
+	}
 }
