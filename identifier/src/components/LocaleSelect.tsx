@@ -5,39 +5,7 @@ import MenuItem from "@mui/material/MenuItem";
 import type { SelectChangeEvent, SelectProps } from "@mui/material/Select";
 import Select from "@mui/material/Select";
 
-import allLocales from "../locales";
-
-/*
- * Returns the first supported locale the browser asks for, preferring an exact
- * match and then one sharing the primary language, or null when none fits.
- *
- * i18next's own matcher cannot be scoped to a subset of locales: its language
- * utilities capture the supported list when they are constructed, so narrowing
- * it afterwards has no effect and would mutate options shared with the rest of
- * the application.
- */
-function bestSupportedLocale(wanted: readonly string[], supported: readonly string[]): string | null {
-  const lower = supported.map((locale) => locale.toLowerCase());
-  const find = (code: string): string | null => {
-    const index = lower.indexOf(code.toLowerCase());
-    return index === -1 ? null : supported[index];
-  };
-
-  for (const code of wanted) {
-    const exact = find(code);
-    if (exact) {
-      return exact;
-    }
-
-    const primary = code.split("-")[0].toLowerCase();
-    const related = supported.find((locale) => locale.toLowerCase().split("-")[0] === primary);
-    if (related) {
-      return related;
-    }
-  }
-
-  return null;
-}
+import allLocales, { bestSupportedLocale } from "../locales";
 
 /* The languages the browser reports, most preferred first. */
 function browserLanguages(): readonly string[] {

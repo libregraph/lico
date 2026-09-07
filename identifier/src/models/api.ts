@@ -25,6 +25,10 @@ export interface ClientDetails {
 export interface ScopeDefinition {
   priority?: number;
   description?: string;
+  // Translations of description, keyed by locale tag. The server sends every
+  // one it holds for the requested scopes, because the language is picked in
+  // the browser and can change without another hello.
+  descriptions?: Record<string, string>;
   id?: string;
 }
 
