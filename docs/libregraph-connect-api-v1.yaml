@@ -97,6 +97,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProviderMetadata'
 
+  /.well-known/oauth-authorization-server:
+    get:
+      tags: [discovery]
+      summary: OAuth 2.0 Authorization Server Metadata
+      description: |
+        Returns the very same document as `/.well-known/openid-configuration`, byte for
+        byte, under the well-known URI defined by
+        [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414#section-3). OAuth 2.0
+        clients which do not speak OpenID Connect discovery try this path first.
+
+        When the issuer carries a path component, both documents are additionally served
+        under the path-inserted form (`/.well-known/oauth-authorization-server{issuerPath}`,
+        `/.well-known/openid-configuration{issuerPath}`) and, for OpenID Connect discovery,
+        under the path-appended form (`{issuerPath}/.well-known/openid-configuration`).
+      operationId: getOAuthAuthorizationServerMetadata
+      responses:
+        '200':
+          description: Provider metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderMetadata'
+
   # ------------------------------------------------------------- oidc core
   /konnect/v1/jwks.json:
     get:
@@ -1024,22 +1047,23 @@ components:
       scheme: basic
       description: |
         `client_secret_basic` — client id and secret in the `Authorization` header. One of
-        the two advertised `token_endpoint_auth_methods_supported`; the other is `none`,
-        expressed on the token endpoint as an empty security requirement.
+        the three advertised `token_endpoint_auth_methods_supported`, together with
+        `client_secret_post` and `none`; the latter is expressed on the token endpoint as an
+        empty security requirement.
 
   schemas:
     # ------------------------------------------------------------ discovery
     ProviderMetadata:
       type: object
       description: |
-        `grant_types_supported` is **not** emitted, so clients
-        must fall back to the specification default of
-        `["authorization_code", "implicit"]`. The token endpoint supports
-        `authorization_code` and `refresh_token`, and not `implicit`, so that default does
-        not describe this server; the token endpoint documentation does.
+        The document is served under the OpenID Connect Discovery 1.0 well-known path and,
+        unchanged, under the OAuth 2.0 Authorization Server Metadata path of
+        [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414). When the issuer carries a
+        path component, it is additionally served under the path-inserted and path-appended
+        forms of both, as described in RFC 8414 sections 3.1 and 5.
 
-        `code_challenge_methods_supported` is also not emitted even though PKCE with `S256`
-        is implemented.
+        Responses carry `Cache-Control: public, max-age=3600`. The document only changes when
+        the server is restarted.
       required:
         - issuer
         - authorization_endpoint
@@ -1099,10 +1123,31 @@ components:
         response_types_supported:
           type: array
           description: |
-            Emitted as `["id_token token", "id_token", "code id_token",
+            Emitted as `["code", "id_token token", "id_token", "code id_token",
             "code id_token token"]`. The authorization endpoint additionally accepts bare
-            `code`, bare `token` and `code token`, so this list under-reports the
-            implementation.
+            `token` and `code token`, so this list under-reports the implementation.
+          items:
+            type: string
+        grant_types_supported:
+          type: array
+          description: |
+            Emitted as `["authorization_code", "refresh_token"]`, which is exactly what the
+            token endpoint implements. The implicit flow issues its tokens from the
+            authorization endpoint and has no grant type here.
+          items:
+            type: string
+        response_modes_supported:
+          type: array
+          description: Emitted as `["query", "fragment"]`.
+          items:
+            type: string
+        code_challenge_methods_supported:
+          type: array
+          description: |
+            Emitted as `["S256"]`. A code challenge is accepted on every code flow and, when
+            present, verified at the token endpoint; no client is required to send one yet.
+            `plain` is rejected by the authorization endpoint and is therefore not
+            advertised.
           items:
             type: string
         subject_types_supported:
@@ -1128,7 +1173,10 @@ components:
           type: array
           items:
             type: string
-          description: Emitted as `["client_secret_basic", "none"]`.
+          description: |
+            Emitted as `["client_secret_basic", "client_secret_post", "none"]`. The token
+            endpoint accepts client credentials in the `Authorization` header or in the
+            request body, and `none` for public clients.
         token_endpoint_auth_signing_alg_values_supported:
           type: array
           items:

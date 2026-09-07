@@ -23,9 +23,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/libregraph/oidc-go"
+
+	konnectoidc "github.com/libregraph/lico/oidc"
 )
 
 func TestWellKnownHandler(t *testing.T) {
@@ -105,4 +108,90 @@ func TestWellKnownHandler(t *testing.T) {
 	if len(wellKnown.IDTokenSigningAlgValuesSupported) == 0 {
 		t.Errorf("IDTokenSigningAlgValuesSupported must not be empty")
 	}
+}
+
+// TestWellKnownHandlerOAuth2Metadata checks the parts of the provider meta data
+// document an OAuth 2.1 client depends on, and that the very same document is
+// served under the OAuth 2.0 Authorization Server Metadata path of RFC 8414.
+func TestWellKnownHandlerOAuth2Metadata(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, _, router, config := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	get := func(t *testing.T, path string) []byte {
+		req, err := http.NewRequest("GET", path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Fatalf("handler returned wrong status code for %s: got %v want %v", path, status, http.StatusOK)
+		}
+
+		body, err := ioutil.ReadAll(rr.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return body
+	}
+
+	body := get(t, config.WellKnownPath)
+
+	t.Run("served under the RFC 8414 path", func(t *testing.T) {
+		for _, path := range config.WellKnownAliasPaths {
+			if alias := get(t, path); string(alias) != string(body) {
+				t.Errorf("document served at %s differs from the one at %s", path, config.WellKnownPath)
+			}
+		}
+	})
+
+	metadata := &konnectoidc.ProviderMetadata{}
+	if err := json.Unmarshal(body, metadata); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("advertises PKCE", func(t *testing.T) {
+		// A client which requires PKCE has no other way to discover support for
+		// it and must refuse to continue when this is absent.
+		if !slices.Contains(metadata.CodeChallengeMethodsSupported, oidc.S256CodeChallengeMethod) {
+			t.Errorf("CodeChallengeMethodsSupported must contain %s, got %v", oidc.S256CodeChallengeMethod, metadata.CodeChallengeMethodsSupported)
+		}
+		// Plain is rejected in payload.AuthenticationRequest.Validate, so
+		// advertising it would be a lie.
+		if slices.Contains(metadata.CodeChallengeMethodsSupported, oidc.PlainCodeChallengeMethod) {
+			t.Errorf("CodeChallengeMethodsSupported must not contain %s, got %v", oidc.PlainCodeChallengeMethod, metadata.CodeChallengeMethodsSupported)
+		}
+	})
+
+	t.Run("advertises the code flow", func(t *testing.T) {
+		if !slices.Contains(metadata.ResponseTypesSupported, oidc.ResponseTypeCode) {
+			t.Errorf("ResponseTypesSupported must contain %s, got %v", oidc.ResponseTypeCode, metadata.ResponseTypesSupported)
+		}
+	})
+
+	t.Run("advertises the implemented grant types", func(t *testing.T) {
+		// Exactly what the token endpoint implements, see TokenHandler. The
+		// implicit flow never reaches the token endpoint and its grant type
+		// must not show up here.
+		want := []string{oidc.GrantTypeAuthorizationCode, oidc.GrantTypeRefreshToken}
+		if !slices.Equal(metadata.GrantTypesSupported, want) {
+			t.Errorf("GrantTypesSupported was incorrect, got %v, want %v", metadata.GrantTypesSupported, want)
+		}
+	})
+
+	t.Run("advertises the supported client authentication methods", func(t *testing.T) {
+		// Both are accepted by payload.DecodeTokenRequest, public clients rely
+		// on none.
+		for _, method := range []string{oidc.AuthMethodClientSecretPost, oidc.AuthMethodNone} {
+			if !slices.Contains(metadata.TokenEndpointAuthMethodsSupported, method) {
+				t.Errorf("TokenEndpointAuthMethodsSupported must contain %s, got %v", method, metadata.TokenEndpointAuthMethodsSupported)
+			}
+		}
+	})
 }

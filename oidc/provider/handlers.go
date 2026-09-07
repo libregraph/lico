@@ -44,11 +44,14 @@ const (
 
 // WellKnownHandler implements the HTTP provider configuration endpoint
 // for OpenID Connect 1.0 as specified at https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+// and for OAuth 2.0 as specified at https://datatracker.ietf.org/doc/html/rfc8414#section-3
 func (p *Provider) WellKnownHandler(rw http.ResponseWriter, req *http.Request) {
-	// TODO(longsleep): Add caching headers.
-	wellKnown := p.metadata
+	// The document only changes when this provider is restarted, and clients
+	// which discover it on every unauthorized response depend on being able to
+	// cache it.
+	rw.Header().Set("Cache-Control", "public, max-age=3600")
 
-	err := utils.WriteJSON(rw, http.StatusOK, wellKnown, "")
+	err := utils.WriteJSON(rw, http.StatusOK, p.metadataDocument, "")
 	if err != nil {
 		p.logger.WithError(err).Errorln("well-known request failed writing response")
 	}
