@@ -28,6 +28,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/libregraph/oidc-go"
 
+	"github.com/libregraph/lico/identity/resources"
 	konnectoidc "github.com/libregraph/lico/oidc"
 )
 
@@ -50,6 +51,11 @@ type AuthenticationRequest struct {
 	RawIDTokenHint  string         `schema:"id_token_hint"`
 	RawMaxAge       string         `schema:"max_age"`
 
+	// RawResources holds the resource indicators of
+	// https://www.rfc-editor.org/rfc/rfc8707.html, one per occurrence of the
+	// parameter. Resource is the single normalized value, if any.
+	RawResources []string `schema:"resource"`
+
 	RawRequest      string `schema:"request"`
 	RawRequestURI   string `schema:"request_uri"`
 	RawRegistration string `schema:"registration"`
@@ -63,6 +69,7 @@ type AuthenticationRequest struct {
 	RedirectURI   *url.URL        `schema:"-"`
 	IDTokenHint   *jwt.Token      `schema:"-"`
 	MaxAge        time.Duration   `schema:"-"`
+	Resource      string          `schema:"-"`
 	Request       *jwt.Token      `schema:"-"`
 
 	UseFragment bool   `schema:"-"`
@@ -334,6 +341,22 @@ func (ar *AuthenticationRequest) Validate(keyFunc jwt.Keyfunc) error {
 
 	if ar.RedirectURI == nil || !ar.RedirectURI.IsAbs() {
 		return ar.NewBadRequest(oidc.ErrorCodeOAuth2InvalidRequest, "invalid or missing redirect_uri")
+	}
+
+	// Resource indicator validation, everything from here on can be reported to
+	// the client by redirect.
+	// https://www.rfc-editor.org/rfc/rfc8707.html#section-2
+	if len(ar.RawResources) > 0 {
+		if len(ar.RawResources) > 1 {
+			// An access token carries exactly one audience value, see
+			// konnect.AccessTokenClaims.
+			return ar.NewError(konnectoidc.ErrorCodeOAuth2InvalidTarget, "only a single resource is supported")
+		}
+		resource, resourceErr := resources.NormalizeResourceID(ar.RawResources[0])
+		if resourceErr != nil {
+			return ar.NewError(konnectoidc.ErrorCodeOAuth2InvalidTarget, "resource "+resourceErr.Error())
+		}
+		ar.Resource = resource
 	}
 
 	if ar.RawIDTokenHint != "" {

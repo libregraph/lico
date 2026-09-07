@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 )
 
@@ -87,6 +88,9 @@ func addResponseHeaders(header http.Header) {
 	header.Set("Referrer-Policy", "origin")
 }
 
+// makeArrayFromBoolMap returns the keys with a true value of the provided map,
+// sorted, so that the same set of scopes or claims always produces the same
+// list in a response or a token.
 func makeArrayFromBoolMap(m map[string]bool) []string {
 	result := []string{}
 	for k, v := range m {
@@ -94,6 +98,7 @@ func makeArrayFromBoolMap(m map[string]bool) []string {
 			result = append(result, k)
 		}
 	}
+	slices.Sort(result)
 
 	return result
 }

@@ -32,6 +32,7 @@ import (
 	konnect "github.com/libregraph/lico"
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/identity/clients"
+	"github.com/libregraph/lico/identity/resources"
 	konnectoidc "github.com/libregraph/lico/oidc"
 	"github.com/libregraph/lico/oidc/code"
 	"github.com/libregraph/lico/oidc/payload"
@@ -94,6 +95,7 @@ func (p *Provider) AuthorizeHandler(rw http.ResponseWriter, req *http.Request) {
 	var err error
 	var auth identity.AuthRecord
 	var nextManager identity.Manager
+	var resource *resources.Resource
 
 	addResponseHeaders(rw.Header())
 
@@ -161,11 +163,50 @@ func (p *Provider) AuthorizeHandler(rw http.ResponseWriter, req *http.Request) {
 		goto done
 	}
 
+	// Resource indicator policy, a token is only ever issued for a registered
+	// resource. https://www.rfc-editor.org/rfc/rfc8707.html#section-2
+	if ar.Resource != "" {
+		var found bool
+		resource, found = p.getResource(ar.Resource)
+		if !found {
+			err = ar.NewError(konnectoidc.ErrorCodeOAuth2InvalidTarget, "unknown resource")
+			goto done
+		}
+		// Use the registered form, it is what ends up in the token audience.
+		ar.Resource = resource.ID
+	}
+
 	// Inject implicit scopes set by client registration.
 	if registration, _ := p.clients.Get(ctx, ar.ClientID); registration != nil {
 		err = registration.ApplyImplicitScopes(ar.Scopes)
 		if err != nil {
 			p.logger.WithError(err).Debugln("failed to apply implicit scopes")
+		}
+	}
+
+	// A resource only ever sees the scopes it accepts, its own implicit ones
+	// included. The narrowing runs after the implicit scopes of the client
+	// registration have been added, since the audience is what bounds a token
+	// and a scope the resource never declared is one it has no way to honor. A
+	// scope which has to reach the resource regardless of what a client asks
+	// for belongs in the resource's own implicit_scopes.
+	if resource != nil {
+		resource.ApplyImplicitScopes(ar.Scopes)
+
+		for scope := range ar.Scopes {
+			switch scope {
+			case oidc.ScopeOpenID:
+				fallthrough
+			case oidc.ScopeOfflineAccess:
+				// Neither is a permission of the resource. openid selects an ID
+				// token, which is about the client, and the MCP specification
+				// keeps offline_access out of a resource's scopes since a
+				// refresh token is not a resource requirement.
+				continue
+			}
+			if !resource.AllowsScope(scope) {
+				delete(ar.Scopes, scope)
+			}
 		}
 	}
 
@@ -244,7 +285,7 @@ func (p *Provider) AuthorizeResponse(rw http.ResponseWriter, req *http.Request, 
 
 	// Create access token when requested.
 	if _, ok := ar.ResponseTypes[oidc.ResponseTypeToken]; ok {
-		accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, auth, nil, nil, "")
+		accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, ar.Resource, auth, nil, nil, "")
 		if err != nil {
 			goto done
 		}
@@ -414,6 +455,14 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 			goto done
 		}
 
+		// Ensure that the "resource" parameter, when given, is the one the code
+		// was issued for. A token can only be bound to a single resource, so
+		// the narrowing RFC 8707 section 2 allows is an exact match here.
+		if tr.Resource != "" && tr.Resource != ar.Resource {
+			err = konnectoidc.NewOAuth2Error(konnectoidc.ErrorCodeOAuth2InvalidTarget, "resource mismatch")
+			goto done
+		}
+
 		// Validate code challenge according to https://tools.ietf.org/html/rfc7636#section-4.6
 		if tr.CodeVerifier != "" || ar.CodeChallenge != "" {
 			if codeVerifierErr := oidc.ValidateCodeChallenge(ar.CodeChallenge, ar.CodeChallengeMethod, tr.CodeVerifier); codeVerifierErr != nil {
@@ -443,7 +492,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 
 		// TODO(longsleep): Compare standard claims issuer.
 
-		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, claims.SessionClaims, claims.IdentityClaims)
+		userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, "", claims.SessionClaims, claims.IdentityClaims)
 		if userID == "" {
 			err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidToken, "missing data in kc.identity claim")
 			goto done
@@ -468,6 +517,14 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 			for _, scope := range claims.ApprovedScopesList {
 				approvedScopes[scope] = true
 			}
+		}
+
+		// Ensure that the "resource" parameter, when given, is the one the
+		// grant was made for. The refresh token carries it as a claim, its own
+		// audience is always the client.
+		if tr.Resource != "" && tr.Resource != claims.Resource {
+			err = konnectoidc.NewOAuth2Error(konnectoidc.ErrorCodeOAuth2InvalidTarget, "resource mismatch")
+			goto done
 		}
 
 		if len(tr.Scopes) > 0 {
@@ -517,6 +574,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 		// Create fake request for token generation.
 		ar = &payload.AuthenticationRequest{
 			ClientID: claims.Audience[0],
+			Resource: claims.Resource,
 		}
 
 		// Remember refresh token claims, for use in access and id token generators later on.
@@ -528,7 +586,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Create access token.
-	accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, auth, signinMethod, refreshTokenClaims, newAccessTokenID)
+	accessTokenString, err = p.makeAccessToken(ctx, ar.ClientID, ar.Resource, auth, signinMethod, refreshTokenClaims, newAccessTokenID)
 	if err != nil {
 		goto done
 	}
@@ -545,7 +603,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 
 		// Create refresh token when granted.
 		if authorizedScopes[oidc.ScopeOfflineAccess] {
-			refreshTokenString, err = p.makeRefreshToken(ctx, ar.ClientID, auth, nil, newRefreshTokenID)
+			refreshTokenString, err = p.makeRefreshToken(ctx, ar.ClientID, ar.Resource, auth, nil, newRefreshTokenID)
 			if err != nil {
 				goto done
 			}
@@ -576,6 +634,11 @@ done:
 		response.AccessToken = accessTokenString
 		response.TokenType = oidc.TokenTypeBearer
 		response.ExpiresIn = int64(p.accessTokenDuration.Seconds())
+		// Report the granted scope, which RFC 6749 section 5.1 requires
+		// whenever it differs from the request. A client which cannot see what
+		// it got has to guess whenever a scope was dropped, and the request
+		// this answers may not have carried a scope at all.
+		response.Scope = strings.Join(makeArrayFromBoolMap(authorizedScopes), " ")
 	}
 	if idTokenString != "" {
 		response.IDToken = idTokenString
@@ -622,7 +685,7 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 	var requestedClaimsMap []*payload.ClaimsRequestMap
 	var authorizedScopes map[string]bool
 
-	userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, claims.SessionClaims, claims.IdentityClaims)
+	userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, claims.AuthorizedParty, claims.SessionClaims, claims.IdentityClaims)
 
 	ctx := konnect.NewClaimsContext(konnect.NewRequestContext(req.Context(), req), claims)
 

@@ -40,6 +40,7 @@ import (
 	"github.com/libregraph/lico/config"
 	"github.com/libregraph/lico/encryption"
 	"github.com/libregraph/lico/identity"
+	identityResources "github.com/libregraph/lico/identity/resources"
 	"github.com/libregraph/lico/managers"
 	oidcProvider "github.com/libregraph/lico/oidc/provider"
 	"github.com/libregraph/lico/utils"
@@ -368,6 +369,18 @@ func (bs *bootstrap) setup(ctx context.Context, settings *Settings) error {
 		return err
 	}
 	managers.Set("identity", identityManager)
+
+	// A registered resource can only require scopes this provider supports,
+	// since a request for anything else silently loses them.
+	if resourceRegistry, _ := managers.Get("resources"); resourceRegistry != nil {
+		resources := resourceRegistry.(*identityResources.Registry)
+		if !resources.Empty() {
+			if err := resources.ValidateScopes(identityManager.ScopesSupported(nil)); err != nil {
+				return fmt.Errorf("failed to validate resource registrations: %v", err)
+			}
+			bs.config.Config.Logger.WithField("scopes", resources.ScopesSupported()).Infoln("protected resources registered")
+		}
+	}
 
 	guestManager, err := bs.setupGuest(ctx, identityManager)
 	if err != nil {

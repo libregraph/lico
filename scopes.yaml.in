@@ -10,3 +10,6 @@ scopes:
 
 #  another-scope:
 #    description: "This is the another scope"
+
+# The scopes a protected resource accepts are defined here like any other, and
+# they have to be, or the resource registration is refused on startup.

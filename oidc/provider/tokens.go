@@ -35,10 +35,14 @@ import (
 
 // MakeAccessToken implements the oidc.AccessTokenProvider interface.
 func (p *Provider) MakeAccessToken(ctx context.Context, audience string, auth identity.AuthRecord) (string, error) {
-	return p.makeAccessToken(ctx, audience, auth, nil, nil, "")
+	return p.makeAccessToken(ctx, audience, "", auth, nil, nil, "")
 }
 
-func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth identity.AuthRecord, signingMethod jwt.SigningMethod, refreshTokenClaims *konnect.RefreshTokenClaims, tokenID string) (string, error) {
+// makeAccessToken creates an access token for the provided client. When a
+// resource indicator is given, the token is bound to that resource as its
+// audience and names the client in the azp claim instead, as required by
+// https://www.rfc-editor.org/rfc/rfc8707.html#section-2.
+func (p *Provider) makeAccessToken(ctx context.Context, clientID string, resource string, auth identity.AuthRecord, signingMethod jwt.SigningMethod, refreshTokenClaims *konnect.RefreshTokenClaims, tokenID string) (string, error) {
 	sk, ok := p.getSigningKey(signingMethod)
 	if !ok {
 		return "", fmt.Errorf("no signing key")
@@ -50,11 +54,19 @@ func (p *Provider) makeAccessToken(ctx context.Context, audience string, auth id
 		tokenID = rndm.GenerateRandomString(24)
 	}
 
+	audience := clientID
+	authorizedParty := ""
+	if resource != "" {
+		audience = resource
+		authorizedParty = clientID
+	}
+
 	authorizedScopes := auth.AuthorizedScopes()
 	authorizedScopesList := payload.ScopesValue(makeArrayFromBoolMap(authorizedScopes))
 
 	accessTokenClaims := konnect.AccessTokenClaims{
 		TokenType:               konnect.TokenTypeAccessToken,
+		AuthorizedParty:         authorizedParty,
 		AuthorizedScopesList:    authorizedScopesList,
 		AuthorizedClaimsRequest: auth.AuthorizedClaims(),
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -310,7 +322,10 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 	return idToken.SignedString(sk.PrivateKey)
 }
 
-func (p *Provider) makeRefreshToken(ctx context.Context, audience string, auth identity.AuthRecord, signingMethod jwt.SigningMethod, tokenID string) (string, error) {
+// makeRefreshToken creates a refresh token for the provided client. Its
+// audience is always the client, the resource indicator the access tokens of
+// this grant are bound to travels as a claim so it survives a refresh.
+func (p *Provider) makeRefreshToken(ctx context.Context, audience string, resource string, auth identity.AuthRecord, signingMethod jwt.SigningMethod, tokenID string) (string, error) {
 	sk, ok := p.getSigningKey(signingMethod)
 	if !ok {
 		return "", fmt.Errorf("no signing key")
@@ -341,6 +356,7 @@ func (p *Provider) makeRefreshToken(ctx context.Context, audience string, auth i
 		ApprovedScopesList:    approvedScopesList,
 		ApprovedClaimsRequest: auth.AuthorizedClaims(),
 		Ref:                   ref,
+		Resource:              resource,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    p.issuerIdentifier,
 			Subject:   auth.Subject(),
