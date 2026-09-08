@@ -124,7 +124,8 @@ func newTestResourceRegistry(ctx context.Context, t *testing.T) *resources.Regis
 
 func newTestClientRegistry(ctx context.Context, t *testing.T) *clients.Registry {
 	trustedURI, _ := url.Parse("http://localhost:8777")
-	registry, err := clients.NewRegistry(ctx, trustedURI, "", false, 0, logger)
+	// Dynamic registration enabled, with no secret expiry, as it defaults to.
+	registry, err := clients.NewRegistry(ctx, trustedURI, "", true, 0, logger)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,6 +198,7 @@ func NewTestProvider(ctx context.Context, t *testing.T) (*httptest.Server, *Prov
 		AuthorizationPath:   "/konnect/v1/authorize",
 		TokenPath:           "/konnect/v1/token",
 		UserInfoPath:        "/konnect/v1/userinfo",
+		RegistrationPath:    "/konnect/v1/register",
 
 		AccessTokenDuration:  10 * time.Minute,
 		IDTokenDuration:      time.Hour,
