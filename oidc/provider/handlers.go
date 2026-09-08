@@ -464,6 +464,12 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		// Validate code challenge according to https://tools.ietf.org/html/rfc7636#section-4.6
+		if p.requirePKCE || (clientDetails.Registration != nil && clientDetails.Registration.RequirePKCE) {
+			if ar.CodeChallenge == "" {
+				err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, "code_challenge required")
+				goto done
+			}
+		}
 		if tr.CodeVerifier != "" || ar.CodeChallenge != "" {
 			if codeVerifierErr := oidc.ValidateCodeChallenge(ar.CodeChallenge, ar.CodeChallengeMethod, tr.CodeVerifier); codeVerifierErr != nil {
 				err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, codeVerifierErr.Error())

@@ -97,6 +97,10 @@ const (
 	testImplicitScope         = "UnitTest.Implicit"
 )
 
+// testPKCEClientID is a public client which must use PKCE, registered beside
+// the plain unittestclient.
+const testPKCEClientID = "unittestpkceclient"
+
 func newTestResourceRegistry(ctx context.Context, t *testing.T) *resources.Registry {
 	fn := filepath.Join(t.TempDir(), "identifier-registration.yaml")
 	conf := "resources:\n" +
@@ -132,6 +136,19 @@ func newTestClientRegistry(ctx context.Context, t *testing.T) *clients.Registry 
 		ApplicationType: oidc.ApplicationTypeNative,
 		RedirectURIs:    []string{"http://localhost/callback"},
 		ImplicitScopes:  []string{testImplicitScope},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A client which must use PKCE, as every dynamically registered one does.
+	err = registry.Register(&clients.ClientRegistration{
+		ID:                         testPKCEClientID,
+		Name:                       "Unit test PKCE client",
+		ApplicationType:            oidc.ApplicationTypeNative,
+		RedirectURIs:               []string{"http://localhost/callback"},
+		RawTokenEndpointAuthMethod: oidc.AuthMethodNone,
+		RequirePKCE:                true,
 	})
 	if err != nil {
 		t.Fatal(err)

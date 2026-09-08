@@ -217,6 +217,11 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 		logger.Infoln("dynamic client registration is enabled")
 	}
 
+	bs.config.Config.RequirePKCE = settings.RequirePKCE
+	if bs.config.Config.RequirePKCE {
+		logger.Infoln("PKCE is required for all clients")
+	}
+
 	encryptionSecretFn := settings.EncryptionSecretFile
 
 	if encryptionSecretFn != "" {

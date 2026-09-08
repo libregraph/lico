@@ -407,3 +407,103 @@ func TestAuthorizeAndTokenWithResource(t *testing.T) {
 		}
 	})
 }
+
+// TestTokenRequiresPKCE covers that a client registration which demands PKCE
+// cannot exchange a code which was not bound to a code challenge, and can when
+// it was.
+func TestTokenRequiresPKCE(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, _, router, config := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	const redirectURI = "http://localhost:33418/callback"
+	const codeVerifier = "unittest-code-verifier-which-is-long-enough"
+
+	exchange := func(t *testing.T, clientID string, withPKCE bool) (int, map[string]interface{}) {
+		t.Helper()
+
+		query := url.Values{
+			"response_type": []string{oidc.ResponseTypeCode},
+			"client_id":     []string{clientID},
+			"redirect_uri":  []string{redirectURI},
+			"scope":         []string{oidc.ScopeOpenID},
+		}
+		form := url.Values{
+			"grant_type":   []string{oidc.GrantTypeAuthorizationCode},
+			"redirect_uri": []string{redirectURI},
+			"client_id":    []string{clientID},
+		}
+		if withPKCE {
+			challenge, challengeErr := oidc.MakeCodeChallenge(oidc.S256CodeChallengeMethod, codeVerifier)
+			if challengeErr != nil {
+				t.Fatal(challengeErr)
+			}
+			query.Set("code_challenge", challenge)
+			query.Set("code_challenge_method", oidc.S256CodeChallengeMethod)
+			form.Set("code_verifier", codeVerifier)
+		}
+
+		req, err := http.NewRequest("GET", config.AuthorizationPath+"?"+query.Encode(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+		if status := rr.Code; status != http.StatusFound {
+			t.Fatalf("authorize returned wrong status code: got %v want %v, body %s", status, http.StatusFound, rr.Body.String())
+		}
+		location, err := url.Parse(rr.Header().Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		code := location.Query().Get("code")
+		if code == "" {
+			t.Fatalf("authorize returned no code, %v", location.RawQuery)
+		}
+		form.Set("code", code)
+
+		req, err = http.NewRequest("POST", config.TokenPath, strings.NewReader(form.Encode()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr = httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		response := make(map[string]interface{})
+		if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+			t.Fatalf("failed to decode token response: %v, body %s", err, rr.Body.String())
+		}
+
+		return rr.Code, response
+	}
+
+	t.Run("refused without a code challenge", func(t *testing.T) {
+		status, response := exchange(t, testPKCEClientID, false)
+		if status != http.StatusBadRequest {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusBadRequest, response)
+		}
+		if errorID, _ := response["error"].(string); errorID != oidc.ErrorCodeOAuth2InvalidGrant {
+			t.Errorf("error was incorrect, got %v, want %s", response["error"], oidc.ErrorCodeOAuth2InvalidGrant)
+		}
+	})
+
+	t.Run("granted with a code challenge, and without a client secret", func(t *testing.T) {
+		status, response := exchange(t, testPKCEClientID, true)
+		if status != http.StatusOK {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusOK, response)
+		}
+		if accessToken, _ := response["access_token"].(string); accessToken == "" {
+			t.Error("token response has no access token")
+		}
+	})
+
+	t.Run("a client which does not demand it is unaffected", func(t *testing.T) {
+		status, response := exchange(t, "unittestclient", false)
+		if status != http.StatusOK {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusOK, response)
+		}
+	})
+}

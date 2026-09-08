@@ -63,6 +63,8 @@ type Provider struct {
 	checkSessionIframePath string
 	registrationPath       string
 
+	requirePKCE bool
+
 	identityManager   identity.Manager
 	guestManager      identity.Manager
 	codeManager       code.Manager
@@ -104,6 +106,8 @@ func NewProvider(c *Config) (*Provider, error) {
 		endSessionPath:         c.EndSessionPath,
 		checkSessionIframePath: c.CheckSessionIframePath,
 		registrationPath:       c.RegistrationPath,
+
+		requirePKCE: c.Config.RequirePKCE,
 
 		signingKeys:    make(map[jwt.SigningMethod]*SigningKey),
 		validationKeys: make(map[string]crypto.PublicKey),
@@ -484,6 +488,16 @@ func (p *Provider) InitializeMetadata() error {
 	return nil
 }
 
+// corsPostJSON is the policy of the endpoints a client posts to directly. The
+// default policy allows no request headers, which is enough for a form encoded
+// POST but not for a JSON body or for client credentials in an Authorization
+// header, both of which make a browser preflight the request.
+var corsPostJSON = cors.New(cors.Options{
+	AllowedOrigins: []string{"*"},
+	AllowedMethods: []string{http.MethodPost},
+	AllowedHeaders: []string{"Authorization", "Content-Type"},
+})
+
 // ServerHTTP implements the http.HandlerFunc interface.
 func (p *Provider) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	switch path := req.URL.Path; {
@@ -494,7 +508,7 @@ func (p *Provider) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	case path == p.authorizationPath:
 		p.AuthorizeHandler(rw, req)
 	case path == p.tokenPath:
-		cors.Default().ServeHTTP(rw, req, p.TokenHandler)
+		corsPostJSON.ServeHTTP(rw, req, p.TokenHandler)
 	case path == p.userInfoPath:
 		// TODO(longsleep): Use more strict CORS.
 		cors.AllowAll().ServeHTTP(rw, req, p.UserInfoHandler)
@@ -503,7 +517,7 @@ func (p *Provider) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	case path == p.checkSessionIframePath:
 		p.CheckSessionIframeHandler(rw, req)
 	case path == p.registrationPath:
-		p.RegistrationHandler(rw, req)
+		corsPostJSON.ServeHTTP(rw, req, p.RegistrationHandler)
 	default:
 		http.NotFound(rw, req)
 	}

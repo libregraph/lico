@@ -184,14 +184,24 @@ func (crr *ClientRegistrationRequest) Validate() error {
 	case oidc.ApplicationTypeNative:
 		// Native Clients MUST only register redirect_uris using custom URI
 		// schemes or URLs using the http: scheme with localhost as the hostname.
+		// These are the same rules the static client registry applies, see
+		// clients.Registry.Register.
 		for _, uriString := range crr.RedirectURIs {
 			uri, err := url.Parse(uriString)
-			if err != nil {
+			if err != nil || uri.Scheme == "" {
 				return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOIDCInvalidRedirectURI, "failed to parse redirect_uris")
 			}
 
-			if !clients.IsLocalNativeHTTPURI(uri) {
-				return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOIDCInvalidRedirectURI, "native clients must only use localhost redirect_uris with http")
+			switch uri.Scheme {
+			case "https":
+				return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOIDCInvalidRedirectURI, "native clients must not use https redirect_uris")
+			case "http":
+				if !clients.IsLocalNativeHTTPURI(uri) {
+					return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOIDCInvalidRedirectURI, "native clients must only use localhost redirect_uris with http")
+				}
+			default:
+				// A private use URI scheme, as recommended by
+				// https://datatracker.ietf.org/doc/html/rfc8252#section-7.1
 			}
 		}
 
@@ -224,8 +234,12 @@ func (crr *ClientRegistrationRequest) Validate() error {
 		crr.RawTokenEndpointAuthMethod = oidc.AuthMethodClientSecretBasic
 	}
 	if crr.RawTokenEndpointAuthMethod != "" {
+		// The methods the token endpoint implements, see DecodeTokenRequest,
+		// and the ones the provider meta data advertises.
 		switch crr.RawTokenEndpointAuthMethod {
 		case oidc.AuthMethodClientSecretBasic:
+			// breaks
+		case oidc.AuthMethodClientSecretPost:
 			// breaks
 		case oidc.AuthMethodNone:
 			// breaks
