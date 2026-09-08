@@ -36,25 +36,29 @@ import (
 // Connect Dynamic Client Registration 1.0 client registration endpoint as
 // specified at https://openid.net/specs/openid-connect-registration-1_0.html#ClientRegistration and
 // https://openid.net/specs/openid-connect-session-1_0.html#DynRegRegistrations
+// The optional members are omitted when empty, since this type is echoed back
+// as part of ClientRegistrationResponse and a client validating that response
+// against the metadata schema of RFC 7591 rejects a null where an array or a
+// string is defined.
 type ClientRegistrationRequest struct {
 	RedirectURIs    []string `json:"redirect_uris"`
-	ResponseTypes   []string `json:"response_types"`
-	GrantTypes      []string `json:"grant_types"`
-	ApplicationType string   `json:"application_type"`
+	ResponseTypes   []string `json:"response_types,omitempty"`
+	GrantTypes      []string `json:"grant_types,omitempty"`
+	ApplicationType string   `json:"application_type,omitempty"`
 
-	Contacts   []string `json:"contacts"`
-	ClientName string   `json:"client_name"`
-	ClientURI  string   `json:"client_uri"`
+	Contacts   []string `json:"contacts,omitempty"`
+	ClientName string   `json:"client_name,omitempty"`
+	ClientURI  string   `json:"client_uri,omitempty"`
 
-	RawJWKS json.RawMessage `json:"jwks"`
+	RawJWKS json.RawMessage `json:"jwks,omitempty"`
 
-	RawIDTokenSignedResponseAlg    string `json:"id_token_signed_response_alg"`
-	RawUserInfoSignedResponseAlg   string `json:"userinfo_signed_response_alg"`
-	RawRequestObjectSigningAlg     string `json:"request_object_signing_alg"`
-	RawTokenEndpointAuthMethod     string `json:"token_endpoint_auth_method"`
-	RawTokenEndpointAuthSigningAlg string `json:"token_endpoint_auth_signing_alg"`
+	RawIDTokenSignedResponseAlg    string `json:"id_token_signed_response_alg,omitempty"`
+	RawUserInfoSignedResponseAlg   string `json:"userinfo_signed_response_alg,omitempty"`
+	RawRequestObjectSigningAlg     string `json:"request_object_signing_alg,omitempty"`
+	RawTokenEndpointAuthMethod     string `json:"token_endpoint_auth_method,omitempty"`
+	RawTokenEndpointAuthSigningAlg string `json:"token_endpoint_auth_signing_alg,omitempty"`
 
-	PostLogoutRedirectURIs []string `json:"post_logout_redirect_uris"`
+	PostLogoutRedirectURIs []string `json:"post_logout_redirect_uris,omitempty"`
 
 	JWKS *gojwk.Key `json:"-"`
 }
