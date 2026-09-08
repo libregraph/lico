@@ -199,11 +199,15 @@ func (cr *ClientRegistration) SetDynamic(ctx context.Context, creator func(ctx c
 	// for more information. We use a JWT as client_id.
 	claims := &RegistrationClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   sub,
-			IssuedAt:  jwt.NewNumericDate(cr.IDIssuedAt),
-			ExpiresAt: jwt.NewNumericDate(cr.SecretExpiresAt),
+			Subject:  sub,
+			IssuedAt: jwt.NewNumericDate(cr.IDIssuedAt),
 		},
 		ClientRegistration: cr,
+	}
+	if !cr.SecretExpiresAt.IsZero() {
+		// Only when one was configured. A zero time would be stamped as the
+		// year one, which expires the client_id the moment it is issued.
+		claims.ExpiresAt = jwt.NewNumericDate(cr.SecretExpiresAt)
 	}
 
 	// Create signed stateless client ID by help of the provided creator function.

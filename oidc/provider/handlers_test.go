@@ -507,3 +507,88 @@ func TestTokenRequiresPKCE(t *testing.T) {
 		}
 	})
 }
+
+// TestRegistrationHandler covers that a client which registered itself can
+// then be used. The client_id is the registration, signed, so it has to be
+// accepted by the very registry which issued it.
+func TestRegistrationHandler(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, provider, router, config := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	register := func(t *testing.T, body string) (int, map[string]interface{}) {
+		t.Helper()
+
+		req, err := http.NewRequest("POST", config.RegistrationPath, strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		response := make(map[string]interface{})
+		if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+			t.Fatalf("failed to decode registration response: %v, body %s", err, rr.Body.String())
+		}
+
+		return rr.Code, response
+	}
+
+	// What a public native client registers itself as.
+	const public = `{"application_type":"native","client_name":"Unit test dynamic client",` +
+		`"token_endpoint_auth_method":"none","grant_types":["authorization_code","refresh_token"],` +
+		`"redirect_uris":["http://127.0.0.1:6274/oauth/callback"]}`
+
+	t.Run("the issued client_id is usable", func(t *testing.T) {
+		status, response := register(t, public)
+		if status != http.StatusCreated {
+			t.Fatalf("registration returned wrong status code: got %v want %v, response %v", status, http.StatusCreated, response)
+		}
+
+		clientID, _ := response["client_id"].(string)
+		if clientID == "" {
+			t.Fatal("registration returned no client_id")
+		}
+
+		// The registry has to recognize it, which it does not when the
+		// client_id carries an expiry it was born with.
+		registration, found := provider.clients.Get(ctx, clientID)
+		if !found {
+			t.Fatalf("the issued client_id was not accepted by the registry: %s", clientID)
+		}
+		if !registration.RequirePKCE {
+			t.Error("a dynamically registered client must require PKCE")
+		}
+		if registration.Name != "Unit test dynamic client" {
+			t.Errorf("client name was incorrect, got %s", registration.Name)
+		}
+	})
+
+	t.Run("a public client gets no secret", func(t *testing.T) {
+		_, response := register(t, public)
+
+		if secret, ok := response["client_secret"]; ok {
+			t.Errorf("a public client was given a secret: %v", secret)
+		}
+		// RFC 7591 section 3.2.1 states a secret which does not expire as 0.
+		if expires, _ := response["client_secret_expires_at"].(float64); expires != 0 {
+			t.Errorf("client_secret_expires_at was incorrect, got %v, want 0", expires)
+		}
+	})
+
+	t.Run("a confidential client gets one", func(t *testing.T) {
+		_, response := register(t, `{"application_type":"native","client_name":"Unit test confidential client",`+
+			`"grant_types":["authorization_code"],"redirect_uris":["my://app"]}`)
+
+		if secret, _ := response["client_secret"].(string); secret == "" {
+			t.Error("a confidential client was given no secret")
+		}
+		if expires, _ := response["client_secret_expires_at"].(float64); expires != 0 {
+			t.Errorf("client_secret_expires_at was incorrect, got %v, want 0", expires)
+		}
+	})
+}

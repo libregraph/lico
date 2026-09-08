@@ -1021,12 +1021,19 @@ done:
 		"redirect_uris":    cr.RedirectURIs,
 	}).Debugln("registered dynamic client")
 
+	// RFC 7591 section 3.2.1 states a client_secret which does not expire as 0,
+	// where the zero time would be stated as the year one.
+	var clientSecretExpiresAt int64
+	if !cr.SecretExpiresAt.IsZero() {
+		clientSecretExpiresAt = cr.SecretExpiresAt.Unix()
+	}
+
 	response := &payload.ClientRegistrationResponse{
 		ClientID:     cr.ID,
 		ClientSecret: cr.Secret,
 
 		ClientIDIssuedAt:      cr.IDIssuedAt.Unix(),
-		ClientSecretExpiresAt: cr.SecretExpiresAt.Unix(),
+		ClientSecretExpiresAt: clientSecretExpiresAt,
 
 		ClientRegistrationRequest: *crr,
 	}
