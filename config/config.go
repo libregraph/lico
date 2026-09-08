@@ -40,4 +40,5 @@ type Config struct {
 	AllowClientGuests              bool
 	AllowClientSignedLogins        bool
 	AllowDynamicClientRegistration bool
+	RequirePKCE                    bool
 }

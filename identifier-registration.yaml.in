@@ -71,6 +71,20 @@ clients:
 #    redirect_uris:
 #      - http://localhost
 
+# A public client, as a native application or a command line tool is: it has no
+# secret to keep, so it gets none, and its code exchange is bound by PKCE and by
+# its redirect URI instead. require_pkce refuses an exchange for a code which
+# was requested without a code challenge, and is what every dynamically
+# registered client gets. The port of a loopback redirect URI is ignored when
+# matching, so a tool which listens on a free port needs no entry per port.
+#  - id: mcp-inspector
+#    name: MCP Inspector
+#    application_type: native
+#    token_endpoint_auth_method: none
+#    require_pkce: yes
+#    redirect_uris:
+#      - http://127.0.0.1:6274/oauth/callback
+
 # Protected resource registry. A resource is something an access token can be
 # issued for, an MCP server for example, named by the resource parameter of
 # RFC 8707. Its id is the canonical URI of that resource and is what ends up in
