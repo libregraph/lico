@@ -591,4 +591,38 @@ func TestRegistrationHandler(t *testing.T) {
 			t.Errorf("client_secret_expires_at was incorrect, got %v, want 0", expires)
 		}
 	})
+
+	t.Run("the response carries no null members", func(t *testing.T) {
+		// A client validates this response against the metadata schema of
+		// RFC 7591, which defines arrays and strings, not nulls. Metadata
+		// which was not registered has to be absent instead.
+		req, err := http.NewRequest("POST", config.RegistrationPath, strings.NewReader(public))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		members := make(map[string]json.RawMessage)
+		if err := json.Unmarshal(rr.Body.Bytes(), &members); err != nil {
+			t.Fatal(err)
+		}
+
+		for name, value := range members {
+			if string(value) == "null" {
+				t.Errorf("member %s is null", name)
+			}
+			if string(value) == `""` {
+				t.Errorf("member %s is an empty string", name)
+			}
+		}
+		if _, ok := members["contacts"]; ok {
+			t.Error("contacts is present although none were registered")
+		}
+		if _, ok := members["redirect_uris"]; !ok {
+			t.Error("redirect_uris is absent")
+		}
+	})
 }
