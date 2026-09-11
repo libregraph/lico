@@ -77,7 +77,7 @@ func makeTestRefreshTokenClaims(t *testing.T, p *Provider, user identity.PublicU
 	auth := identity.NewAuthRecord(p.identityManager, "unittestuser", nil, nil, nil)
 	auth.SetUser(user)
 
-	refreshTokenString, err := p.makeRefreshToken(context.Background(), "unittestclient", "", auth, nil, tokenID)
+	refreshTokenString, err := p.makeRefreshToken(context.Background(), "unittestclient", "", auth, nil, nil, tokenID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestMakeRefreshTokenResource(t *testing.T) {
 	auth.SetUser(&testUser{sub: "unittestuser"})
 
 	resource := "https://mcp.example.com/mcp"
-	refreshTokenString, err := p.makeRefreshToken(ctx, "unittestclient", resource, auth, nil, "")
+	refreshTokenString, err := p.makeRefreshToken(ctx, "unittestclient", resource, auth, nil, nil, "")
 	if err != nil {
 		t.Fatal(err)
 	}
