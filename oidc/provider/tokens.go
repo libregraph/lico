@@ -325,7 +325,14 @@ func (p *Provider) makeIDToken(ctx context.Context, ar *payload.AuthenticationRe
 // makeRefreshToken creates a refresh token for the provided client. Its
 // audience is always the client, the resource indicator the access tokens of
 // this grant are bound to travels as a claim so it survives a refresh.
-func (p *Provider) makeRefreshToken(ctx context.Context, audience string, resource string, auth identity.AuthRecord, signingMethod jwt.SigningMethod, tokenID string) (string, error) {
+//
+// The grantedScopes are the scopes the resource owner approved, which is what
+// the new token carries as the grant. A caller which has them passes them, and
+// one which does not passes nil to use the scopes of the record: a request may
+// ask for less than the grant, see
+// https://tools.ietf.org/html/rfc6749#section-6, and that narrows the tokens it
+// answers with rather than the grant they come from.
+func (p *Provider) makeRefreshToken(ctx context.Context, audience string, resource string, auth identity.AuthRecord, grantedScopes map[string]bool, signingMethod jwt.SigningMethod, tokenID string) (string, error) {
 	sk, ok := p.getSigningKey(signingMethod)
 	if !ok {
 		return "", fmt.Errorf("no signing key")
@@ -337,9 +344,13 @@ func (p *Provider) makeRefreshToken(ctx context.Context, audience string, resour
 		tokenID = rndm.GenerateRandomString(24)
 	}
 
+	if grantedScopes == nil {
+		grantedScopes = auth.AuthorizedScopes()
+	}
+
 	approvedScopesList := []string{}
 	approvedScopes := make(map[string]bool)
-	for scope, granted := range auth.AuthorizedScopes() {
+	for scope, granted := range grantedScopes {
 		if granted {
 			approvedScopesList = append(approvedScopesList, scope)
 			approvedScopes[scope] = true

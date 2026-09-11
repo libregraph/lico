@@ -749,4 +749,34 @@ func TestTokenRefresh(t *testing.T) {
 			t.Errorf("token scopes must not contain %s, got %v", testResourceScope, claims.AuthorizedScopesList)
 		}
 	})
+
+	t.Run("a subset of the granted scopes leaves the grant alone", func(t *testing.T) {
+		// The refresh token is the only record of a grant there is, so a
+		// request for less than it carries must not be able to shrink it: the
+		// scopes it leaves out have to be requestable again afterwards.
+		status, response := refresh(t, url.Values{
+			"grant_type":    []string{oidc.GrantTypeRefreshToken},
+			"client_id":     []string{"unittestclient"},
+			"scope":         []string{strings.Join([]string{oidc.ScopeOfflineAccess, testOtherScope}, " ")},
+			"refresh_token": []string{refreshToken(t, oidc.ScopeOfflineAccess, testOtherScope, testResourceScope)},
+		})
+		if status != http.StatusOK {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusOK, response)
+		}
+
+		refreshTokenString, _ := response["refresh_token"].(string)
+		if refreshTokenString == "" {
+			t.Fatalf("token response has no refresh token, response %v", response)
+		}
+
+		claims := &konnect.RefreshTokenClaims{}
+		if _, err := jwt.ParseWithClaims(refreshTokenString, claims, provider.validateJWT); err != nil {
+			t.Fatal(err)
+		}
+		for _, scope := range []string{oidc.ScopeOfflineAccess, testOtherScope, testResourceScope} {
+			if !slices.Contains(claims.ApprovedScopesList, scope) {
+				t.Errorf("the grant must still carry %s, got %v", scope, claims.ApprovedScopesList)
+			}
+		}
+	})
 }

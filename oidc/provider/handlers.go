@@ -619,9 +619,13 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		// Create refresh token when granted.
+		// Create refresh token when granted. The new one carries the scopes of
+		// the grant, which approvedScopes holds for a refresh and which the
+		// record itself is for a fresh code: a request which asks for less than
+		// it was granted narrows its tokens, not the grant behind them, as
+		// lico keeps no record of a grant besides its refresh token.
 		if authorizedScopes[oidc.ScopeOfflineAccess] {
-			refreshTokenString, err = p.makeRefreshToken(ctx, ar.ClientID, ar.Resource, auth, nil, newRefreshTokenID)
+			refreshTokenString, err = p.makeRefreshToken(ctx, ar.ClientID, ar.Resource, auth, approvedScopes, nil, newRefreshTokenID)
 			if err != nil {
 				goto done
 			}

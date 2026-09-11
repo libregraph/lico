@@ -164,6 +164,8 @@ func NewTestProvider(ctx context.Context, t *testing.T) (*httptest.Server, *Prov
 		&identity.Config{
 			ScopesSupported: []string{
 				oidc.ScopeProfile,
+				// Required for a refresh token to be issued at all.
+				oidc.ScopeOfflineAccess,
 				oidc.ScopeEmail,
 				testResourceScope,
 				testOtherScope,
