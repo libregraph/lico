@@ -27,6 +27,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/libregraph/oidc-go"
@@ -623,6 +624,129 @@ func TestRegistrationHandler(t *testing.T) {
 		}
 		if _, ok := members["redirect_uris"]; !ok {
 			t.Error("redirect_uris is absent")
+		}
+	})
+}
+
+// TestTokenRefresh covers the refresh token grant of
+// https://tools.ietf.org/html/rfc6749#section-6, which has no redirect_uri
+// parameter, so a client sending one anyway is not held to the redirect URIs of
+// its registration, and where asking for more scope than the grant carries is
+// refused as invalid_scope.
+func TestTokenRefresh(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, provider, router, config := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	// A refresh token of the test client, carrying the provided scopes as the
+	// ones the resource owner approved. The dummy identity manager never grants
+	// offline access, so the full code flow cannot produce one.
+	refreshToken := func(t *testing.T, approvedScopes ...string) string {
+		t.Helper()
+
+		tokenString, err := provider.makeJWT(ctx, provider.signingMethodDefault, &konnect.RefreshTokenClaims{
+			TokenType:          konnect.TokenTypeRefreshToken,
+			ApprovedScopesList: approvedScopes,
+			Ref:                "unittestref",
+			IdentityClaims: jwt.MapClaims{
+				konnect.IdentifiedUserIDClaim: "unittestuser",
+			},
+			IdentityProvider: "dummy",
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    config.IssuerIdentifier,
+				Subject:   "unittestsubject",
+				Audience:  jwt.ClaimStrings{"unittestclient"},
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				ID:        "unittestrefreshtokenid",
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return tokenString
+	}
+
+	refresh := func(t *testing.T, form url.Values) (int, map[string]interface{}) {
+		t.Helper()
+
+		req, err := http.NewRequest("POST", config.TokenPath, strings.NewReader(form.Encode()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		response := make(map[string]interface{})
+		if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+			t.Fatalf("failed to decode token response: %v, body %s", err, rr.Body.String())
+		}
+
+		return rr.Code, response
+	}
+
+	t.Run("a redirect_uri which is not registered is ignored", func(t *testing.T) {
+		status, response := refresh(t, url.Values{
+			"grant_type":    []string{oidc.GrantTypeRefreshToken},
+			"client_id":     []string{"unittestclient"},
+			"redirect_uri":  []string{"https://not.registered.example.com/callback"},
+			"refresh_token": []string{refreshToken(t, testResourceScope)},
+		})
+		if status != http.StatusOK {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusOK, response)
+		}
+
+		claims := &konnect.AccessTokenClaims{}
+		accessTokenString, _ := response["access_token"].(string)
+		if _, err := jwt.ParseWithClaims(accessTokenString, claims, provider.validateJWT); err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Contains(claims.AuthorizedScopesList, testResourceScope) {
+			t.Errorf("token scopes must contain %s, got %v", testResourceScope, claims.AuthorizedScopesList)
+		}
+	})
+
+	t.Run("a scope the grant never carried is refused", func(t *testing.T) {
+		status, response := refresh(t, url.Values{
+			"grant_type":    []string{oidc.GrantTypeRefreshToken},
+			"client_id":     []string{"unittestclient"},
+			"scope":         []string{testOtherScope},
+			"refresh_token": []string{refreshToken(t, testResourceScope)},
+		})
+		if status != http.StatusBadRequest {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusBadRequest, response)
+		}
+		if errorID, _ := response["error"].(string); errorID != konnectoidc.ErrorCodeOAuth2InvalidScope {
+			t.Errorf("error was incorrect, got %v, want %s", response["error"], konnectoidc.ErrorCodeOAuth2InvalidScope)
+		}
+	})
+
+	t.Run("a subset of the granted scopes narrows the token", func(t *testing.T) {
+		status, response := refresh(t, url.Values{
+			"grant_type":    []string{oidc.GrantTypeRefreshToken},
+			"client_id":     []string{"unittestclient"},
+			"scope":         []string{testOtherScope},
+			"refresh_token": []string{refreshToken(t, testResourceScope, testOtherScope)},
+		})
+		if status != http.StatusOK {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusOK, response)
+		}
+
+		if scope, _ := response["scope"].(string); scope != testOtherScope {
+			t.Errorf("response scope was incorrect, got %q, want %q", scope, testOtherScope)
+		}
+
+		claims := &konnect.AccessTokenClaims{}
+		if _, err := jwt.ParseWithClaims(response["access_token"].(string), claims, provider.validateJWT); err != nil {
+			t.Fatal(err)
+		}
+		if slices.Contains(claims.AuthorizedScopesList, testResourceScope) {
+			t.Errorf("token scopes must not contain %s, got %v", testResourceScope, claims.AuthorizedScopesList)
 		}
 	})
 }
