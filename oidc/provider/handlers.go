@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-jose/go-jose/v3"
@@ -382,6 +383,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	var approvedScopes map[string]bool
 	var authorizedScopes map[string]bool
 	var clientDetails *clients.Details
+	var lookupRedirectURI *url.URL
 	signinMethod := p.signingMethodDefault
 
 	rw.Header().Set("Cache-Control", "no-store")
@@ -420,7 +422,17 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Additional validations according to https://tools.ietf.org/html/rfc6749#section-4.1.3
-	clientDetails, err = p.clients.Lookup(ctx, tr.ClientID, tr.ClientSecret, tr.RedirectURI, "", false)
+	// The redirect_uri is a parameter of the authorization code grant alone.
+	// The refresh token grant of https://tools.ietf.org/html/rfc6749#section-6
+	// has none, so a client which sends one anyway must not have it validated
+	// against the registration, where it means nothing for that grant. An
+	// unparsable value is treated the same way, and fails the comparison with
+	// the one of the authorization request below.
+	lookupRedirectURI = &url.URL{}
+	if tr.GrantType == oidc.GrantTypeAuthorizationCode && tr.RedirectURI != nil {
+		lookupRedirectURI = tr.RedirectURI
+	}
+	clientDetails, err = p.clients.Lookup(ctx, tr.ClientID, tr.ClientSecret, lookupRedirectURI, "", false)
 	if err != nil {
 		err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2AccessDenied, err.Error())
 		goto done
@@ -539,7 +551,7 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 			authorizedScopes = make(map[string]bool)
 			for scope := range tr.Scopes {
 				if !approvedScopes[scope] {
-					err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InsufficientScope, "insufficient scope")
+					err = konnectoidc.NewOAuth2Error(konnectoidc.ErrorCodeOAuth2InvalidScope, "requested scope exceeds the granted scope")
 					goto done
 				} else {
 					authorizedScopes[scope] = true

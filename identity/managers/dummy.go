@@ -191,7 +191,12 @@ func (im *DummyIdentityManager) Fetch(ctx context.Context, userID string, sessio
 	authorizedScopes, _ := identity.AuthorizeScopes(im, user, scopes)
 	claims := identity.GetUserClaimsForScopes(user, authorizedScopes, requestedClaimsMaps)
 
-	return identity.NewAuthRecord(im, user.Subject(), authorizedScopes, nil, claims), true, nil
+	auth := identity.NewAuthRecord(im, user.Subject(), authorizedScopes, nil, claims)
+	// Every other manager does this, and without it the record can authorize
+	// no scope at all, since that is decided together with the user.
+	auth.SetUser(user)
+
+	return auth, true, nil
 }
 
 // Name implements the identity.Manager interface.
