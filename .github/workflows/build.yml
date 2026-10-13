@@ -67,6 +67,11 @@ jobs:
         skip-cache: true
         only-new-issues: true
 
+    # The build only bundles the web app, so its lint, type check and tests
+    # run here, where a dependency update which breaks them turns the run red.
+    - name: Check identifier
+      run: make -C identifier check
+
     - name: Build
       run: |
         make DATE=reproducible
