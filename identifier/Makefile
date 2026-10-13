@@ -42,13 +42,14 @@ lint-checkstyle: vendor ; $(info running biome checkstyle ...)	@
 
 # The generated locale JSON is what makes i18n a prerequisite here: both the
 # typecheck and the suite import it, and without it they fail with missing
-# modules rather than anything meaningful. Linting does not read it.
+# modules rather than anything meaningful. The suite also renders the app icon,
+# which src generates. Linting reads neither.
 .PHONY: typecheck
 typecheck: vendor | i18n ; $(info running tsc ...)	@
 	@$(BUNX) tsc -p tsconfig.json --noEmit && echo "tsc: no type errors"
 
 .PHONY: test
-test: vendor | i18n ; $(info running vitest ...)	@
+test: vendor | src i18n ; $(info running vitest ...)	@
 	@$(BUN) --bun run test --run
 
 # Cheapest gate first, so a lint slip fails in a tenth of a second instead of
