@@ -333,7 +333,7 @@ func (b *LibreGraphIdentifierBackend) RunWithContext(ctx context.Context) error 
 func (b *LibreGraphIdentifierBackend) Logon(ctx context.Context, audience, username, password string) (bool, *string, *string, backends.UserFromBackend, error) {
 	record, _ := identifier.FromRecordContext(ctx)
 	var requestedScopes map[string]bool
-	if record != nil {
+	if record != nil && record.HelloRequest != nil {
 		requestedScopes = record.HelloRequest.Scopes
 	}
 
