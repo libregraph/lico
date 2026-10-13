@@ -12,8 +12,8 @@
         "@mui/icons-material": "^9.4.0",
         "@mui/material": "^9.4.0",
         "@reduxjs/toolkit": "^2.12.0",
-        "i18next": "^21.10.0",
-        "i18next-browser-languagedetector": "^6.1.8",
+        "i18next": "^26.4.3",
+        "i18next-browser-languagedetector": "^8.2.1",
         "i18next-resources-to-backend": "^1.2.3",
         "query-string": "^9.5.0",
         "react": "^19.2.8",
@@ -785,9 +785,9 @@
 
     "htmlparser2": ["htmlparser2@10.1.0", "", { "dependencies": { "domelementtype": "^2.3.0", "domhandler": "^5.0.3", "domutils": "^3.2.2", "entities": "^7.0.1" } }, "sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ=="],
 
-    "i18next": ["i18next@21.10.0", "", { "dependencies": { "@babel/runtime": "^7.17.2" } }, "sha512-YeuIBmFsGjUfO3qBmMOc0rQaun4mIpGKET5WDwvu8lU7gvwpcariZLNtL0Fzj+zazcHUrlXHiptcFhBMFaxzfg=="],
+    "i18next": ["i18next@26.4.3", "", { "peerDependencies": { "typescript": "^5 || ^6 || ^7" }, "optionalPeers": ["typescript"] }, "sha512-QIIueUYS2giFVIY3hu/X5Dz7/qTzwcXE06H29m1DKVhUGVPCyT0wnsh14wEn/cTy9nZ/B6VhbDItdXotOKSO8A=="],
 
-    "i18next-browser-languagedetector": ["i18next-browser-languagedetector@6.1.8", "", { "dependencies": { "@babel/runtime": "^7.19.0" } }, "sha512-Svm+MduCElO0Meqpj1kJAriTC6OhI41VhlT/A0UPjGoPZBhAHIaGE5EfsHlTpgdH09UVX7rcc72pSDDBeKSQQA=="],
+    "i18next-browser-languagedetector": ["i18next-browser-languagedetector@8.2.1", "", { "dependencies": { "@babel/runtime": "^7.23.2" } }, "sha512-bZg8+4bdmaOiApD7N7BPT9W8MLZG+nPTOFlLiJiT8uzKXFjhxw4v2ierCXOwB5sFDMtuA5G4kgYZ0AznZxQ/cw=="],
 
     "i18next-conv": ["i18next-conv@12.1.1", "", { "dependencies": { "c8": "^7.11.0", "colorette": "^2.0.16", "commander": "^9.1.0", "gettext-converter": "^1.2.2", "gettext-parser": "^5.1.2", "node-gettext": "^3.0.0" }, "bin": { "i18next-conv": "bin/index.js" } }, "sha512-NYYVVGjB1/c/L+I4CG8Yu5xFYbn+FDQXbki3z8/CxLepkfnqw43VHaelllGpagv8xE6kXaYq1qKEF9EY6+EcOA=="],
 

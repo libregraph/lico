@@ -31,7 +31,7 @@ function newProductionLikeI18n(lng: string): I18nInstance {
       fallbackLng: "en-GB",
       supportedLngs: allLocales.map((locale) => locale.locale),
       resources: {},
-      initImmediate: false,
+      initAsync: false,
       interpolation: { escapeValue: false },
       detection: { order: ["navigator"], caches: [] },
     });
