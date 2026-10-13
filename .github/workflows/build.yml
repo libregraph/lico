@@ -5,10 +5,29 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  # Advisories are published without anything being pushed, and GitHub raises
+  # no Dependabot alerts for bun.lock, so the audit also runs on its own.
+  schedule:
+    - cron: '23 5 * * 1'
 
 jobs:
 
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: identifier/.bun-version
+
+    - name: Audit identifier dependencies
+      working-directory: identifier
+      run: bun run audit
+
   build:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
