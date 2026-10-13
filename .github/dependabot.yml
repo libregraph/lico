@@ -5,3 +5,19 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 2
+
+  # The identifier web app is managed by Bun. Without this entry Dependabot
+  # falls back to its npm and Yarn updater, which cannot update bun.lock.
+  - package-ecosystem: "bun"
+    directory: "/identifier"
+    schedule:
+      interval: "weekly"
+    # Matches minimumReleaseAge in identifier/bunfig.toml.
+    cooldown:
+      default-days: 3
+    groups:
+      identifier:
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 2
