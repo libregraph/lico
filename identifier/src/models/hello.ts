@@ -11,6 +11,7 @@ export interface HelloRequest {
   redirect_uri?: string;
   id_token_hint?: string;
   max_age?: string;
+  resource?: string;
 }
 
 export function newHelloRequest(flow: string | null | undefined, query: Record<string, string>): HelloRequest {
@@ -34,6 +35,9 @@ export function newHelloRequest(flow: string | null | undefined, query: Record<s
       }
       if (query.max_age) {
         r.max_age = query.max_age;
+      }
+      if (query.resource) {
+        r.resource = query.resource;
       }
       if (query.claims_scope) {
         // Add additional scopes from claims request if given. The request may

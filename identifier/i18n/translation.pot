@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-04T18:39:04.647Z\n"
+"POT-Creation-Date: 2026-10-13T12:36:16.761Z\n"
 "MIME-Version: 1.0\n"
 
 #. From: konnect##loading##error##headline
@@ -113,14 +113,24 @@ msgstr ""
 msgid "Use another account"
 msgstr ""
 
-#. From: konnect##consent##headline
-#: konnect##consent##headline
-msgid "Hi {{displayName}}"
+#. From: konnect##consent##messageWithResource
+#: konnect##consent##messageWithResource
+msgid "<0><0></0></0> wants to use <2>{{resource}}</2> to:"
 msgstr ""
 
 #. From: konnect##consent##message
 #: konnect##consent##message
 msgid "<0><0></0></0> wants to:"
+msgstr ""
+
+#. From: konnect##consent##headline
+#: konnect##consent##headline
+msgid "Hi {{displayName}}"
+msgstr ""
+
+#. From: konnect##consent##claimedName
+#: konnect##consent##claimedName
+msgid "It identifies itself as {{name}}."
 msgstr ""
 
 #. From: konnect##consent##nothingShared
@@ -131,6 +141,16 @@ msgstr ""
 #. From: konnect##consent##redirect
 #: konnect##consent##redirect
 msgid "Clicking \"Allow\" will redirect you to {{host}}"
+msgstr ""
+
+#. From: konnect##consent##redirectLocal
+#: konnect##consent##redirectLocal
+msgid "Clicking \"Allow\" will redirect you to an application on this device ({{host}})"
+msgstr ""
+
+#. From: konnect##consent##localWarning
+#: konnect##consent##localWarning
+msgid "Only continue if you started this sign-in from that application yourself."
 msgstr ""
 
 #. From: konnect##consent##cancelButton##label

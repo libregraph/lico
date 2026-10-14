@@ -600,7 +600,7 @@ paths:
 
         A client registering with `token_endpoint_auth_method: none` is public and gets no
         secret. Every dynamically registered client must use PKCE, since nobody vouches
-        for it.
+        for it, and is shown as unverified on the consent screen.
       operationId: registerClient
       requestBody:
         required: true
@@ -1730,6 +1730,11 @@ components:
         max_age:
           type: string
           description: Seconds, as a string. Must parse as an integer if present.
+        resource:
+          type: string
+          description: |
+            The `resource` parameter of the authorization request (RFC 8707), passed on so
+            the consent screen can name the protected resource the request is for.
 
     HelloResponse:
       type: object
@@ -1773,6 +1778,8 @@ components:
           $ref: '#/components/schemas/ScopesMap'
         client:
           $ref: '#/components/schemas/ClientDetails'
+        resource:
+          $ref: '#/components/schemas/ResourceDetails'
         meta:
           $ref: '#/components/schemas/Meta'
         branding:
@@ -1892,6 +1899,30 @@ components:
           format: uri
         trusted:
           type: boolean
+        unverified:
+          type: boolean
+          description: |
+            True for a client nobody vouches for: one which registered itself, or one whose
+            `client_id` is the URL of its Client ID Metadata Document. For the latter
+            `display_name` is the host of that URL.
+        claimed_name:
+          type: string
+          description: |
+            The `client_name` a Client ID Metadata Document gives. Self-asserted, so it is
+            only shown beside the host. Omitted when there is none.
+
+    ResourceDetails:
+      type: object
+      description: |
+        The protected resource a consent is for, as registered with this server. Present
+        on a consent answer only when the request named a registered resource.
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uri
+        name:
+          type: string
 
     Meta:
       type: object

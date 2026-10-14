@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import WarningAmberOutlined from "@mui/icons-material/WarningAmberOutlined";
 import Box from "@mui/material/Box";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -78,26 +79,67 @@ function Consent() {
   const meta = hello.details.meta?.scopes ?? { mapping: {}, definitions: {} };
 
   /*
-   * The domain behind the icon, and only when it is one a visitor could
-   * recognise. The registry decides which is which and this mirrors it: a web
-   * client's redirect URI is https and never loopback, while a native client's
-   * is a custom scheme or http on localhost
-   * (identity/clients/registry.go:138-177). A client returning to
-   * `msauth://com.microsoft...` or `localhost:53682` has no destination worth
-   * naming, so it gets no icon either.
+   * Where Allow sends the visitor, split by whether it is a domain a visitor
+   * could recognise. The registry decides which is which and this mirrors it: a
+   * web client's redirect URI is https and never loopback, while a native
+   * client's is a custom scheme or http on localhost
+   * (identity/clients/registry.go, prepareRedirectURIs).
+   *
+   * For a registered client the domain is detail, so it sits behind the icon,
+   * and a client returning to `msauth://com.microsoft...` or `localhost:53682`
+   * gets no icon at all. For an unverified client, one nobody vouches for, the
+   * destination is the one thing the visitor can check, so it is stated on the
+   * page, a local one included, and a local one comes with a warning: the MCP
+   * authorization specification requires the first and asks for the second
+   * (security considerations, Client ID Metadata Document Security), since any
+   * application on the device can listen on localhost.
    */
+  const unverified = !!client.unverified;
   let redirectHost = "";
+  let redirectLocal = "";
   if (client.redirect_uri) {
     try {
       const uri = new URL(client.redirect_uri);
       const loopback = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(uri.hostname);
       if ((uri.protocol === "https:" || uri.protocol === "http:") && !loopback) {
         redirectHost = uri.host;
+      } else if (loopback) {
+        redirectLocal = uri.host;
+      } else if (uri.host) {
+        redirectLocal = `${uri.protocol}//${uri.host}`;
       }
     } catch {
       // Not a URI this browser can read, so there is no host to promise.
     }
   }
+
+  // The name an unverified client gives itself, shown beside the host it is
+  // named by and never instead of it. Repeating the same name says nothing.
+  const claimedName =
+    unverified && client.claimed_name && client.claimed_name !== client.display_name ? client.claimed_name : "";
+
+  // The resource is named by the operator's registration, so unlike the
+  // client's it is a name this server vouches for.
+  const resourceName = hello.details.resource ? hello.details.resource.name || hello.details.resource.id : "";
+
+  /*
+   * The translations address these children by position: konnect.consent.message
+   * is "<0></0> wants to:". Reflowing the JSX inserts a {" "} child before it,
+   * which shifts the index and silently wraps the wrong node, so each stays on
+   * the lines it was written on. The spans carry no styling of their own now
+   * that the whole line is set in the heading weight; they exist because the
+   * sentence structure is the translators' contract.
+   */
+  // biome-ignore format: children are index-mapped by the translations
+  const message = resourceName ? (
+    <Trans t={t} i18nKey="konnect.consent.messageWithResource" defaults="<0><0></0></0> wants to use <2>{{resource}}</2> to:" values={{ resource: resourceName }}>
+      <Box component="span"><ClientDisplayName client={client}/></Box> wants to use <Box component="span">{resourceName}</Box> to:
+    </Trans>
+  ) : (
+    <Trans t={t} i18nKey="konnect.consent.message">
+      <Box component="span"><ClientDisplayName client={client}/></Box> wants to:
+    </Trans>
+  );
 
   return (
     <DialogContent>
@@ -115,20 +157,14 @@ function Consent() {
        * the spacing scale rather than gutterBottom's 0.35em, which landed on 7px
        * here and read as an accident beside the 16px between every other block.
        */}
-      <Typography variant="h6" component="p" sx={{ mb: 1 }}>
-        {/*
-         * The translations address this child by position: konnect.consent.message
-         * is "<0></0> wants to:". Reflowing the JSX inserts a {" "} child before
-         * it, which shifts the index and silently wraps the wrong node, so this
-         * stays on the lines it was written on. The span carries no styling of
-         * its own now that the whole line is set in the heading weight; it
-         * exists because the sentence structure is the translators' contract.
-         */}
-        {/* biome-ignore format: children are index-mapped by the translations */}
-        <Trans t={t} i18nKey="konnect.consent.message">
-          <Box component="span"><ClientDisplayName client={client}/></Box> wants to:
-        </Trans>
+      <Typography variant="h6" component="p" sx={{ mb: claimedName ? 0.5 : 1 }}>
+        {message}
       </Typography>
+      {claimedName ? (
+        <Typography variant="body2" sx={{ mb: 1, color: "text.secondary" }}>
+          {t("konnect.consent.claimedName", "It identifies itself as {{name}}.", { name: claimedName })}
+        </Typography>
+      ) : null}
       <ScopesList dense disablePadding sx={{ mb: 0 }} scopes={scopes} meta={meta}></ScopesList>
 
       {/*
@@ -141,8 +177,9 @@ function Consent() {
        * The whole redirect URI used to be here, then just its host. Neither
        * belongs on the page: none of the sign-in pages this was measured
        * against shows a redirect target, and for a native client it is a custom
-       * scheme or a loopback port, which reads like a fault. The domain is
-       * detail, so it sits behind the icon.
+       * scheme or a loopback port, which reads like a fault. For a registered
+       * client the domain is detail, so it sits behind the icon. An unverified
+       * client's destination is stated below instead, see redirectLocal above.
        */}
       {/*
        * text.secondary rather than the secondary palette colour, which lands on
@@ -151,7 +188,7 @@ function Consent() {
        */}
       <Typography variant="subtitle1" sx={{ mt: 2, color: "text.secondary" }}>
         {t("konnect.consent.nothingShared", "Nothing is shared until you click Allow.")}
-        {redirectHost ? (
+        {redirectHost && !unverified ? (
           /* Above, because this line sits directly over Allow and Cancel. */
           <Tooltip
             describeChild
@@ -164,6 +201,29 @@ function Consent() {
           </Tooltip>
         ) : null}
       </Typography>
+      {unverified && (redirectHost || redirectLocal) ? (
+        <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
+          {redirectHost
+            ? t("konnect.consent.redirect", 'Clicking "Allow" will redirect you to {{host}}', { host: redirectHost })
+            : t(
+                "konnect.consent.redirectLocal",
+                'Clicking "Allow" will redirect you to an application on this device ({{host}})',
+                { host: redirectLocal },
+              )}
+        </Typography>
+      ) : null}
+      {unverified && redirectLocal ? (
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mt: 1 }}>
+          {/* The amber is the icon's alone, the sentence keeps the text colour it needs to be read. */}
+          <WarningAmberOutlined sx={{ fontSize: 18, mt: "1px", color: "warning.main" }} />
+          <Typography variant="body2">
+            {t(
+              "konnect.consent.localWarning",
+              "Only continue if you started this sign-in from that application yourself.",
+            )}
+          </Typography>
+        </Box>
+      ) : null}
 
       <form action="" onSubmit={action(undefined, scopes)}>
         {/*

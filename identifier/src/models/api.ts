@@ -20,6 +20,17 @@ export interface ClientDetails {
   display_name: string;
   redirect_uri: string;
   trusted: boolean;
+  // Nobody vouches for this client: it registered itself, or its id is the URL
+  // of a metadata document and display_name is the host of that URL.
+  unverified?: boolean;
+  // The name such a document gives, self-asserted.
+  claimed_name?: string;
+}
+
+// The protected resource a consent is for, named by the server's registration.
+export interface ResourceDetails {
+  id: string;
+  name?: string;
 }
 
 export interface ScopeDefinition {
@@ -47,6 +58,7 @@ export interface HelloResponse {
   continue_uri?: string;
   scopes?: Record<string, boolean>;
   client?: ClientDetails;
+  resource?: ResourceDetails;
   meta?: { scopes: ScopesMeta };
   branding?: Branding;
 }
