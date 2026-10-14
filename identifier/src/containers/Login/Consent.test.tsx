@@ -213,6 +213,75 @@ describe("Consent", () => {
     expect(screen.getByText(/Nothing is shared until you click Allow\./)).toBeInTheDocument();
   });
 
+  describe("for an unverified client", () => {
+    // A client whose id is the URL of its own metadata document: the server
+    // names it by the host of that URL and passes the name it gives beside it.
+    const unverified: ClientDetails = {
+      id: "https://app.example.test/oauth/client-metadata",
+      display_name: "app.example.test",
+      redirect_uri: "https://app.example.test/oauth/callback",
+      trusted: false,
+      unverified: true,
+      claimed_name: "Example App",
+    };
+
+    it("names it by its host and states the name it claims beside it", () => {
+      renderConsent(helloResponse({ client: unverified }));
+
+      expect(screen.getByText(/wants to/)).toHaveTextContent("app.example.test wants to:");
+      expect(screen.getByText("It identifies itself as Example App.")).toBeInTheDocument();
+    });
+
+    it("states no claimed name which only repeats the host", () => {
+      renderConsent(helloResponse({ client: { ...unverified, claimed_name: "app.example.test" } }));
+
+      expect(screen.queryByText(/identifies itself/)).not.toBeInTheDocument();
+    });
+
+    it("states the destination on the page rather than behind the icon", () => {
+      renderConsent(helloResponse({ client: unverified }));
+
+      // Nobody vouches for this client, so where Allow leads is the one thing
+      // a visitor can check, and the specification requires it to be shown.
+      expect(screen.getByText('Clicking "Allow" will redirect you to app.example.test')).toBeInTheDocument();
+      expect(screen.queryByTitle(/redirect you to/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Only continue/)).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ["http://localhost:53682/callback", "localhost:53682"],
+      ["http://127.0.0.1:41000/callback", "127.0.0.1:41000"],
+      ["vscode://vscode.github-authentication/did-authenticate", "vscode://vscode.github-authentication"],
+    ])("warns before returning to an application on this device, %s", (redirect_uri, host) => {
+      renderConsent(helloResponse({ client: { ...unverified, redirect_uri } }));
+
+      // Any application on the device can listen there, so the visitor is told
+      // and asked to have started the sign-in themselves.
+      expect(
+        screen.getByText(`Clicking "Allow" will redirect you to an application on this device (${host})`),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Only continue if you started this sign-in from that application yourself."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("for a request naming a protected resource", () => {
+    it("names the resource in the sentence", () => {
+      renderConsent(helloResponse({ resource: { id: "https://mcp.example.test/mcp", name: "Example MCP server" } }));
+
+      expect(screen.getByText(/wants to use/)).toHaveTextContent("OIDC Playground wants to use Example MCP server to:");
+    });
+
+    it("falls back to the resource id when it has no name", () => {
+      renderConsent(helloResponse({ resource: { id: "https://mcp.example.test/mcp" } }));
+
+      expect(screen.getByText(/wants to use/)).toHaveTextContent(
+        "OIDC Playground wants to use https://mcp.example.test/mcp to:",
+      );
+    });
+  });
+
   it("grants the requested scopes when allow is clicked", async () => {
     renderConsent();
 

@@ -121,4 +121,49 @@ for (const lng of Object.keys(locales)) {
     expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(2);
     expect(text).toContain("User One");
   });
+
+  it(`renders the resource and the unverified client notices in ${lng}`, async () => {
+    const i18n = getTestI18n();
+    i18n.addResourceBundle(lng, "translation", locales[lng], true, true);
+    await i18n.changeLanguage(lng);
+
+    const details: HelloResponse = {
+      ...hello,
+      client: {
+        ...client,
+        display_name: "app.example.test",
+        redirect_uri: "http://localhost:53682/callback",
+        unverified: true,
+        claimed_name: "Example CLI",
+      },
+      resource: { id: "https://mcp.example.test/mcp", name: "Example MCP server" },
+    };
+    const { container } = renderWithProviders(<Consent />, {
+      ...arriveAt("/consent"),
+      request: { query },
+      preloaded: {
+        common: {
+          hello: {
+            state: details.success,
+            username: details.username,
+            displayName: details.displayName,
+            details,
+          },
+        },
+      },
+    });
+
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/<\d+>/);
+    expect(text).not.toMatch(/\{\{/);
+
+    // Both names are wrapped by the sentence, so both have to survive it.
+    const wrapped = [...container.querySelectorAll("span")].map((e) => e.textContent);
+    expect(wrapped).toContain("app.example.test");
+    expect(wrapped).toContain("Example MCP server");
+
+    // Interpolated rather than wrapped, so only their presence can be checked.
+    expect(text).toContain("Example CLI");
+    expect(text).toContain("localhost:53682");
+  });
 }

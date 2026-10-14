@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: LibreGraph Connect Identifier\n"
-"POT-Creation-Date: 2026-09-04T18:39:04.647Z\n"
+"POT-Creation-Date: 2026-10-13T12:33:59.002Z\n"
 "PO-Revision-Date: 2026-09-04 19:02+0200\n"
 "Last-Translator: Simon Eisenmann <simon@longsleep.org>\n"
 "Language-Team: none\n"
@@ -10,6 +10,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. From: konnect##consent##messageWithResource
+#: konnect##consent##messageWithResource
+msgid "<0><0></0></0> wants to use <2>{{resource}}</2> to:"
+msgstr "<0><0></0></0> quiere, a través de <2>{{resource}}</2>:"
 
 #. From: konnect##consent##message
 #: konnect##consent##message
@@ -35,6 +40,11 @@ msgstr "Cancelar"
 #: konnect##chooseaccount##headline
 msgid "Choose an account"
 msgstr "Elija una cuenta"
+
+#. From: konnect##consent##redirectLocal
+#: konnect##consent##redirectLocal
+msgid "Clicking \"Allow\" will redirect you to an application on this device ({{host}})"
+msgstr "Al hacer clic en \"Permitir\" se le redirigirá a una aplicación de este dispositivo: {{host}}"
 
 #. From: konnect##consent##redirect
 #: konnect##consent##redirect
@@ -81,6 +91,11 @@ msgstr "Hola {{displayName}}"
 msgid "Identity"
 msgstr "Identidad"
 
+#. From: konnect##consent##claimedName
+#: konnect##consent##claimedName
+msgid "It identifies itself as {{name}}."
+msgstr "La aplicación se identifica como {{name}}."
+
 #. From: konnect##error##login##failed
 #: konnect##error##login##failed
 msgid "Logon failed. Please verify your credentials and try again."
@@ -105,6 +120,11 @@ msgstr "Siguiente"
 #: konnect##consent##nothingShared
 msgid "Nothing is shared until you click Allow."
 msgstr "No se comparte nada hasta que haga clic en Permitir."
+
+#. From: konnect##consent##localWarning
+#: konnect##consent##localWarning
+msgid "Only continue if you started this sign-in from that application yourself."
+msgstr "Continúe solo si usted mismo inició este inicio de sesión desde esa aplicación."
 
 #. From: konnect##login##passwordField##label
 #: konnect##login##passwordField##label

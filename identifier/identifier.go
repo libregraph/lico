@@ -44,6 +44,7 @@ import (
 	"github.com/libregraph/lico/identity"
 	"github.com/libregraph/lico/identity/authorities"
 	"github.com/libregraph/lico/identity/clients"
+	"github.com/libregraph/lico/identity/resources"
 	"github.com/libregraph/lico/managers"
 	"github.com/libregraph/lico/utils"
 )
@@ -82,6 +83,7 @@ type Identifier struct {
 	backend     backends.Backend
 	clients     *clients.Registry
 	authorities *authorities.Registry
+	resources   *resources.Registry
 
 	meta *meta.Meta
 
@@ -196,6 +198,10 @@ func NewIdentifier(c *Config) (*Identifier, error) {
 func (i *Identifier) RegisterManagers(mgrs *managers.Managers) error {
 	i.clients = mgrs.Must("clients").(*clients.Registry)
 	i.authorities = mgrs.Must("authorities").(*authorities.Registry)
+	// Optional, it only names the resource a consent is for.
+	if resourceRegistry, _ := mgrs.Get("resources"); resourceRegistry != nil {
+		i.resources = resourceRegistry.(*resources.Registry)
+	}
 
 	if service, ok := i.backend.(managers.ServiceUsesManagers); ok {
 		err := service.RegisterManagers(mgrs)
