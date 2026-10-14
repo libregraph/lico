@@ -57,6 +57,10 @@ type TokenRequest struct {
 	RefreshToken *jwt.Token      `schema:"-"`
 	Scopes       map[string]bool `schema:"-"`
 	Resource     string          `schema:"-"`
+
+	// ClientAuthenticationBasic is true when the client authenticated with
+	// the Authorization header, which decides how a failure is answered.
+	ClientAuthenticationBasic bool `schema:"-"`
 }
 
 // DecodeTokenRequest return a TokenRequest holding the provided
@@ -100,11 +104,13 @@ func DecodeTokenRequest(req *http.Request, providerMetadata *oidc.WellKnown) (*T
 		// Use client ID and secret if no client_id was passed to the request directly.
 		tr.ClientID = clientID
 		tr.ClientSecret = clientSecret
+		tr.ClientAuthenticationBasic = true
 	} else if clientID != "" {
 		if tr.ClientID == clientID {
 			// Update the client secret, if the ID is a match. This replaces
 			// a directly given secret.
 			tr.ClientSecret = clientSecret
+			tr.ClientAuthenticationBasic = true
 		}
 	}
 
@@ -150,7 +156,12 @@ func (tr *TokenRequest) Validate(keyFunc jwt.Keyfunc, claims jwt.Claims) error {
 				return nil, fmt.Errorf("Not validated")
 			})
 			if err != nil {
-				return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidRequest, err.Error())
+				// A refresh token which is malformed, expired or signed with a
+				// key we do not hold is an invalid grant, as defined in
+				// https://datatracker.ietf.org/doc/html/rfc6749#section-5.2.
+				// It tells the client to sign in again rather than to fix its
+				// request.
+				return konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2InvalidGrant, err.Error())
 			}
 			tr.RefreshToken = refreshToken
 		}

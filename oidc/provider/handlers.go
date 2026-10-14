@@ -434,7 +434,10 @@ func (p *Provider) TokenHandler(rw http.ResponseWriter, req *http.Request) {
 	}
 	clientDetails, err = p.clients.Lookup(ctx, tr.ClientID, tr.ClientSecret, lookupRedirectURI, "", false)
 	if err != nil {
-		err = konnectoidc.NewOAuth2Error(oidc.ErrorCodeOAuth2AccessDenied, err.Error())
+		// Unknown client and failed client authentication alike, as defined in
+		// https://datatracker.ietf.org/doc/html/rfc6749#section-5.2.
+		// access_denied belongs to the authorization endpoint.
+		err = konnectoidc.NewOAuth2Error(konnectoidc.ErrorCodeOAuth2InvalidClient, err.Error())
 		goto done
 	}
 	if clientDetails != nil && clientDetails.Registration != nil {
@@ -636,7 +639,16 @@ done:
 	if err != nil {
 		switch err.(type) {
 		case *konnectoidc.OAuth2Error:
-			err = utils.WriteJSON(rw, http.StatusBadRequest, err, "")
+			status := http.StatusBadRequest
+			if tr != nil && tr.ClientAuthenticationBasic && konnectoidc.IsErrorWithID(err, konnectoidc.ErrorCodeOAuth2InvalidClient) {
+				// A client which authenticated with the Authorization header
+				// is answered with 401 and a challenge of the same scheme, as
+				// https://datatracker.ietf.org/doc/html/rfc6749#section-5.2
+				// requires.
+				status = http.StatusUnauthorized
+				rw.Header().Set("WWW-Authenticate", fmt.Sprintf("Basic realm=%q", p.issuerIdentifier))
+			}
+			err = utils.WriteJSON(rw, status, err, "")
 			if err != nil {
 				p.logger.WithError(err).Errorln("token request failed writing response")
 				return

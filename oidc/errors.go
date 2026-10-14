@@ -37,6 +37,12 @@ const (
 	// https://datatracker.ietf.org/doc/html/rfc6749#section-5.2. It is not
 	// defined by oidc-go.
 	ErrorCodeOAuth2InvalidScope = "invalid_scope"
+
+	// ErrorCodeOAuth2InvalidClient is the OAuth2 error code for a token request
+	// whose client is unknown or failed to authenticate, as defined in
+	// https://datatracker.ietf.org/doc/html/rfc6749#section-5.2. It is not
+	// defined by oidc-go.
+	ErrorCodeOAuth2InvalidClient = "invalid_client"
 )
 
 // OAuth2Error defines a general OAuth2 error with id and decription.

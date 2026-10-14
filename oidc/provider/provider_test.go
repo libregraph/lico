@@ -101,6 +101,13 @@ const (
 // the plain unittestclient.
 const testPKCEClientID = "unittestpkceclient"
 
+// testConfidentialClientID is a client with a secret, for the tests of client
+// authentication at the token endpoint.
+const (
+	testConfidentialClientID     = "unittestconfidentialclient"
+	testConfidentialClientSecret = "unittestsecret"
+)
+
 func newTestResourceRegistry(ctx context.Context, t *testing.T) *resources.Registry {
 	fn := filepath.Join(t.TempDir(), "identifier-registration.yaml")
 	conf := "resources:\n" +
@@ -150,6 +157,18 @@ func newTestClientRegistry(ctx context.Context, t *testing.T) *clients.Registry 
 		RedirectURIs:               []string{"http://localhost/callback"},
 		RawTokenEndpointAuthMethod: oidc.AuthMethodNone,
 		RequirePKCE:                true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A confidential client, which has to present its secret.
+	err = registry.Register(&clients.ClientRegistration{
+		ID:              testConfidentialClientID,
+		Secret:          testConfidentialClientSecret,
+		Name:            "Unit test confidential client",
+		ApplicationType: oidc.ApplicationTypeNative,
+		RedirectURIs:    []string{"http://localhost/callback"},
 	})
 	if err != nil {
 		t.Fatal(err)
