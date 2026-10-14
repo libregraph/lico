@@ -46,6 +46,9 @@ the limits worth knowing before you build on it.
   the same document the OpenID Connect discovery endpoint serves
 - [RFC 8707 - Resource Indicators](https://www.rfc-editor.org/rfc/rfc8707.html) -
   the `resource` parameter binds an access token to the resource it is for
+- [RFC 9207 - Authorization Server Issuer Identification](https://datatracker.ietf.org/doc/html/rfc9207) -
+  every authorization response redirected to the client, errors included,
+  carries `iss`
 - [OAuth 2.0 Multiple Response Type Encoding Practices](https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html)
 
 ### JOSE and cryptography

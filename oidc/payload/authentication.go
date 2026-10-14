@@ -414,6 +414,7 @@ func (ar *AuthenticationRequest) NewError(id string, description string) *Authen
 		ErrorID:          id,
 		ErrorDescription: description,
 		State:            ar.State,
+		Iss:              ar.issuer(),
 	}
 }
 
@@ -424,7 +425,17 @@ func (ar *AuthenticationRequest) NewBadRequest(id string, description string) *A
 		ErrorID:          id,
 		ErrorDescription: description,
 		State:            ar.State,
+		Iss:              ar.issuer(),
 	}
+}
+
+// issuer returns the issuer identifier of the provider the associated request
+// was made to, as an error redirected back to the client has to carry it.
+func (ar *AuthenticationRequest) issuer() string {
+	if ar.providerMetadata == nil {
+		return ""
+	}
+	return ar.providerMetadata.Issuer
 }
 
 // AuthenticationSuccess holds the outgoind data for a successful OpenID
@@ -440,6 +451,11 @@ type AuthenticationSuccess struct {
 	State       string `url:"state"`
 	ExpiresIn   int64  `url:"expires_in,omitempty"`
 
+	// Iss identifies the issuer of the response, so a client talking to more
+	// than one authorization server can tell which one answered, as specified
+	// at https://www.rfc-editor.org/rfc/rfc9207.html#section-2.
+	Iss string `url:"iss,omitempty"`
+
 	Scope string `url:"scope,omitempty"`
 
 	SessionState string `url:"session_state,omitempty"`
@@ -453,6 +469,9 @@ type AuthenticationError struct {
 	ErrorID          string `url:"error" json:"error"`
 	ErrorDescription string `url:"error_description,omitempty" json:"error_description,omitempty"`
 	State            string `url:"state,omitempty" json:"state,omitempty"`
+	// Iss as in AuthenticationSuccess. It belongs to the redirect alone and
+	// has no place in an error rendered as a JSON body.
+	Iss string `url:"iss,omitempty" json:"-"`
 }
 
 // Error interface implementation.
@@ -472,6 +491,8 @@ type AuthenticationBadRequest struct {
 	ErrorID          string `url:"error" json:"error"`
 	ErrorDescription string `url:"error_description,omitempty" json:"error_description,omitempty"`
 	State            string `url:"state,omitempty" json:"state,omitempty"`
+	// Iss as in AuthenticationSuccess.
+	Iss string `url:"iss,omitempty" json:"-"`
 }
 
 // Error interface implementation.

@@ -483,6 +483,11 @@ func (p *Provider) InitializeMetadata() error {
 		CodeChallengeMethodsSupported: []string{
 			oidc.S256CodeChallengeMethod,
 		},
+		// Every authorization response redirected to a client carries iss,
+		// successes from AuthorizeResponse and errors from the constructors of
+		// payload.AuthenticationRequest. Clients reject a response without it
+		// once this is set, see RFC 9207 section 2.4.
+		AuthorizationResponseIssParameterSupported: true,
 	}
 
 	return nil
