@@ -1,7 +1,7 @@
 openapi: '3.0.0'
 
 info:
-  version: '1.1.0'
+  version: '1.2.0'
   title: LibreGraph Connect API
   description: |
     LibreGraph Connect (lico) provides OpenID Connect Provider (OP) functionality with an
@@ -12,6 +12,9 @@ info:
     - OpenID Connect Discovery 1.0
     - OpenID Connect Session Management 1.0
     - OAuth 2.0 Authorization Framework
+    - OAuth 2.0 Authorization Server Metadata (RFC 8414)
+    - Proof Key for Code Exchange (RFC 7636), `S256` only
+    - Resource Indicators for OAuth 2.0 (RFC 8707)
     - Dynamic Client Registration (only when explicitly enabled, see below)
     - SAML2 and OAuth2 integration with external identity providers
 
@@ -155,6 +158,11 @@ paths:
         `error`, `error_description` and `state`, in the query string or the fragment
         depending on the response type. Requests that fail before that point render an HTML
         error page.
+
+        A request naming a `resource` binds the tokens it leads to to that resource, which
+        must be registered with this server, and narrows the requested scopes to the ones
+        the resource accepts. A client which must use PKCE is not refused here: a code
+        issued without a `code_challenge` is refused at the token endpoint instead.
       operationId: authorize
       parameters:
         - name: response_type
@@ -165,9 +173,9 @@ paths:
             below.
 
             **Known inconsistency:** the discovery document's `response_types_supported`
-            advertises only `id_token`, `id_token token`, `code id_token` and
-            `code id_token token`. Bare `code`, bare `token` and `code token` are accepted by
-            this endpoint but are not advertised.
+            advertises `code`, `id_token`, `id_token token`, `code id_token` and
+            `code id_token token`. Bare `token` and `code token` are accepted by this
+            endpoint but are not advertised.
 
             Response types containing `id_token` additionally require `nonce`.
           schema:
@@ -252,6 +260,11 @@ paths:
             type: string
         - name: code_challenge
           in: query
+          description: |
+            PKCE challenge (RFC 7636). Accepted on every code flow and verified at the
+            token endpoint. Required for dynamically registered clients, for static clients
+            with `require_pkce`, and for every client when the server runs with
+            `--require-pkce`.
           schema:
             type: string
         - name: code_challenge_method
@@ -260,6 +273,23 @@ paths:
           schema:
             type: string
             enum: [S256]
+        - name: resource
+          in: query
+          description: |
+            Resource indicator (RFC 8707), the canonical URI of the protected resource the
+            requested access token is for. At most one value: an absolute URI without
+            query or fragment, `https` or `http` on a loopback host. Scheme and host are
+            compared case-insensitively and a trailing slash is ignored.
+
+            The resource must be registered in the `resources:` block of
+            `--identifier-registration-conf` (see `ResourceRegistration`). It becomes the
+            `aud` of the access token, and every requested scope but `openid` and
+            `offline_access` which the resource does not accept is dropped. Several values,
+            a malformed value or an unregistered resource are answered with an
+            `invalid_target` error redirect.
+          schema:
+            type: string
+            format: uri
       responses:
         '302':
           description: |
@@ -300,6 +330,12 @@ paths:
                   type: string
                 nonce:
                   type: string
+                code_challenge:
+                  type: string
+                code_challenge_method:
+                  type: string
+                resource:
+                  type: string
       responses:
         '302':
           description: As for GET.
@@ -313,8 +349,9 @@ paths:
       description: |
         Token endpoint for the authorization code and refresh token grants.
 
-        Client authentication is `client_secret_basic` or `none`, matching
-        `token_endpoint_auth_methods_supported`.
+        Client authentication is `client_secret_basic`, `client_secret_post` or `none`,
+        matching `token_endpoint_auth_methods_supported`. A client registered with
+        `token_endpoint_auth_method: none` is public and sends no secret.
 
         The provider dispatches this endpoint by exact path match without router-level method
         restriction, so a GET reaches the handler and is rejected by it with a JSON error
@@ -340,9 +377,10 @@ paths:
                 $ref: '#/components/schemas/TokenResponse'
         '400':
           description: |
-            All OAuth2 errors on this endpoint are returned with status 400, including
-            `invalid_grant`, `invalid_request`, `unsupported_grant_type`, `invalid_token`,
-            `insufficient_scope` and `access_denied`.
+            OAuth2 errors on this endpoint are returned with status 400, among them
+            `invalid_request`, `invalid_grant`, `invalid_scope`, `invalid_target`,
+            `unsupported_grant_type`, `invalid_token`, `insufficient_scope` and
+            `access_denied`.
           content:
             application/json:
               schema:
@@ -519,6 +557,10 @@ paths:
 
         The two surfaces name two fields differently: the dynamic JSON uses `client_name`
         and `client_uri` where the static YAML uses `name` and `uri`.
+
+        A client registering with `token_endpoint_auth_method: none` is public and gets no
+        secret. Every dynamically registered client must use PKCE, since nobody vouches
+        for it.
       operationId: registerClient
       requestBody:
         required: true
@@ -534,7 +576,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientRegistrationResponse'
         '400':
-          description: Bad request
+          description: |
+            Invalid registration metadata, as `OIDCError` with `invalid_redirect_uri` or
+            `invalid_client_metadata`. A body which is not JSON is answered with an HTML
+            error page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCError'
         '404':
           description: Dynamic client registration is not enabled (the default).
 
@@ -1041,7 +1090,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: OAuth2 access token, required by the UserInfo endpoint.
+      description: |
+        OAuth2 access token, required by the UserInfo endpoint. A JWT signed with a key from
+        `jwks_uri`, with the claims described by `AccessTokenClaims`.
     clientBasicAuth:
       type: http
       scheme: basic
@@ -1145,9 +1196,10 @@ components:
           type: array
           description: |
             Emitted as `["S256"]`. A code challenge is accepted on every code flow and, when
-            present, verified at the token endpoint; no client is required to send one yet.
-            `plain` is rejected by the authorization endpoint and is therefore not
-            advertised.
+            present, verified at the token endpoint. Dynamically registered clients and static
+            clients with `require_pkce` must send one, and every client must when the server
+            runs with `--require-pkce`. `plain` is rejected by the authorization endpoint and
+            is therefore not advertised.
           items:
             type: string
         subject_types_supported:
@@ -1242,15 +1294,23 @@ components:
         redirect_uri:
           type: string
           format: uri
+          description: Must equal the `redirect_uri` of the authorization request.
         client_id:
           type: string
           description: May instead be supplied via `client_secret_basic`.
         client_secret:
           type: string
-          description: May instead be supplied via `client_secret_basic`.
+          description: |
+            May instead be supplied via `client_secret_basic`. Absent for a public client.
         code_verifier:
           type: string
-          description: PKCE verifier. Validated when the stored challenge is non-empty.
+          description: PKCE verifier. Required and validated when the code was issued with a challenge.
+        resource:
+          type: string
+          format: uri
+          description: |
+            Optional. When given, it must be the resource the code was issued for, else
+            `invalid_target`. Leaving it out keeps that resource.
 
     RefreshTokenGrant:
       type: object
@@ -1263,29 +1323,81 @@ components:
           type: string
         scope:
           type: string
+          description: |
+            Narrows the new tokens to these scopes. Every scope must be part of the grant,
+            else `invalid_scope`. Leaving it out keeps all scopes of the grant.
+        resource:
+          type: string
+          format: uri
+          description: |
+            Optional. When given, it must be the resource the grant was made for, else
+            `invalid_target`. Leaving it out keeps that resource.
         client_id:
           type: string
         client_secret:
           type: string
+          description: Absent for a public client.
 
     TokenResponse:
       type: object
       description: |
-        Every field is omitted when empty. There is **no `scope` member** — the response
-        struct does not define one, so granted scopes are not echoed here.
+        Every field but `scope` is omitted when empty. `scope` names the scopes granted to
+        the access token, which may be fewer than requested.
+
+        `redirect_uri` plays no role in the refresh grant and is ignored there. A refresh
+        returns a new refresh token whenever `offline_access` is granted.
       properties:
         access_token:
           type: string
+          description: A JWT with the claims described by `AccessTokenClaims`.
         token_type:
           type: string
           enum: [Bearer]
         expires_in:
           type: integer
           description: Seconds. Set by `--access-token-expiration`.
+        scope:
+          type: string
+          description: Space-delimited.
         refresh_token:
           type: string
         id_token:
           type: string
+
+    AccessTokenClaims:
+      type: object
+      description: |
+        The claims of an access token, a JWT signed with a key from `jwks_uri`. A resource
+        server validates the signature and `exp`, requires `iss` to equal the discovery
+        `issuer` and `aud` to equal its own resource identifier, and reads the granted
+        scopes from `scp`. A token whose `aud` is a client is not meant for a resource
+        server. Claims prefixed with `lg.` are internal to this server.
+      properties:
+        iss:
+          type: string
+          format: uri
+        sub:
+          type: string
+        aud:
+          type: array
+          items:
+            type: string
+          description: |
+            Exactly one value: the resource the token is bound to, or the client when the
+            request named no resource.
+        azp:
+          type: string
+          description: The client the token was issued to. Present only when `aud` is a resource.
+        scp:
+          type: string
+          description: Space-delimited granted scopes.
+        exp:
+          type: integer
+        iat:
+          type: integer
+        jti:
+          type: string
+      additionalProperties: true
 
     UserInfo:
       type: object
@@ -1376,6 +1488,9 @@ components:
           type: string
         token_endpoint_auth_method:
           type: string
+          description: |
+            `client_secret_basic` when omitted. `none` registers a public client without a
+            secret.
         token_endpoint_auth_signing_alg:
           type: string
         post_logout_redirect_uris:
@@ -1394,10 +1509,14 @@ components:
               type: string
             client_secret:
               type: string
+              description: Absent for a public client.
             client_id_issued_at:
               type: integer
             client_secret_expires_at:
               type: integer
+              description: |
+                Unix time, or `0` when the secret does not expire, which is the case unless
+                `--dynamic-client-secret-duration` is set.
 
     StaticClientRegistration:
       type: object
@@ -1407,7 +1526,8 @@ components:
         a default deployment**, since dynamic registration is disabled by default.
 
         The same file also carries an `authorities:` array configuring external OAuth2 and
-        SAML2 identity providers, which is out of scope here.
+        SAML2 identity providers, which is out of scope here, and a `resources:` array of
+        protected resources, see `ResourceRegistration`.
       properties:
         id:
           type: string
@@ -1432,6 +1552,11 @@ components:
         insecure:
           type: boolean
           description: Relaxes redirect URI scheme and host validation.
+        require_pkce:
+          type: boolean
+          description: |
+            Refuses a code issued without a `code_challenge` at the token endpoint. Not
+            implied by `token_endpoint_auth_method: none`.
         implicit_scopes:
           type: array
           items:
@@ -1478,10 +1603,47 @@ components:
           type: string
         token_endpoint_auth_method:
           type: string
+          description: '`none` makes a public client, which has no `secret`.'
         token_endpoint_auth_signing_alg:
           type: string
 
+    ResourceRegistration:
+      type: object
+      description: |
+        One entry of the `resources:` array in the `--identifier-registration-conf` file, a
+        protected resource a client may name with the `resource` parameter (RFC 8707).
+        Access tokens for it carry its `id` as `aud`.
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uri
+          description: |
+            The canonical URI of the resource. It is normalized at startup like the
+            `resource` parameter, with scheme and host in lower case and no trailing
+            slash, and access tokens carry that form as `aud`. The resource server has to
+            announce exactly it as `resource` in its protected resource metadata
+            (RFC 9728) and expect it as `aud`.
+        name:
+          type: string
+          description: Display name shown on the consent screen.
+        scopes:
+          type: array
+          items:
+            type: string
+          description: |
+            The scopes the resource accepts. A request naming the resource keeps only these
+            and the `implicit_scopes`, besides `openid` and `offline_access`.
+        implicit_scopes:
+          type: array
+          items:
+            type: string
+          description: |
+            Scopes added to every request naming the resource, whether or not the client
+            asked for them.
+
     # ----------------------------------------------------- identifier API
+
     HelloRequest:
       type: object
       description: |
@@ -1778,9 +1940,10 @@ components:
     OIDCError:
       type: object
       description: |
-        JSON error body of the token endpoint. **Not** used by the identifier JSON endpoints,
-        which return plain text — see the `PlainTextError` response. On `authorize` these same
-        codes are delivered as redirect parameters rather than as a body.
+        JSON error body of the token and registration endpoints. **Not** used by the
+        identifier JSON endpoints, which return plain text — see the `PlainTextError`
+        response. On `authorize` these same codes are delivered as redirect parameters rather
+        than as a body.
       required: [error]
       properties:
         error:
@@ -1793,6 +1956,9 @@ components:
             - unsupported_response_type
             - unsupported_grant_type
             - invalid_scope
+            - invalid_target
+            - invalid_redirect_uri
+            - invalid_client_metadata
             - invalid_token
             - insufficient_scope
             - server_error
