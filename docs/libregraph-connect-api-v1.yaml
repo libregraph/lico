@@ -16,6 +16,7 @@ info:
     - Proof Key for Code Exchange (RFC 7636), `S256` only
     - Resource Indicators for OAuth 2.0 (RFC 8707)
     - OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)
+    - OAuth Client ID Metadata Document (draft `-02`, only for configured hosts)
     - Dynamic Client Registration (only when explicitly enabled, see below)
     - SAML2 and OAuth2 integration with external identity providers
 
@@ -196,6 +197,15 @@ paths:
         - name: client_id
           in: query
           required: true
+          description: |
+            A client registered in `--identifier-registration-conf` or dynamically, or the
+            `https` URL of the client's Client ID Metadata Document when its host is named
+            with `--client-id-metadata-document-host`. Such a document is fetched and
+            cached by this server and makes a public client which must use PKCE. Its
+            redirect URIs are either on the document's own host or loopback, never both.
+
+            A `client_id` which does not resolve, including a document which is not
+            allowed, cannot be fetched or is invalid, is refused and never leads to a code.
           schema:
             type: string
         - name: redirect_uri
@@ -267,8 +277,9 @@ paths:
           in: query
           description: |
             PKCE challenge (RFC 7636). Accepted on every code flow and verified at the
-            token endpoint. Required for dynamically registered clients, for static clients
-            with `require_pkce`, and for every client when the server runs with
+            token endpoint. Required for dynamically registered clients, for clients
+            identified by a Client ID Metadata Document, for static clients with
+            `require_pkce`, and for every client when the server runs with
             `--require-pkce`.
           schema:
             type: string
@@ -1225,12 +1236,19 @@ components:
           type: array
           description: |
             Emitted as `["S256"]`. A code challenge is accepted on every code flow and, when
-            present, verified at the token endpoint. Dynamically registered clients and static
-            clients with `require_pkce` must send one, and every client must when the server
-            runs with `--require-pkce`. `plain` is rejected by the authorization endpoint and
-            is therefore not advertised.
+            present, verified at the token endpoint. Dynamically registered clients, clients
+            identified by a Client ID Metadata Document and static clients with
+            `require_pkce` must send one, and every client must when the server runs with
+            `--require-pkce`. `plain` is rejected by the authorization endpoint and is
+            therefore not advertised.
           items:
             type: string
+        client_id_metadata_document_supported:
+          type: boolean
+          description: |
+            Emitted as `true` when at least one `--client-id-metadata-document-host` is
+            configured, and omitted otherwise. A client may then use the `https` URL of its
+            Client ID Metadata Document as `client_id`.
         authorization_response_iss_parameter_supported:
           type: boolean
           description: |

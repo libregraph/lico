@@ -49,6 +49,9 @@ the limits worth knowing before you build on it.
 - [RFC 9207 - Authorization Server Issuer Identification](https://datatracker.ietf.org/doc/html/rfc9207) -
   every authorization response redirected to the client, errors included,
   carries `iss`
+- [OAuth Client ID Metadata Document](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02) -
+  draft `-02`, for the hosts named with `--client-id-metadata-document-host`,
+  public clients only
 - [OAuth 2.0 Multiple Response Type Encoding Practices](https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html)
 
 ### JOSE and cryptography
@@ -157,6 +160,21 @@ whether it registered itself or was written into the file. Use `--require-pkce`
 to ask the same of every client, and `--dynamic-client-secret-expiration` to
 expire the credentials of a dynamic registration, which by default do not
 expire.
+
+A client can also be identified by the `https` URL of a JSON document which
+describes it, its Client ID Metadata Document. Lico fetches the document
+instead of keeping a registration, for the hosts named with
+`--client-id-metadata-document-host`, which can be given several times:
+`app.example.com` allows that host as listed, `*.example.com` the subdomains of
+`example.com`, and `*` any public host. A wildcard never matches an address, a
+name without a dot or a name which only means something inside a local network,
+such as `localhost`, `*.local`, `*.internal` or `*.home.arpa`, and no document is
+ever fetched from a loopback, private or other special-use address. Such a
+client is public and has to use PKCE, its non-loopback redirect URIs have to be
+on the host of its `client_id`, and the consent screen names it by that host,
+with the name the document claims beside it. A document is cached as its
+`Cache-Control` says, between one minute and a day, and is used for up to a day
+longer while its host cannot be reached.
 
 ### Protected resources
 

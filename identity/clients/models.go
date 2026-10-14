@@ -68,6 +68,13 @@ type ClientRegistration struct {
 	IDIssuedAt      time.Time `yaml:"-" json:"-"`
 	SecretExpiresAt time.Time `yaml:"-" json:"-"`
 
+	// MetadataDocument is true for a client described by the Client ID
+	// Metadata Document at its client ID URL. Its Name is then the host of
+	// that URL, and ClaimedName the client_name the document gives, which
+	// nobody vouches for.
+	MetadataDocument bool   `yaml:"-" json:"-"`
+	ClaimedName      string `yaml:"-" json:"-"`
+
 	Contacts        []string `yaml:"contacts,flow" json:"contacts,omitempty"`
 	Name            string   `yaml:"name" json:"name,omitempty"`
 	URI             string   `yaml:"uri"  json:"uri,omitempty"`

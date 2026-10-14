@@ -154,7 +154,7 @@ func newTestBackendWithRegistry(t *testing.T, status int, body string) (*LibreGr
 	logger := logrus.New()
 	logger.SetLevel(logrus.PanicLevel)
 
-	registry, err := identityClients.NewRegistry(context.Background(), nil, "", false, 0, logger)
+	registry, err := identityClients.NewRegistry(context.Background(), nil, "", false, 0, nil, logger)
 	if err != nil {
 		httpServer.Close()
 		t.Fatal(err)

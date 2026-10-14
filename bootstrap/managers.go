@@ -72,7 +72,7 @@ func newManagers(ctx context.Context, bs *bootstrap) (*managers.Managers, error)
 	mgrs.Set("code", code)
 
 	// Identifier client registry manager.
-	clients, err := identityClients.NewRegistry(ctx, bs.config.IssuerIdentifierURI, bs.config.IdentifierRegistrationConf, bs.config.Config.AllowDynamicClientRegistration, time.Duration(bs.config.DyamicClientSecretDurationSeconds)*time.Second, logger)
+	clients, err := identityClients.NewRegistry(ctx, bs.config.IssuerIdentifierURI, bs.config.IdentifierRegistrationConf, bs.config.Config.AllowDynamicClientRegistration, time.Duration(bs.config.DyamicClientSecretDurationSeconds)*time.Second, bs.config.Config.ClientIDMetadataDocumentHosts, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client registry: %v", err)
 	}
