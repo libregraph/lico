@@ -488,6 +488,9 @@ func (p *Provider) InitializeMetadata() error {
 		// payload.AuthenticationRequest. Clients reject a response without it
 		// once this is set, see RFC 9207 section 2.4.
 		AuthorizationResponseIssParameterSupported: true,
+		// Clients pick a Client ID Metadata Document only when this is set
+		// and none is among the token endpoint auth methods, which it is.
+		ClientIDMetadataDocumentSupported: p.clients.MetadataDocumentsSupported(),
 	}
 
 	return nil

@@ -57,6 +57,6 @@ type ProviderMetadata struct {
 
 	// ClientIDMetadataDocumentSupported announces that a client may use the
 	// HTTPS URL of its own metadata document as client_id, as specified at
-	// https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00.
+	// https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02.
 	ClientIDMetadataDocumentSupported bool `json:"client_id_metadata_document_supported,omitempty"`
 }

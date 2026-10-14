@@ -101,6 +101,7 @@ func commandServe() *cobra.Command {
 	serveCmd.Flags().BoolVar(&cfg.AllowClientSignedLogins, "allow-client-signed-logins", false, "Allow sign in of client controlled signed login users")
 	serveCmd.Flags().BoolVar(&cfg.AllowDynamicClientRegistration, "allow-dynamic-client-registration", false, "Allow dynamic OAuth2 client registration")
 	serveCmd.Flags().BoolVar(&cfg.RequirePKCE, "require-pkce", false, "Require PKCE for all clients using the authorization code flow, dynamically registered clients always require it")
+	serveCmd.Flags().StringArrayVar(&cfg.ClientIDMetadataDocumentHosts, "client-id-metadata-document-host", nil, "Fetch Client ID Metadata Documents from this host (repeatable, \"*\" for all public)")
 	serveCmd.Flags().Uint64Var(&cfg.AccessTokenDurationSeconds, "access-token-expiration", 60*10, "Expiration time of access tokens in seconds since generated")                                             // 10 Minutes.
 	serveCmd.Flags().Uint64Var(&cfg.IDTokenDurationSeconds, "id-token-expiration", 60*60, "Expiration time of id tokens in seconds since generated")                                                         // 1 Hour.
 	serveCmd.Flags().Uint64Var(&cfg.RefreshTokenDurationSeconds, "refresh-token-expiration", 60*60*24*365*3, "Expiration time of refresh tokens in seconds since generated")                                 // 3 Years.

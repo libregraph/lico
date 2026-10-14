@@ -222,6 +222,11 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 		logger.Infoln("PKCE is required for all clients")
 	}
 
+	bs.config.Config.ClientIDMetadataDocumentHosts = settings.ClientIDMetadataDocumentHosts
+	if len(bs.config.Config.ClientIDMetadataDocumentHosts) > 0 {
+		logger.WithField("hosts", bs.config.Config.ClientIDMetadataDocumentHosts).Infoln("client id metadata documents are enabled")
+	}
+
 	encryptionSecretFn := settings.EncryptionSecretFile
 
 	if encryptionSecretFn != "" {

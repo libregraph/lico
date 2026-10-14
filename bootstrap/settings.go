@@ -38,6 +38,7 @@ type Settings struct {
 	AllowClientSignedLogins           bool
 	AllowDynamicClientRegistration    bool
 	RequirePKCE                       bool
+	ClientIDMetadataDocumentHosts     []string
 	EncryptionSecretFile              string
 	Listen                            string
 	IdentifierClientDisabled          bool

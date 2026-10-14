@@ -132,7 +132,7 @@ func newTestResourceRegistry(ctx context.Context, t *testing.T) *resources.Regis
 func newTestClientRegistry(ctx context.Context, t *testing.T) *clients.Registry {
 	trustedURI, _ := url.Parse("http://localhost:8777")
 	// Dynamic registration enabled, with no secret expiry, as it defaults to.
-	registry, err := clients.NewRegistry(ctx, trustedURI, "", true, 0, logger)
+	registry, err := clients.NewRegistry(ctx, trustedURI, "", true, 0, nil, logger)
 	if err != nil {
 		t.Fatal(err)
 	}

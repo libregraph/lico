@@ -24,7 +24,7 @@ func TestRedirectUriWithDynamicPort(t *testing.T) {
 		{"https://localhost:123/callback", true},
 	}
 
-	registry, _ := NewRegistry(context.Background(), nil, "", true, 0, nil)
+	registry, _ := NewRegistry(context.Background(), nil, "", true, 0, nil, nil)
 	clientRegistration := ClientRegistration{
 		ID:              "native",
 		Secret:          "secret",
@@ -69,7 +69,7 @@ func TestRedirectUriWithSpecificPath(t *testing.T) {
 		{"http://localhost:8080/other-callback", false},
 	}
 
-	registry, _ := NewRegistry(context.Background(), nil, "", true, 0, nil)
+	registry, _ := NewRegistry(context.Background(), nil, "", true, 0, nil, nil)
 	clientRegistration := ClientRegistration{
 		ID:              "native",
 		Secret:          "secret",
