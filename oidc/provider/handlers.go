@@ -719,6 +719,10 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 	var requestedClaimsMap []*payload.ClaimsRequestMap
 	var authorizedScopes map[string]bool
 
+	// The client is azp for a token bound to a resource, whose audience is the
+	// resource rather than the client.
+	clientID := claims.AuthorizedPartyOrAudience()
+
 	userID, sessionRef := p.getUserIDAndSessionRefFromClaims(&claims.RegisteredClaims, claims.AuthorizedParty, claims.SessionClaims, claims.IdentityClaims)
 
 	ctx := konnect.NewClaimsContext(konnect.NewRequestContext(req.Context(), req), claims)
@@ -740,7 +744,7 @@ func (p *Provider) UserInfoHandler(rw http.ResponseWriter, req *http.Request) {
 	authorizedScopes = claims.AuthorizedScopes()
 
 	auth, found, err = currentIdentityManager.Fetch(ctx, userID, sessionRef, authorizedScopes, requestedClaimsMap, authorizedScopes, &identity.LookupContext{
-		Audience: claims.Audience[0],
+		Audience: clientID,
 	})
 	if err != nil {
 		p.logger.WithFields(utils.ErrorAsFields(err)).Errorln("identity manager fetch failed")
@@ -840,7 +844,7 @@ done:
 	// Support returning signed user info if the registered client requested it
 	// as specified in https://openid.net/specs/openid-connect-core-1_0.html#UserInfoResponse and
 	// https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata
-	registration, _ := p.clients.Get(ctx, claims.Audience[0])
+	registration, _ := p.clients.Get(ctx, clientID)
 	if registration != nil {
 		if registration.RawUserInfoSignedResponseAlg != "" {
 			// Get alg.
