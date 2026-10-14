@@ -353,6 +353,14 @@ paths:
         matching `token_endpoint_auth_methods_supported`. A client registered with
         `token_endpoint_auth_method: none` is public and sends no secret.
 
+        The code grant fails with `invalid_grant` for an unknown, used or expired code, a
+        code issued to another client, a `redirect_uri` other than the one of the
+        authorization request, a missing `code_challenge` for a client which must use PKCE,
+        and a missing or wrong `code_verifier`. The refresh grant fails with
+        `invalid_grant` for a refresh token which is malformed, expired, not verifiable or
+        issued to another client. An unknown client, a wrong secret or, on the code grant,
+        a `redirect_uri` the client has not registered fail with `invalid_client`.
+
         The provider dispatches this endpoint by exact path match without router-level method
         restriction, so a GET reaches the handler and is rejected by it with a JSON error
         rather than a 405.
@@ -378,9 +386,22 @@ paths:
         '400':
           description: |
             OAuth2 errors on this endpoint are returned with status 400, among them
-            `invalid_request`, `invalid_grant`, `invalid_scope`, `invalid_target`,
-            `unsupported_grant_type`, `invalid_token`, `insufficient_scope` and
-            `access_denied`.
+            `invalid_request`, `invalid_client`, `invalid_grant`, `invalid_scope`,
+            `invalid_target`, `unsupported_grant_type`, `invalid_token`,
+            `insufficient_scope` and `access_denied`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCError'
+        '401':
+          description: |
+            `invalid_client` for a client which authenticated with the `Authorization`
+            header, as RFC 6749 section 5.2 requires. Carries a challenge of that scheme.
+          headers:
+            WWW-Authenticate:
+              description: '`Basic realm="<issuer>"`.'
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1950,6 +1971,7 @@ components:
           type: string
           enum:
             - invalid_request
+            - invalid_client
             - invalid_grant
             - unauthorized_client
             - access_denied

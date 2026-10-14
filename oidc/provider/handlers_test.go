@@ -779,4 +779,110 @@ func TestTokenRefresh(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("a refresh token which does not verify is an invalid grant", func(t *testing.T) {
+		// Expired and malformed alike tell the client to sign in again, which
+		// is what invalid_grant means and invalid_request does not.
+		expired, err := provider.makeJWT(ctx, provider.signingMethodDefault, &konnect.RefreshTokenClaims{
+			TokenType: konnect.TokenTypeRefreshToken,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    config.IssuerIdentifier,
+				Subject:   "unittestsubject",
+				Audience:  jwt.ClaimStrings{"unittestclient"},
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
+				IssuedAt:  jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)),
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for name, token := range map[string]string{
+			"expired":   expired,
+			"malformed": "not.a.token",
+		} {
+			status, response := refresh(t, url.Values{
+				"grant_type":    []string{oidc.GrantTypeRefreshToken},
+				"client_id":     []string{"unittestclient"},
+				"refresh_token": []string{token},
+			})
+			if status != http.StatusBadRequest {
+				t.Errorf("%s: token returned wrong status code: got %v want %v, response %v", name, status, http.StatusBadRequest, response)
+			}
+			if errorID, _ := response["error"].(string); errorID != oidc.ErrorCodeOAuth2InvalidGrant {
+				t.Errorf("%s: error was incorrect, got %v, want %s", name, response["error"], oidc.ErrorCodeOAuth2InvalidGrant)
+			}
+		}
+	})
+}
+
+// TestTokenClientAuthentication covers a client which is unknown or fails to
+// authenticate at the token endpoint. Both are invalid_client, and a client
+// which authenticated with the Authorization header is challenged with 401.
+func TestTokenClientAuthentication(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, _, router, config := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	for _, tc := range []struct {
+		name          string
+		clientID      string
+		clientSecret  string
+		basic         bool
+		wantStatus    int
+		wantChallenge bool
+	}{
+		{name: "unknown client", clientID: "unknownclient", wantStatus: http.StatusBadRequest},
+		{name: "wrong secret in the request body", clientID: testConfidentialClientID, clientSecret: "wrong", wantStatus: http.StatusBadRequest},
+		{name: "wrong secret in the Authorization header", clientID: testConfidentialClientID, clientSecret: "wrong", basic: true, wantStatus: http.StatusUnauthorized, wantChallenge: true},
+		{name: "unknown client in the Authorization header", clientID: "unknownclient", clientSecret: "secret", basic: true, wantStatus: http.StatusUnauthorized, wantChallenge: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			router.ServeHTTP(rr, newCodeTokenRequest(t, config.TokenPath, tc.clientID, tc.clientSecret, tc.basic))
+
+			if rr.Code != tc.wantStatus {
+				t.Errorf("token returned wrong status code: got %v want %v, body %s", rr.Code, tc.wantStatus, rr.Body.String())
+			}
+			response := make(map[string]interface{})
+			if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+				t.Fatalf("failed to decode token response: %v, body %s", err, rr.Body.String())
+			}
+			if errorID, _ := response["error"].(string); errorID != konnectoidc.ErrorCodeOAuth2InvalidClient {
+				t.Errorf("error was incorrect, got %v, want %s", response["error"], konnectoidc.ErrorCodeOAuth2InvalidClient)
+			}
+			challenge := rr.Header().Get("WWW-Authenticate")
+			if strings.HasPrefix(challenge, "Basic ") != tc.wantChallenge || (challenge != "") != tc.wantChallenge {
+				t.Errorf("WWW-Authenticate was incorrect, got %q, want a Basic challenge: %v", challenge, tc.wantChallenge)
+			}
+		})
+	}
+}
+
+// newCodeTokenRequest returns an authorization code token request of the
+// provided client, authenticated in the request body or with HTTP Basic.
+func newCodeTokenRequest(t *testing.T, tokenPath, clientID, clientSecret string, basic bool) *http.Request {
+	t.Helper()
+
+	form := url.Values{
+		"grant_type":   []string{oidc.GrantTypeAuthorizationCode},
+		"code":         []string{"unittestcode"},
+		"redirect_uri": []string{"http://localhost/callback"},
+	}
+	if !basic {
+		form.Set("client_id", clientID)
+		form.Set("client_secret", clientSecret)
+	}
+	req, err := http.NewRequest("POST", tokenPath, strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if basic {
+		req.SetBasicAuth(url.QueryEscape(clientID), url.QueryEscape(clientSecret))
+	}
+
+	return req
 }
