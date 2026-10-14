@@ -449,6 +449,85 @@ func TestAuthorizeAndTokenWithResource(t *testing.T) {
 	})
 }
 
+// TestAuthorizeResponseIss covers the iss parameter of RFC 9207 on the
+// redirect back to the client, which a client compares with the issuer of the
+// discovery document by simple string comparison, for an error as much as for
+// a success, and which the discovery document announces.
+func TestAuthorizeResponseIss(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	httpServer, _, router, config := NewTestProvider(ctx, t)
+	defer httpServer.Close()
+
+	metadata := getTestProviderMetadata(t, router, config.WellKnownPath)
+	if !metadata.AuthorizationResponseIssParameterSupported {
+		t.Error("authorization_response_iss_parameter_supported is not announced")
+	}
+
+	for _, tc := range []struct {
+		name      string
+		resource  string
+		wantError string
+	}{
+		{name: "success", wantError: ""},
+		{name: "error", resource: "https://unregistered.example.com/mcp", wantError: konnectoidc.ErrorCodeOAuth2InvalidTarget},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			query := url.Values{
+				"response_type": []string{oidc.ResponseTypeCode},
+				"client_id":     []string{"unittestclient"},
+				"redirect_uri":  []string{"http://localhost:33418/callback"},
+				"scope":         []string{oidc.ScopeOpenID},
+				"state":         []string{"unitteststate"},
+			}
+			if tc.resource != "" {
+				query.Set("resource", tc.resource)
+			}
+			req, err := http.NewRequest("GET", config.AuthorizationPath+"?"+query.Encode(), http.NoBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rr := httptest.NewRecorder()
+			router.ServeHTTP(rr, req)
+			if rr.Code != http.StatusFound {
+				t.Fatalf("authorize returned wrong status code: got %v want %v, body %s", rr.Code, http.StatusFound, rr.Body.String())
+			}
+			location, err := url.Parse(rr.Header().Get("Location"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			values := location.Query()
+
+			if errorID := values.Get("error"); errorID != tc.wantError {
+				t.Fatalf("error was incorrect, got %q, want %q", errorID, tc.wantError)
+			}
+			if iss := values.Get("iss"); iss != metadata.Issuer {
+				t.Errorf("iss was incorrect, got %q, want the discovery issuer %q", iss, metadata.Issuer)
+			}
+		})
+	}
+}
+
+// getTestProviderMetadata returns the discovery document served at the
+// provided path.
+func getTestProviderMetadata(t *testing.T, router http.Handler, path string) *konnectoidc.ProviderMetadata {
+	t.Helper()
+
+	req, err := http.NewRequest("GET", path, http.NoBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	metadata := &konnectoidc.ProviderMetadata{}
+	if err := json.Unmarshal(rr.Body.Bytes(), metadata); err != nil {
+		t.Fatal(err)
+	}
+
+	return metadata
+}
+
 // TestTokenRequiresPKCE covers that a client registration which demands PKCE
 // cannot exchange a code which was not bound to a code challenge, and can when
 // it was.

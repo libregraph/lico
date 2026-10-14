@@ -346,6 +346,7 @@ done:
 	// http://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthResponse
 	response := &payload.AuthenticationSuccess{
 		State: ar.State,
+		Iss:   p.issuerIdentifier,
 		Scope: strings.Join(authorizedScopesList, " "),
 
 		SessionState: sessionState,

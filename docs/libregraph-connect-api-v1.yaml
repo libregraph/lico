@@ -15,6 +15,7 @@ info:
     - OAuth 2.0 Authorization Server Metadata (RFC 8414)
     - Proof Key for Code Exchange (RFC 7636), `S256` only
     - Resource Indicators for OAuth 2.0 (RFC 8707)
+    - OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)
     - Dynamic Client Registration (only when explicitly enabled, see below)
     - SAML2 and OAuth2 integration with external identity providers
 
@@ -44,7 +45,7 @@ info:
 
     - The **OIDC/OAuth2 protocol endpoints** (`token`) return the JSON `OIDCError` shape.
     - `authorize` reports errors by **302 redirect** to the client's `redirect_uri` with
-      `error`/`error_description`/`state` in the query or fragment. It does not return JSON.
+      `error`/`error_description`/`state`/`iss` in the query or fragment. It does not return JSON.
     - The **identifier JSON endpoints** (`{signin}/identifier/_/*`) never return a JSON error
       body. Failures are `text/plain` from Go's `http.Error`, shaped
       `"<status> <reason>[ - <detail>]"`, e.g. `400 Bad Request - failed to decode request JSON`.
@@ -155,9 +156,13 @@ paths:
 
         **Errors are not returned as JSON.** A request that validates far enough to know the
         client and `redirect_uri` is answered with a 302 to that `redirect_uri` carrying
-        `error`, `error_description` and `state`, in the query string or the fragment
+        `error`, `error_description`, `state` and `iss`, in the query string or the fragment
         depending on the response type. Requests that fail before that point render an HTML
         error page.
+
+        Every redirect to the client, success or error, carries `iss`, the issuer identifier
+        exactly as in the discovery document (RFC 9207), so a client talking to several
+        authorization servers can tell which one answered.
 
         A request naming a `resource` binds the tokens it leads to to that resource, which
         must be registered with this server, and narrows the requested scopes to the ones
@@ -1226,6 +1231,11 @@ components:
             is therefore not advertised.
           items:
             type: string
+        authorization_response_iss_parameter_supported:
+          type: boolean
+          description: |
+            Emitted as `true`. Every authorization response redirected to the client carries
+            `iss` (RFC 9207), errors included, so a client may reject one which does not.
         subject_types_supported:
           type: array
           items:
