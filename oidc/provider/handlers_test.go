@@ -352,6 +352,46 @@ func TestAuthorizeAndTokenWithResource(t *testing.T) {
 		}
 	})
 
+	t.Run("userinfo answers for the client, not the resource", func(t *testing.T) {
+		// A client which asked for signed user info gets it only when the
+		// handler finds its registration, which a lookup by the audience of
+		// a resource-bound token does not.
+		registration, _ := provider.clients.Get(ctx, "unittestclient")
+		registration.RawUserInfoSignedResponseAlg = provider.signingMethodDefault.Alg()
+		defer func() {
+			registration.RawUserInfoSignedResponseAlg = ""
+		}()
+
+		code := authorize(t, testResource).Get("code")
+		status, response := token(t, code, testResource)
+		if status != http.StatusOK {
+			t.Fatalf("token returned wrong status code: got %v want %v, response %v", status, http.StatusOK, response)
+		}
+
+		req, err := http.NewRequest("GET", config.UserInfoPath, http.NoBody)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", "Bearer "+response["access_token"].(string))
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("userinfo returned wrong status code: got %v want %v, body %s", rr.Code, http.StatusOK, rr.Body.String())
+		}
+		if contentType := rr.Header().Get("Content-Type"); contentType != "application/jwt" {
+			t.Fatalf("userinfo was not signed, content type %q, body %s", contentType, rr.Body.String())
+		}
+		claims := jwt.MapClaims{}
+		if _, err := jwt.ParseWithClaims(rr.Body.String(), claims, provider.validateJWT); err != nil {
+			t.Fatal(err)
+		}
+		if audience, _ := claims["aud"].(string); audience != "unittestclient" {
+			t.Errorf("userinfo audience was incorrect, got %v, want unittestclient", claims["aud"])
+		}
+	})
+
 	t.Run("without a resource the token stays bound to the client", func(t *testing.T) {
 		code := authorize(t, "").Get("code")
 

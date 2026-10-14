@@ -419,6 +419,9 @@ paths:
 
         Only bearer token authentication is accepted here; the identifier session cookie is
         not consulted.
+
+        An access token bound to a resource is accepted too. Its client is then the one
+        named in `azp` rather than `aud`, see `AccessTokenClaims`.
       operationId: getUserInfo
       security:
         - bearerAuth: []
