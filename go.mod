@@ -8,7 +8,7 @@ require (
 	github.com/crewjam/httperr v0.2.0
 	github.com/crewjam/saml v0.4.14
 	github.com/deckarep/golang-set v1.8.0
-	github.com/gabriel-vasile/mimetype v1.4.2
+	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-jose/go-jose/v3 v3.0.5
 	github.com/go-ldap/ldap/v3 v3.4.13
