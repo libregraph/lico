@@ -339,6 +339,11 @@ func (ar *oidcAuthorityRegistration) MakeRedirectEndSessionRequestURL(ref interf
 		return nil, nil, nil
 	}
 
+	if ar.endSessionEndpoint == nil {
+		// Do nothing when the authority has no end session endpoint. Without
+		// discovery none can be configured, and discovery may find none.
+		return nil, nil, nil
+	}
 	uri, _ := url.Parse(ar.endSessionEndpoint.String())
 	query := make(url.Values)
 	query.Add("state", state)
@@ -379,13 +384,24 @@ func (ar *oidcAuthorityRegistration) Metadata() AuthorityMetadata {
 	ar.mutex.RLock()
 	defer ar.mutex.RUnlock()
 
+	// Endpoints which are neither configured nor discovered are nil, which
+	// is the case for most of them without discovery.
 	return &oidc.WellKnown{
 		Issuer:                ar.data.Iss,
-		AuthorizationEndpoint: ar.authorizationEndpoint.String(),
-		TokenEndpoint:         ar.tokenEndpoint.String(),
-		UserInfoEndpoint:      ar.userInfoEndpoint.String(),
-		EndSessionEndpoint:    ar.endSessionEndpoint.String(),
+		AuthorizationEndpoint: endpointString(ar.authorizationEndpoint),
+		TokenEndpoint:         endpointString(ar.tokenEndpoint),
+		UserInfoEndpoint:      endpointString(ar.userInfoEndpoint),
+		EndSessionEndpoint:    endpointString(ar.endSessionEndpoint),
 	}
+}
+
+// endpointString returns the provided endpoint as string, empty for nil.
+func endpointString(endpoint *url.URL) string {
+	if endpoint == nil {
+		return ""
+	}
+
+	return endpoint.String()
 }
 
 type oidcProviderLogger struct {

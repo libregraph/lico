@@ -412,6 +412,11 @@ func (i *Identifier) EndSession(ctx context.Context, user *IdentifiedUser, rw ht
 		if err != nil {
 			return nil, err
 		}
+		if uri == nil {
+			// The authority has nothing to redirect to, so the session ends
+			// here.
+			return nil, nil
+		}
 		sd.Extra = extra
 		if postRedirectURI != nil && postRedirectURI.String() != "" {
 			sd.RawQuery = postRedirectURI.String()
