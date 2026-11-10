@@ -28,7 +28,7 @@
 const fs = require('fs'),
   path = require('path');
 
-const version = '20260825-1'; // Unused, kept as a record of the script revision.
+const version = '20261110-1'; // Unused, kept as a record of the script revision.
 
 const licenseFilenames = [
   'LICENSE',
@@ -51,12 +51,11 @@ const noticeFilenames = [
 
 function findModuleViaPackageJSON(mp) {
   const p = mp.split('/');
-  if (p[p.length - 1] === 'esm') {
-    p.pop()
-  }
   while (p.length > 0) {
     const bp = p.join('/') + '/package.json';
-    if (fs.existsSync(bp)) {
+    // A package.json without a name only sets the module type of its
+    // directory, so the package it belongs to is further up.
+    if (fs.existsSync(bp) && JSON.parse(fs.readFileSync(bp, 'utf-8')).name) {
       return p.join('/');
     }
 
@@ -66,12 +65,6 @@ function findModuleViaPackageJSON(mp) {
 
 function findLicense(mp) {
   const json = JSON.parse(fs.readFileSync(mp + '/package.json', 'utf-8'));
-  if (json.type === 'module') {
-    delete json['version'];
-    if (Object.keys(json).length === 1) {
-      return;
-    }
-  }
   if (json.module && json.module.indexOf('../') === 0) {
     return;
   }
