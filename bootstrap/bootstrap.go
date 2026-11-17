@@ -286,6 +286,7 @@ func (bs *bootstrap) initialize(settings *Settings) error {
 		bs.config.IdentifierDefaultUsernameHintText = &settings.IdentifierDefaultUsernameHintText
 	}
 	bs.config.IdentifierUILocales = settings.IdentifierUILocales
+	bs.config.IdentifierSecondFactor = settings.IdentifierSecondFactor
 
 	bs.config.SigningKeyID = settings.SigningKid
 	bs.config.Signers = make(map[string]crypto.Signer)

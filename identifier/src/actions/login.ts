@@ -4,12 +4,24 @@ import {
   asError,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
   ERROR_LOGIN_FAILED,
+  ERROR_LOGIN_SECOND_FACTOR_INVALID,
+  ERROR_LOGIN_SECOND_FACTOR_LOCKED,
+  ERROR_LOGIN_SECOND_FACTOR_UNSUPPORTED,
+  ERROR_LOGIN_VALIDATE_MISSINGCODE,
   ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
   ExtendedError,
 } from "../errors";
 import type { FlowNavigation } from "../hooks/navigation";
-import type { AttemptResult, FieldErrors, HelloResponse, LogonResponse, StateResponse } from "../models/api";
+import type {
+  AttemptResult,
+  FieldErrors,
+  HelloResponse,
+  LogonResponse,
+  SecondFactorResponse,
+  SecondFactorState,
+  StateResponse,
+} from "../models/api";
 import { newHelloRequest } from "../models/hello";
 import { receiveHello } from "../reducers/common";
 import {
@@ -31,11 +43,52 @@ export const ModeLogonUsernamePassword = "1";
 
 export type LogonMode = typeof ModeLogonUsernameEmptyPasswordCookie | typeof ModeLogonUsernamePassword;
 
+// The second factor type this web app can use.
+export const SecondFactorTypeTOTP = "totp";
+
+/*
+ * The response travels with the request options rather than as a positional
+ * argument, because it belongs to one mode only and the callers which send
+ * none stay as they were.
+ */
+export interface LogonOptions extends PostJSONOptions {
+  secondFactor?: SecondFactorResponse;
+}
+
+/*
+ * A TOTP code as the server expects it: the digits as bytes, without the
+ * spaces some authenticator apps show for readability.
+ */
+export function totpSecondFactor(code: string): SecondFactorResponse {
+  const digits = new TextEncoder().encode(code.replace(/\s+/g, ""));
+  return { type: SecondFactorTypeTOTP, value: btoa(String.fromCharCode(...digits)) };
+}
+
+/*
+ * A logon whose password was accepted but which needs a second factor. Only a
+ * TOTP can be entered here, so a user offered nothing else stays on the first
+ * step with an explanation.
+ */
+function secondFactorAttempt(state: string, secondFactor: SecondFactorState): AttemptResult {
+  if (!secondFactor.methods.some((method) => method.type === SecondFactorTypeTOTP)) {
+    return { success: false, state, errors: { http: { message: ERROR_LOGIN_SECOND_FACTOR_UNSUPPORTED } } };
+  }
+  switch (secondFactor.result) {
+    case "invalid":
+      return { success: false, state, secondFactor, errors: { code: { message: ERROR_LOGIN_SECOND_FACTOR_INVALID } } };
+    case "locked":
+      return { success: false, state, secondFactor, errors: { code: { message: ERROR_LOGIN_SECOND_FACTOR_LOCKED } } };
+    default:
+      // Being asked for a code is not a mistake to report.
+      return { success: false, state, secondFactor, errors: {} };
+  }
+}
+
 export function executeLogon(
   username: string,
   password: string,
   mode: LogonMode = ModeLogonUsernamePassword,
-  options: PostJSONOptions = {},
+  { secondFactor, ...options }: LogonOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return async (dispatch, _getState, request): Promise<AttemptResult> => {
     dispatch(requestLogon());
@@ -66,13 +119,15 @@ export function executeLogon(
     const r = withClientRequestState({
       params: params,
       hello: newHelloRequest(flow, query),
+      // Left out of the JSON when there is none.
+      second_factor: secondFactor,
     });
     try {
       const { status, headers, data } = await postJSON("./identifier/_/logon", r, options);
 
       let response: AttemptResult;
       switch (status) {
-        case 200:
+        case 200: {
           /*
            * Parsed as the shape this endpoint sends, not as the union the
            * containers read. The two differ: a locally built refusal also
@@ -80,8 +135,10 @@ export function executeLogon(
            * a field the server starts sending lands in one place that has to
            * account for it.
            */
-          response = data as LogonResponse;
+          const logon = data as LogonResponse;
+          response = logon.second_factor ? secondFactorAttempt(logon.state, logon.second_factor) : logon;
           break;
+        }
         case 204:
           // login failed. The state travels in a header, because there is no
           // body to carry it.
@@ -198,10 +255,13 @@ export function executeConsent(
 // incomplete form is an ordinary outcome rather than a failure, and expressing
 // it as a rejected promise carrying domain data forced callers to treat it as
 // one.
+// A second factor is checked only when one is sent; undefined means the form
+// has no field for it.
 export function validateUsernamePassword(
   username: string,
   password: string,
   isSignedIn: boolean,
+  secondFactor?: SecondFactorResponse,
 ): AppThunk<FieldErrors> {
   return (dispatch) => {
     const errors: FieldErrors = {};
@@ -211,6 +271,9 @@ export function validateUsernamePassword(
     }
     if (!password && !isSignedIn) {
       errors.password = { message: ERROR_LOGIN_VALIDATE_MISSINGPASSWORD };
+    }
+    if (secondFactor !== undefined && !secondFactor.value) {
+      errors.code = { message: ERROR_LOGIN_VALIDATE_MISSINGCODE };
     }
 
     dispatch(receiveValidateLogon(errors));
@@ -223,10 +286,10 @@ export function executeLogonIfFormValid(
   username: string,
   password: string,
   isSignedIn: boolean,
-  options: PostJSONOptions = {},
+  options: LogonOptions = {},
 ): AppThunk<Promise<AttemptResult>> {
   return (dispatch) => {
-    const errors = dispatch(validateUsernamePassword(username, password, isSignedIn));
+    const errors = dispatch(validateUsernamePassword(username, password, isSignedIn, options.secondFactor));
     if (Object.keys(errors).length > 0) {
       return Promise.resolve({
         success: false,

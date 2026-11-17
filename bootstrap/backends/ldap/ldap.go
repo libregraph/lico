@@ -150,7 +150,8 @@ func NewIdentityManager(bs bootstrap.Bootstrap) (identity.Manager, error) {
 		DefaultUsernameHintText:  config.IdentifierDefaultUsernameHintText,
 		UILocales:                config.IdentifierUILocales,
 
-		Backend: identifierBackend,
+		Backend:      identifierBackend,
+		SecondFactor: config.IdentifierSecondFactor,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create identifier: %v", err)

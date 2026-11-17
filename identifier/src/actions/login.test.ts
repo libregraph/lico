@@ -5,6 +5,10 @@ import {
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATE,
   ERROR_HTTP_UNEXPECTED_RESPONSE_STATUS,
   ERROR_LOGIN_FAILED,
+  ERROR_LOGIN_SECOND_FACTOR_INVALID,
+  ERROR_LOGIN_SECOND_FACTOR_LOCKED,
+  ERROR_LOGIN_SECOND_FACTOR_UNSUPPORTED,
+  ERROR_LOGIN_VALIDATE_MISSINGCODE,
   ERROR_LOGIN_VALIDATE_MISSINGPASSWORD,
   ERROR_LOGIN_VALIDATE_MISSINGUSERNAME,
 } from "../errors";
@@ -38,6 +42,7 @@ import {
   executeConsent,
   executeLogon,
   executeLogonIfFormValid,
+  totpSecondFactor,
   validateUsernamePassword,
 } from "./login";
 
@@ -467,6 +472,111 @@ describe("executeConsent", () => {
   });
 });
 
+describe("executeLogon with a second factor", () => {
+  /*
+   * A refusal whose password was accepted is a 200 whose body names the second
+   * factor next to the echoed state. The helper is local because no other test
+   * needs to answer like this.
+   */
+  const replySecondFactor = (secondFactor: unknown) => {
+    fetchMock().mockImplementation((_url: string, init: RequestInit) => {
+      const sent = JSON.parse(String(init.body)) as { state?: string };
+      return Promise.resolve(
+        new Response(JSON.stringify({ success: false, state: sent.state, hello: null, second_factor: secondFactor }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+  };
+  const totpOnly = { methods: [{ type: "totp" }] };
+
+  it("sends the code as a totp response in the body", async () => {
+    replyEchoingState(200, { success: true });
+    const { store } = newHarness();
+
+    await store.dispatch(executeLogon("user1", "secret", "1", { secondFactor: totpSecondFactor("123 456") }));
+
+    expect(postedBody().params).toEqual(["user1", "secret", "1"]);
+    expect(postedBody().second_factor).toEqual({ type: "totp", value: btoa("123456") });
+  });
+
+  it("encodes whatever was typed as UTF-8, so no input can break the request", () => {
+    expect(totpSecondFactor("12 34\t56")).toEqual({ type: "totp", value: btoa("123456") });
+    expect(totpSecondFactor("١٢٣")).toEqual({ type: "totp", value: "2aHZotmj" });
+  });
+
+  it("sends no second factor when there is none", async () => {
+    replyEchoingState(200, { success: true });
+    const { store } = newHarness();
+
+    await store.dispatch(executeLogon("user1", "secret"));
+
+    expect(postedBody()).not.toHaveProperty("second_factor");
+  });
+
+  it("asks for a code without reporting an error", async () => {
+    replySecondFactor({ result: "required", ...totpOnly });
+    const { store } = newHarness();
+
+    const response = await store.dispatch(executeLogon("user1", "secret"));
+
+    expect(response).toEqual({
+      success: false,
+      state: postedBody().state,
+      secondFactor: { result: "required", methods: [{ type: "totp" }] },
+      errors: {},
+    });
+    expect(store.getState().login.errors).toEqual({});
+    expect(store.getState().login.loading).toBe("");
+  });
+
+  it("reports a wrong code against the code field", async () => {
+    replySecondFactor({ result: "invalid", ...totpOnly });
+    const { store } = newHarness();
+
+    const response = await store.dispatch(
+      executeLogon("user1", "secret", "1", { secondFactor: totpSecondFactor("000000") }),
+    );
+
+    expect(response.secondFactor?.result).toBe("invalid");
+    expect(store.getState().login.errors).toEqual({ code: { message: ERROR_LOGIN_SECOND_FACTOR_INVALID } });
+  });
+
+  it("reports a locked second factor against the code field", async () => {
+    replySecondFactor({ result: "locked", ...totpOnly });
+    const { store } = newHarness();
+
+    const response = await store.dispatch(
+      executeLogon("user1", "secret", "1", { secondFactor: totpSecondFactor("123456") }),
+    );
+
+    expect(response.secondFactor?.result).toBe("locked");
+    expect(store.getState().login.errors).toEqual({ code: { message: ERROR_LOGIN_SECOND_FACTOR_LOCKED } });
+  });
+
+  it("says when no offered method can be used here", async () => {
+    replySecondFactor({ result: "required", methods: [{ type: "webauthn", data: "AP8Q" }] });
+    const { store } = newHarness();
+
+    const response = await store.dispatch(executeLogon("user1", "secret"));
+
+    expect(response.secondFactor).toBeUndefined();
+    expect(response.errors).toEqual({ http: { message: ERROR_LOGIN_SECOND_FACTOR_UNSUPPORTED } });
+  });
+
+  it("keeps the code out of every action it dispatches", async () => {
+    replySecondFactor({ result: "invalid", ...totpOnly });
+    const { store, actions } = newHarness();
+
+    await store.dispatch(executeLogon("user1", "secret", "1", { secondFactor: totpSecondFactor("987654") }));
+
+    expect(actions.length).toBeGreaterThan(0);
+    expect(JSON.stringify(actions)).not.toContain("987654");
+    expect(JSON.stringify(actions)).not.toContain(btoa("987654"));
+  });
+});
+
 describe("validateUsernamePassword", () => {
   it("reports no errors when both are given", () => {
     const { store, actions } = newHarness();
@@ -526,6 +636,24 @@ describe("validateUsernamePassword", () => {
     const { store } = newHarness();
 
     expect(store.dispatch(validateUsernamePassword("", "", false))).not.toBeInstanceOf(Promise);
+  });
+});
+
+describe("validateUsernamePassword with a code", () => {
+  it("asks for a code when an empty one is expected", () => {
+    const { store } = newHarness();
+
+    const errors = store.dispatch(validateUsernamePassword("user1", "secret", false, totpSecondFactor(" ")));
+
+    expect(errors).toEqual({ code: { message: ERROR_LOGIN_VALIDATE_MISSINGCODE } });
+  });
+
+  it("does not ask for a code when none is expected", () => {
+    const { store } = newHarness();
+
+    const errors = store.dispatch(validateUsernamePassword("user1", "secret", false));
+
+    expect(errors).toEqual({});
   });
 });
 

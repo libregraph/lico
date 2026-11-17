@@ -46,6 +46,31 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
+#. From: konnect##login##secondFactor##headline
+#: konnect##login##secondFactor##headline
+msgid "Two-factor authentication"
+msgstr ""
+
+#. From: konnect##login##secondFactor##text
+#: konnect##login##secondFactor##text
+msgid "Enter the code from your authenticator app."
+msgstr ""
+
+#. From: konnect##login##codeField##label
+#: konnect##login##codeField##label
+msgid "Code"
+msgstr ""
+
+#. From: konnect##login##backButton##label
+#: konnect##login##backButton##label
+msgid "Back"
+msgstr ""
+
+#. From: konnect##login##verifyButton##label
+#: konnect##login##verifyButton##label
+msgid "Verify"
+msgstr ""
+
 #. From: konnect##scopeDescription##aliasBasic
 #: konnect##scopeDescription##aliasBasic
 msgid "Access your basic account information"
@@ -183,9 +208,29 @@ msgstr ""
 msgid "Enter your password."
 msgstr ""
 
+#. From: konnect##error##login##validate##missingCode
+#: konnect##error##login##validate##missingCode
+msgid "Enter your code."
+msgstr ""
+
 #. From: konnect##error##login##failed
 #: konnect##error##login##failed
 msgid "Logon failed. Please verify your credentials and try again."
+msgstr ""
+
+#. From: konnect##error##login##secondFactor##invalid
+#: konnect##error##login##secondFactor##invalid
+msgid "The code is not correct. Please try again."
+msgstr ""
+
+#. From: konnect##error##login##secondFactor##locked
+#: konnect##error##login##secondFactor##locked
+msgid "Too many wrong codes. Please wait and try again later."
+msgstr ""
+
+#. From: konnect##error##login##secondFactor##unsupported
+#: konnect##error##login##secondFactor##unsupported
+msgid "This account needs a second factor which cannot be used on this page."
 msgstr ""
 
 #. From: konnect##error##http##networkError

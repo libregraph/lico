@@ -18,7 +18,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import { advanceLogonFlow, executeLogonIfFormValid } from "../../actions/login";
+import { advanceLogonFlow, executeLogonIfFormValid, totpSecondFactor } from "../../actions/login";
 import BusyButton from "../../components/BusyButton";
 import Loading from "../../components/Loading";
 import RedirectWithQuery from "../../components/RedirectWithQuery";
@@ -26,9 +26,11 @@ import RequestError from "../../components/RequestError";
 import { ErrorMessage } from "../../errors";
 import { useFlowNavigation } from "../../hooks/navigation";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import type { SecondFactorState } from "../../models/api";
 import { selectBranding, selectHello } from "../../reducers/common";
-import { clearFieldError, selectErrors, selectLoading } from "../../reducers/login";
+import { clearFieldError, receiveValidateLogon, selectErrors, selectLoading } from "../../reducers/login";
 import { useSignInRequest } from "../../request";
+import SecondFactor from "./SecondFactor";
 
 /*
  * login_hint decides only whether the username field is prefilled. The server
@@ -93,6 +95,16 @@ function Login() {
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   /*
+   * The second step, for users with a second factor. The server only says one
+   * is needed after it accepted the password, so the step is entered from the
+   * reply, with the methods it offered, and both credentials are kept to be
+   * sent again with the response. The code is a credential as well and stays
+   * here for the same reason.
+   */
+  const [secondFactor, setSecondFactor] = useState<SecondFactorState | null>(null);
+  const [code, setCode] = useState("");
+
+  /*
    * Whether this visitor is only passing through, decided on mount. The
    * initialiser is what freezes it: this screen's own form fills the store and
    * moves the location, and re-deciding later would take a visitor off a screen
@@ -137,7 +149,7 @@ function Login() {
    * this component.
    */
   const handleChange =
-    (name: "username" | "password", set: (value: string) => void) =>
+    (name: "username" | "password" | "code", set: (value: string) => void) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       set(event.target.value);
       if (errors[name]) {
@@ -148,11 +160,29 @@ function Login() {
   const handleNextClick = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
-    dispatch(executeLogonIfFormValid(withAsciiDomain(username), password, false)).then((response) => {
+    const options = secondFactor ? { secondFactor: totpSecondFactor(code) } : {};
+    dispatch(executeLogonIfFormValid(withAsciiDomain(username), password, false, options)).then((response) => {
       if (response.success) {
         dispatch(advanceLogonFlow(response.success, nav));
+        return;
+      }
+
+      // The second step is left by passing it or going back. A code is single
+      // use, so a wrong one is not left in the field.
+      if (response.secondFactor) {
+        setSecondFactor(response.secondFactor);
+        setCode("");
       }
     });
+  };
+
+  // Back to the first step. The password field is uncontrolled and comes back
+  // empty, so the password kept for the second request is dropped with it.
+  const handleBackClick = () => {
+    setSecondFactor(null);
+    setPassword("");
+    setCode("");
+    dispatch(receiveValidateLogon({}));
   };
 
   const usernamePlaceHolder = useMemo(() => {
@@ -186,6 +216,17 @@ function Login() {
    */
   if (passingThrough) {
     return selectAccount ? <RedirectWithQuery target="/chooseaccount" /> : <Loading delay={800} />;
+  }
+
+  if (secondFactor) {
+    return (
+      <SecondFactor
+        code={code}
+        onCodeChange={handleChange("code", setCode)}
+        onSubmit={handleNextClick}
+        onBack={handleBackClick}
+      />
+    );
   }
 
   return (

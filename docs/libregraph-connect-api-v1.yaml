@@ -676,6 +676,14 @@ paths:
         backend as the logon audience, so including or omitting `hello` can change backend
         authorization scoping. A successful response embeds the same payload `hello` would
         have returned.
+
+        When the application embedding the identifier provides a second factor, it is asked
+        only after the backend accepted the password in mode `1`. For a user with a second
+        factor the logon then also needs a valid `second_factor` response. Without one the
+        reply is a 200 with `success: false`, no session cookie and a `second_factor` member
+        naming the result and the methods the user can use. A wrong password is still
+        answered with 204 and never reveals whether a user has a second factor. Limiting
+        attempts is up to the application, the identifier does not count them.
       operationId: logon
       parameters:
         - $ref: '#/components/parameters/XSRFHeader'
@@ -689,7 +697,10 @@ paths:
               $ref: '#/components/schemas/LogonRequest'
       responses:
         '200':
-          description: Authentication successful; session cookie established.
+          description: |
+            Authentication successful; session cookie established. Also returned with
+            `success: false`, without the cookie, when the password was accepted but a second
+            factor is needed (see `second_factor`).
           content:
             application/json:
               schema:
@@ -697,7 +708,7 @@ paths:
           headers:
             Set-Cookie:
               description: |
-                Identifier session cookie. Default name `__Secure-KKT`; the name is set by
+                Only when `success` is `true`. Identifier session cookie. Default name `__Secure-KKT`; the name is set by
                 the configured backend. Attributes:
                 `Path={signinPrefix}/identifier/_/`, `Secure`, `HttpOnly`,
                 `SameSite=None` by default (operator-configurable). No `Expires` or
@@ -719,7 +730,8 @@ paths:
           $ref: '#/components/responses/PlainTextError'
         '500':
           description: |
-            Backend logon error, or failure to serialize the session cookie. Plain text.
+            Backend logon error, failure to check the second factor, or failure to serialize
+            the session cookie. Plain text.
           content:
             text/plain:
               schema:
@@ -1813,6 +1825,12 @@ components:
             Optional. When present, `hello.client_id` becomes the logon audience passed to
             the identity backend, and a successful response embeds the corresponding
             `HelloResponse`.
+        second_factor:
+          allOf:
+            - $ref: '#/components/schemas/SecondFactorResponse'
+          description: |
+            Optional, mode `1` only. The response to one of the methods a previous reply
+            offered in `second_factor.methods`. Ignored for a user without a second factor.
 
     LogonResponse:
       type: object
@@ -1829,6 +1847,62 @@ components:
           description: |
             Unlike the other optional members in this API, this key is always present and is
             explicitly `null` when the request carried no `hello`.
+        second_factor:
+          allOf:
+            - $ref: '#/components/schemas/SecondFactorState'
+          description: |
+            Only present with `success: false`, when the password was accepted but the logon
+            needs a second factor. `hello` is `null` then.
+
+    SecondFactorState:
+      type: object
+      required: [result, methods]
+      properties:
+        result:
+          type: string
+          enum: [required, invalid, locked]
+          description: |
+            `required` when no response was sent, `invalid` when it was not accepted,
+            `locked` when no responses are accepted at the moment.
+        methods:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SecondFactorMethod'
+          description: The methods the user can use, as provided by the application.
+
+    SecondFactorMethod:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: |
+            `totp` or `webauthn`, or a type of the application's own. A web app ignores
+            types it does not know.
+          example: totp
+        data:
+          type: string
+          format: byte
+          description: |
+            Optional data the method needs, for example the options of a WebAuthn
+            challenge. Opaque to the identifier and passed on as provided.
+
+    SecondFactorResponse:
+      type: object
+      required: [type, value]
+      properties:
+        type:
+          type: string
+          description: One of the offered method types.
+          example: totp
+        value:
+          type: string
+          format: byte
+          description: |
+            The response, for example the digits of a TOTP code or a WebAuthn assertion.
+            Opaque to the identifier and passed on to the application.
+          example: MTIzNDU2
 
     ConsentRequest:
       type: object
