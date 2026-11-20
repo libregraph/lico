@@ -252,6 +252,21 @@ func (i *Identifier) handleLogon(rw http.ResponseWriter, req *http.Request) {
 				i.ErrorPage(rw, http.StatusInternalServerError, "", "failed to logon")
 				return
 			}
+			response.SecondFactor, err = i.checkSecondFactor(req.Context(), logonedUser, r.SecondFactor)
+			if err != nil {
+				i.logger.WithError(err).Errorln("identifier failed to check second factor")
+				i.ErrorPage(rw, http.StatusInternalServerError, "", "failed to logon")
+				return
+			}
+			if response.SecondFactor != nil {
+				// The password was accepted, so not a 204: the body tells the
+				// web app what the second factor needs.
+				err = utils.WriteJSON(rw, http.StatusOK, response, "")
+				if err != nil {
+					i.logger.WithError(err).Errorln("logon request failed writing response")
+				}
+				return
+			}
 			user = logonedUser
 
 		default:

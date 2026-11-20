@@ -67,6 +67,8 @@ export interface LogonResponse {
   success: boolean;
   state: string;
   hello: HelloResponse | null;
+  // Only on a refused logon whose password was accepted.
+  second_factor?: SecondFactorState;
 }
 
 export interface StateResponse {
@@ -114,4 +116,39 @@ export interface AttemptResult {
   errors?: FieldErrors;
   state?: string | null;
   hello?: HelloResponse | null;
+  /*
+   * Set when the password was accepted but the logon still needs a second
+   * factor. A refused logon without it failed on the password.
+   */
+  secondFactor?: SecondFactorState;
+}
+
+/*
+ * "required" asks for a response, the other two say what was wrong with the
+ * one that was sent.
+ */
+export type SecondFactorResult = "required" | "invalid" | "locked";
+
+/*
+ * A way the user can provide a second factor. The server decides which ones a
+ * user has; data is whatever the method needs (base64), for example the options
+ * of a WebAuthn challenge.
+ */
+export interface SecondFactorMethod {
+  type: string;
+  data?: string;
+}
+
+export interface SecondFactorState {
+  result: SecondFactorResult;
+  methods: SecondFactorMethod[];
+}
+
+/*
+ * What the web app sends back for one of the methods. The value is bytes and
+ * travels as base64, a TOTP code as its digits.
+ */
+export interface SecondFactorResponse {
+  type: string;
+  value: string;
 }

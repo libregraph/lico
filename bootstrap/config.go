@@ -27,6 +27,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/libregraph/lico/config"
+	"github.com/libregraph/lico/identifier"
 )
 
 // Config is a typed application config which represents the active
@@ -55,6 +56,7 @@ type Config struct {
 	IdentifierDefaultLogoTargetURI    *string
 	IdentifierDefaultUsernameHintText *string
 	IdentifierUILocales               []string
+	IdentifierSecondFactor            identifier.SecondFactor
 
 	EncryptionSecret []byte
 	SigningMethod    jwt.SigningMethod

@@ -391,4 +391,149 @@ describe("Login", () => {
       expect(await submit("user1")).toEqual(["user1", "secret123", "1"]);
     });
   });
+
+  describe("with a second factor", () => {
+    /*
+     * Answered by turn: a status alone is a plain reply (200 accepted, 204
+     * refused), a result is a refusal whose password was accepted. Each answer
+     * echoes the request's nonce, because the action rejects a reply whose
+     * state differs.
+     */
+    type Answer = { status: 200 | 204; result?: string; methods?: Array<{ type: string }> };
+    const totp = [{ type: "totp" }];
+    const replyInTurn = (...answers: Answer[]) => {
+      let n = 0;
+      fetchMock().mockImplementation((_url: string, init: RequestInit) => {
+        const sent = JSON.parse(String(init.body)) as { state?: string };
+        const answer = answers[Math.min(n, answers.length - 1)];
+        n++;
+        if (answer.status === 204) {
+          return Promise.resolve(
+            new Response(null, { status: 204, headers: { "Kopano-Konnect-State": sent.state ?? "" } }),
+          );
+        }
+        const body = answer.result
+          ? {
+              success: false,
+              state: sent.state,
+              hello: null,
+              second_factor: { result: answer.result, methods: answer.methods ?? totp },
+            }
+          : { success: true, state: sent.state, hello: null };
+        return Promise.resolve(
+          new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } }),
+        );
+      });
+    };
+    const required: Answer = { status: 200, result: "required" };
+
+    const signIn = async () => {
+      await userEvent.type(fieldOf("Username"), "user1@example.test");
+      await userEvent.type(fieldOf("Password"), "secret123{Enter}");
+      await waitFor(() => expect(screen.getByText("Two-factor authentication")).toBeInTheDocument());
+    };
+
+    it("asks for a code after the password was accepted", async () => {
+      replyInTurn(required);
+      renderLogin();
+
+      await signIn();
+
+      expect(fieldOf("Code")).toHaveFocus();
+      expect(screen.queryByText("Password", { selector: "label" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Verify" })).toBeInTheDocument();
+    });
+
+    it("sends the username and the password again together with the code", async () => {
+      replyInTurn(required, { status: 200 });
+      renderLogin();
+
+      await signIn();
+      await userEvent.type(fieldOf("Code"), "123 456{Enter}");
+
+      await waitFor(() => expect(logonBodies()).toHaveLength(2));
+      expect(logonBodies()[0]).not.toHaveProperty("second_factor");
+      expect(logonBodies()[1].params).toEqual(["user1@example.test", "secret123", "1"]);
+      expect(logonBodies()[1].second_factor).toEqual({ type: "totp", value: btoa("123456") });
+    });
+
+    it("stays on the password and explains when no method can be used here", async () => {
+      replyInTurn({ status: 200, result: "required", methods: [{ type: "webauthn" }] });
+      renderLogin();
+
+      await userEvent.type(fieldOf("Username"), "user1@example.test");
+      await userEvent.type(fieldOf("Password"), "secret123{Enter}");
+
+      await waitFor(() =>
+        expect(
+          screen.getByText("This account needs a second factor which cannot be used on this page."),
+        ).toBeInTheDocument(),
+      );
+      expect(fieldOf("Password")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Verify" })).not.toBeInTheDocument();
+    });
+
+    it("says when a code is wrong and empties the field", async () => {
+      replyInTurn(required, { status: 200, result: "invalid" });
+      renderLogin();
+
+      await signIn();
+      await userEvent.type(fieldOf("Code"), "000000{Enter}");
+
+      await waitFor(() => expect(screen.getByText("The code is not correct. Please try again.")).toBeInTheDocument());
+      expect(fieldOf("Code")).toHaveValue("");
+    });
+
+    it("says when the second factor is locked", async () => {
+      replyInTurn(required, { status: 200, result: "locked" });
+      renderLogin();
+
+      await signIn();
+      await userEvent.type(fieldOf("Code"), "123456{Enter}");
+
+      await waitFor(() =>
+        expect(screen.getByText("Too many wrong codes. Please wait and try again later.")).toBeInTheDocument(),
+      );
+    });
+
+    it("refuses to send an empty code and says so", async () => {
+      replyInTurn(required);
+      renderLogin();
+
+      await signIn();
+      await userEvent.click(screen.getByRole("button", { name: "Verify" }));
+
+      await waitFor(() => expect(screen.getByText("Enter your code.")).toBeInTheDocument());
+      expect(logonBodies()).toHaveLength(1);
+    });
+
+    it("goes back to the password with an empty password field", async () => {
+      replyInTurn(required, { status: 200 });
+      renderLogin();
+
+      await signIn();
+      await userEvent.click(screen.getByRole("button", { name: "Back" }));
+
+      expect(fieldOf("Username")).toHaveValue("user1@example.test");
+      expect(fieldOf("Password")).toHaveValue("");
+
+      // The password kept for the code step went with it.
+      await userEvent.click(screen.getByRole("button", { name: "Next" }));
+      await waitFor(() => expect(screen.getByText("Enter your password.")).toBeInTheDocument());
+      expect(logonBodies()).toHaveLength(1);
+    });
+
+    it("says when the password is no longer accepted and leaves going back to the user", async () => {
+      replyInTurn(required, { status: 204 });
+      renderLogin();
+
+      await signIn();
+      await userEvent.type(fieldOf("Code"), "123456{Enter}");
+
+      await waitFor(() =>
+        expect(screen.getByText("Logon failed. Please verify your credentials and try again.")).toBeInTheDocument(),
+      );
+      expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
+    });
+  });
 });

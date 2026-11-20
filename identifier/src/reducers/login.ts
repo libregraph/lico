@@ -78,7 +78,7 @@ export const loginSlice = createSlice({
      * complaint about one of them. Without it a stale "enter your password"
      * would stay on screen while the user is typing one.
      */
-    clearFieldError: (state, { payload }: PayloadAction<"username" | "password">) => {
+    clearFieldError: (state, { payload }: PayloadAction<"username" | "password" | "code">) => {
       delete state.errors[payload];
     },
   },

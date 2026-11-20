@@ -19,6 +19,8 @@ package bootstrap
 
 import (
 	"net/http"
+
+	"github.com/libregraph/lico/identifier"
 )
 
 // Settings is a typed application config which represents the user accessible
@@ -51,6 +53,7 @@ type Settings struct {
 	IdentifierDefaultLogoTargetURI    string
 	IdentifierDefaultUsernameHintText string
 	IdentifierUILocales               []string
+	IdentifierSecondFactor            identifier.SecondFactor
 	SigningKid                        string
 	SigningMethod                     string
 	SigningPrivateKeyFiles            []string

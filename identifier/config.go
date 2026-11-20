@@ -54,4 +54,8 @@ type Config struct {
 	UILocales                []string
 
 	Backend backends.Backend
+
+	// SecondFactor, when set, is asked after every accepted username and
+	// password logon whether the user also has to pass a second factor.
+	SecondFactor SecondFactor
 }

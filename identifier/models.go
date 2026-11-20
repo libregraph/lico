@@ -35,6 +35,8 @@ type LogonRequest struct {
 
 	Params []string      `json:"params"`
 	Hello  *HelloRequest `json:"hello"`
+
+	SecondFactor *SecondFactorResponse `json:"second_factor,omitempty"`
 }
 
 // A LogonResponse holds a response as sent by the logon endpoint.
@@ -43,6 +45,8 @@ type LogonResponse struct {
 	State   string `json:"state"`
 
 	Hello *HelloResponse `json:"hello"`
+
+	SecondFactor *SecondFactorState `json:"second_factor,omitempty"`
 }
 
 // A HelloRequest is the request data as send to the hello endpoint.
